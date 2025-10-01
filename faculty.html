@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Dashboard</title>
+  <link rel="stylesheet" href="css/faculty.css">
+  <link rel="stylesheet" href="css/animation.css">
+  <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+  <header>
+    <h1>Faculty Dashboard</h1>
+    <button id="logoutBtn">Logout</button>
+  </header>
+
+  <div class="container">
+    
+    <!-- Greeting -->
+    <div id="greeting" class="stats">
+      <div class="card">
+        <h2 id="totalStudents">0</h2>
+        <p>Total Students</p>
+      </div>
+      <div class="card">
+        <h2 id="totalAssignments">0</h2>
+        <p>Assignments</p>
+      </div>
+      <div class="card">
+        <h2 id="totalNotes">0</h2>
+        <p>Notes</p>
+      </div>
+    </div>
+
+    <!-- Add Notes -->
+    <form id="addNoteForm">
+      <h3>Add Note</h3>
+      <label for="studentReg">Student Registration No:</label>
+      <input type="text" id="studentReg" required>
+      
+      <label for="noteContent">Note:</label>
+      <textarea id="noteContent" rows="4" required></textarea>
+      
+      <label for="publicNote">
+        <input type="checkbox" id="publicNote"> Public Note
+      </label>
+      
+      <button type="submit" class="submit-btn">Add Note</button>
+    </form>
+
+    <!-- Mark Attendance -->
+    <form id="markAttendanceForm">
+      <h3>Mark Attendance</h3>
+      <label for="attendanceReg">Student Registration No:</label>
+      <input type="text" id="attendanceReg" required>
+      
+      <label for="subject">Subject:</label>
+      <input type="text" id="subject" required>
+      
+      <label for="percentage">Percentage:</label>
+      <input type="number" id="percentage" min="0" max="100" required>
+      
+      <button type="submit" class="submit-btn">Update Attendance</button>
+    </form>
+
+    <!-- Add Assignment -->
+    <form id="addAssignmentForm">
+      <h3>Add Assignment</h3>
+      <label for="assignmentStudent">Student Registration No:</label>
+      <input type="text" id="assignmentStudent" required>
+      
+      <label for="assignmentFile">Assignment File:</label>
+      <input type="file" id="assignmentFile" accept=".pdf,.doc,.docx,.txt" required>
+      
+      <button type="submit" class="submit-btn">Upload Assignment</button>
+    </form>
+
+    <!-- Chatbot Section -->
+    <div id="chatbotSection">
+      <h3>Chatbot Assistant</h3>
+      <div id="chatWindow" class="chat-window">
+        <!-- Messages will appear here -->
+      </div>
+      <input type="text" id="chatInput" placeholder="Type a message...">
+      <button id="sendChat">Send</button>
+    </div>
+
+    <!-- Feedback Section -->
+    <form id="feedbackForm">
+      <h3>Send Feedback to Admin</h3>
+      <textarea id="feedbackMessage" rows="3" placeholder="Your feedback..." required></textarea>
+      <button type="submit" class="submit-btn">Send Feedback</button>
+    </form>
+
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="js/faculty.js"></script>
+  <script src="js/chatbot.js"></script>
+  <script src="js/api.js"></script>
+</body>
+</html>

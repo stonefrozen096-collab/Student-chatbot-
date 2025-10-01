@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moderator Dashboard</title>
+  <link rel="stylesheet" href="../css/common.css">
+  <link rel="stylesheet" href="../css/moderator.css">
+  <script defer src="../js/moderator.js"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>Moderator Dashboard</h1>
+      <button onclick="logout()">Logout</button>
+    </div>
+
+    <!-- Alerts -->
+    <div id="alert-box"></div>
+
+    <!-- Logs Section -->
+    <section>
+      <h2>System Logs</h2>
+      <div class="logs" id="logs-container">
+        <!-- Logs will be loaded here dynamically -->
+      </div>
+    </section>
+
+    <!-- Suspicious Activity Monitoring -->
+    <section>
+      <h2>Suspicious Login Attempts</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th>IP Address</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="suspicious-table">
+          <!-- Suspicious activity rows go here -->
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Messages to Admin -->
+    <section>
+      <h2>Send Message to Admin</h2>
+      <form id="messageForm">
+        <textarea id="messageText" placeholder="Type your message..." required></textarea>
+        <button type="submit">Send</button>
+      </form>
+      <div id="chatBox">
+        <!-- Chat messages will appear here -->
+      </div>
+    </section>
+
+    <!-- Dark Mode Toggle -->
+    <section>
+      <h2>Preferences</h2>
+      <button onclick="toggleDarkMode()">Toggle Dark/Light Mode</button>
+    </section>
+  </div>
+</body>
+</html>

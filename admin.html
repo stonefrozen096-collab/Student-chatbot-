@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/animation.css">
+</head>
+<body>
+    <header>
+        Admin Dashboard
+        <button id="toggleTheme" style="float:right; margin-right:20px;">🌙</button>
+    </header>
+
+    <div class="dashboard">
+
+        <!-- Cards / Stats -->
+        <div class="card">
+            <h2>Total Students</h2>
+            <div class="value" id="totalStudents">0</div>
+        </div>
+        <div class="card">
+            <h2>Total Faculty</h2>
+            <div class="value" id="totalFaculty">0</div>
+        </div>
+        <div class="card">
+            <h2>Total Notices</h2>
+            <div class="value" id="totalNotices">0</div>
+        </div>
+        <div class="card">
+            <h2>Total Exams</h2>
+            <div class="value" id="totalExams">0</div>
+        </div>
+
+    </div>
+
+    <!-- Add / Remove Students -->
+    <form id="studentForm">
+        <h3>Add Student</h3>
+        <label>Registration Number</label>
+        <input type="text" id="studentReg" required>
+        <label>Name</label>
+        <input type="text" id="studentName" required>
+        <button type="submit">Add Student</button>
+    </form>
+
+    <form id="removeStudentForm">
+        <h3>Remove Student</h3>
+        <label>Registration Number</label>
+        <input type="text" id="removeStudentReg" required>
+        <button type="submit">Remove Student</button>
+    </form>
+
+    <!-- Add / Remove Faculty -->
+    <form id="facultyForm">
+        <h3>Add Faculty</h3>
+        <label>Username</label>
+        <input type="text" id="facultyUsername" required>
+        <label>Password</label>
+        <input type="password" id="facultyPassword" required>
+        <label>Name</label>
+        <input type="text" id="facultyName" required>
+        <label>Department</label>
+        <input type="text" id="facultyDept" required>
+        <button type="submit">Add Faculty</button>
+    </form>
+
+    <form id="removeFacultyForm">
+        <h3>Remove Faculty</h3>
+        <label>Username</label>
+        <input type="text" id="removeFacultyUsername" required>
+        <button type="submit">Remove Faculty</button>
+    </form>
+
+    <!-- Notices & Exams -->
+    <form id="noticeForm">
+        <h3>Add Notice</h3>
+        <label>Notice</label>
+        <input type="text" id="noticeText" required>
+        <button type="submit">Add Notice</button>
+    </form>
+
+    <form id="examForm">
+        <h3>Add Exam</h3>
+        <label>Exam Name</label>
+        <input type="text" id="examName" required>
+        <label>Date</label>
+        <input type="date" id="examDate" required>
+        <button type="submit">Add Exam</button>
+    </form>
+
+    <!-- Assign Badges -->
+    <form id="badgeForm">
+        <h3>Assign Badge</h3>
+        <label>Username</label>
+        <input type="text" id="badgeUsername" required>
+        <label>Role</label>
+        <select id="badgeRole" required>
+            <option value="Admin">Admin</option>
+            <option value="Faculty">Faculty</option>
+            <option value="Student">Student</option>
+            <option value="Moderator">Moderator</option>
+            <option value="Tester">Tester</option>
+        </select>
+        <button type="submit">Assign Badge</button>
+    </form>
+
+    <!-- Alerts -->
+    <div id="alertContainer"></div>
+
+    <!-- Scripts -->
+    <script src="../js/main.js"></script>
+    <script src="../js/admin.js"></script>
+    <script src="../js/api.js"></script>
+</body>
+</html>
