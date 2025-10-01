@@ -85,7 +85,10 @@ function generateToken() {
 // ----------------------
 const transporter = nodemailer.createTransport({
   service: "gmail",
-  auth: { user: "sunshinesbright004@gmail.com", pass: "Hari@00412" }
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
 });
 
 // ----------------------
