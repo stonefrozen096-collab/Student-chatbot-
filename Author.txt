@@ -1,0 +1,7 @@
+Author
+
+Hari Prasath
+
+This covers **all your backend and frontend features, folder structure, and setup instructions**.  
+
+If you want, I can also make a **shorter “quick start” version** that’s easier to read for someone just installing the project.  

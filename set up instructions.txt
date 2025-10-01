@@ -1,0 +1,9 @@
+---
+
+## Setup Instructions
+
+1. **Backend**
+   ```bash
+   cd backend
+   npm install
+   node server.js
