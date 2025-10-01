@@ -1,157 +1,87 @@
 // faculty.js
 
-document.addEventListener("DOMContentLoaded", () => {
-  const addNoteForm = document.getElementById("addNoteForm");
-  const markAttendanceForm = document.getElementById("markAttendanceForm");
-  const addAssignmentForm = document.getElementById("addAssignmentForm");
-  const feedbackForm = document.getElementById("feedbackForm");
+// Elements
+const addNoteForm = document.getElementById("add-note-form");
+const attendanceForm = document.getElementById("attendance-form");
+const assignmentForm = document.getElementById("assignment-form");
+const messageForm = document.getElementById("message-form");
+const feedbackBox = document.getElementById("feedback-box");
 
-  const chatWindow = document.getElementById("chatWindow");
-  const chatInput = document.getElementById("chatInput");
-  const sendChatBtn = document.getElementById("sendChat");
+// Utility function to show messages
+function showMessage(msg, type = "success") {
+  const div = document.createElement("div");
+  div.className = `alert ${type}`;
+  div.innerText = msg;
+  feedbackBox.appendChild(div);
+  setTimeout(() => div.remove(), 3000);
+}
 
-  const API_BASE = "http://localhost:3000"; // change if deployed
-
-  // ------------------------
-  // Add Note
-  // ------------------------
+// ----------------------
+// Add Note
+// ----------------------
+if(addNoteForm) {
   addNoteForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const studentReg = document.getElementById("studentReg").value.trim();
-    const noteContent = document.getElementById("noteContent").value.trim();
-    const publicNote = document.getElementById("publicNote").checked;
+    const studentReg = addNoteForm["studentReg"].value;
+    const note = addNoteForm["note"].value;
+    const publicNote = addNoteForm["publicNote"].checked;
 
-    if (!studentReg || !noteContent) return alert("Fill all fields");
-
-    try {
-      const res = await fetch(`${API_BASE}/faculty/add-note`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentReg, faculty: "faculty1", note: noteContent, publicNote }),
-      });
-      const data = await res.json();
-      alert(data.msg);
-      addNoteForm.reset();
-    } catch (err) {
-      console.error(err);
-      alert("Error adding note");
-    }
+    const res = await addNote(studentReg, note, publicNote);
+    if(res.msg) showMessage(res.msg);
+    addNoteForm.reset();
   });
+}
 
-  // ------------------------
-  // Mark Attendance
-  // ------------------------
-  markAttendanceForm.addEventListener("submit", async (e) => {
+// ----------------------
+// Mark Attendance
+// ----------------------
+if(attendanceForm) {
+  attendanceForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const studentReg = document.getElementById("attendanceReg").value.trim();
-    const subject = document.getElementById("subject").value.trim();
-    const percentage = document.getElementById("percentage").value;
+    const studentReg = attendanceForm["studentReg"].value;
+    const subject = attendanceForm["subject"].value;
+    const percentage = attendanceForm["percentage"].value;
 
-    if (!studentReg || !subject || !percentage) return alert("Fill all fields");
-
-    try {
-      const res = await fetch(`${API_BASE}/faculty/mark-attendance`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentReg, subject, percentage, faculty: "faculty1" }),
-      });
-      const data = await res.json();
-      alert(data.msg);
-      markAttendanceForm.reset();
-    } catch (err) {
-      console.error(err);
-      alert("Error updating attendance");
-    }
+    const res = await markAttendance(studentReg, subject, percentage);
+    if(res.msg) showMessage(res.msg);
+    attendanceForm.reset();
   });
+}
 
-  // ------------------------
-  // Add Assignment
-  // ------------------------
-  addAssignmentForm.addEventListener("submit", async (e) => {
+// ----------------------
+// Add Assignment
+// ----------------------
+if(assignmentForm) {
+  assignmentForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const studentReg = document.getElementById("assignmentStudent").value.trim();
-    const fileInput = document.getElementById("assignmentFile");
+    const studentReg = assignmentForm["studentReg"].value;
+    const fileInput = assignmentForm["file"];
+    if(fileInput.files.length === 0) {
+      showMessage("Please select a file", "error");
+      return;
+    }
+
     const file = fileInput.files[0];
-    if (!studentReg || !file) return alert("Fill all fields");
+    if(file.size > 3 * 1024 * 1024) { // 3 MB
+      showMessage("File size exceeds 3 MB", "error");
+      return;
+    }
 
-    // Convert file to Base64
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const fileData = reader.result;
-      try {
-        const res = await fetch(`${API_BASE}/faculty/add-assignment`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ studentReg, faculty: "faculty1", file: fileData }),
-        });
-        const data = await res.json();
-        alert(data.msg);
-        addAssignmentForm.reset();
-      } catch (err) {
-        console.error(err);
-        alert("Error uploading assignment");
-      }
-    };
-    reader.readAsDataURL(file);
+    const res = await addAssignment(studentReg, file);
+    if(res.msg) showMessage(res.msg);
+    assignmentForm.reset();
   });
+}
 
-  // ------------------------
-  // Feedback
-  // ------------------------
-  feedbackForm.addEventListener("submit", async (e) => {
+// ----------------------
+// Message Admin
+// ----------------------
+if(messageForm) {
+  messageForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const message = document.getElementById("feedbackMessage").value.trim();
-    if (!message) return alert("Enter feedback message");
-
-    try {
-      const res = await fetch(`${API_BASE}/faculty/message-admin`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ faculty: "faculty1", message }),
-      });
-      const data = await res.json();
-      alert(data.msg);
-      feedbackForm.reset();
-    } catch (err) {
-      console.error(err);
-      alert("Error sending feedback");
-    }
+    const message = messageForm["message"].value;
+    const res = await sendMessageToAdmin(message);
+    if(res.msg) showMessage(res.msg);
+    messageForm.reset();
   });
-
-  // ------------------------
-  // Chatbot
-  // ------------------------
-  sendChatBtn.addEventListener("click", sendMessage);
-  chatInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") sendMessage();
-  });
-
-  async function sendMessage() {
-    const message = chatInput.value.trim();
-    if (!message) return;
-    appendMessage("You", message);
-    chatInput.value = "";
-
-    try {
-      const res = await fetch(`${API_BASE}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
-      });
-      const data = await res.json();
-      appendMessage("Bot", data.reply);
-    } catch (err) {
-      console.error(err);
-      appendMessage("Bot", "Error: Could not get response");
-    }
-  }
-
-  function appendMessage(sender, text) {
-    const msgDiv = document.createElement("div");
-    msgDiv.classList.add("chat-message");
-    msgDiv.classList.add(sender === "Bot" ? "bot-msg" : "user-msg");
-    msgDiv.textContent = `${sender}: ${text}`;
-    chatWindow.appendChild(msgDiv);
-    chatWindow.scrollTop = chatWindow.scrollHeight;
-  }
-});
+}

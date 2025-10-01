@@ -1,156 +1,217 @@
-/* student.css */
+/* ===========================
+   Student Dashboard Styles
+=========================== */
 
-/* General Layout */
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f9f9fb;
-  margin: 0;
-  padding: 0;
+/* Header */
+.student-header {
+  background-color: #27ae60;
+  color: #fff;
+  padding: 15px 20px;
+  border-radius: 0 0 12px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Sidebar */
+.student-sidebar {
+  width: 220px;
+  background-color: #2c3e50;
+  min-height: 100vh;
+  padding-top: 20px;
+  position: fixed;
+  left: 0;
+  top: 0;
+  border-radius: 0 12px 12px 0;
+}
+
+.student-sidebar a {
+  display: block;
+  color: #ecf0f1;
+  padding: 12px 20px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.student-sidebar a:hover {
+  background-color: #34495e;
+  color: #fff;
+}
+
+/* Main Content */
+.student-main {
+  margin-left: 240px;
+  padding: 20px;
+}
+
+/* Cards */
+.student-card {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.student-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* Tables */
+.student-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.student-table th, .student-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+.student-table th {
+  background-color: #27ae60;
+  color: #fff;
+}
+
+/* Notes Section */
+.student-notes {
+  margin-bottom: 20px;
+}
+
+.student-notes .note {
+  padding: 12px 15px;
+  border-radius: 8px;
+  background-color: #f1f1f1;
+  margin-bottom: 10px;
+}
+
+/* Attendance Section */
+.student-attendance {
+  margin-bottom: 20px;
+}
+
+.student-attendance .attendance-item {
+  padding: 12px 15px;
+  border-radius: 8px;
+  background-color: #e8f6f3;
+  margin-bottom: 10px;
+}
+
+/* Exams Section */
+.student-exams .exam-item {
+  padding: 12px 15px;
+  border-radius: 8px;
+  background-color: #f9f2e7;
+  margin-bottom: 10px;
+}
+
+/* Badges */
+.student-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background-color: #f39c12;
+  color: #fff;
+  font-size: 12px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+/* Buttons */
+.student-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.student-btn.primary {
+  background-color: #27ae60;
+  color: #fff;
+}
+
+.student-btn.primary:hover {
+  background-color: #1e8449;
+}
+
+.student-btn.secondary {
+  background-color: #e1e1e1;
   color: #333;
 }
 
-header {
-  background: #4CAF50;
-  color: #fff;
-  padding: 15px 25px;
-  text-align: center;
-  font-size: 1.5rem;
-  font-weight: bold;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-}
-
-/* Navigation */
-nav {
-  display: flex;
-  justify-content: center;
-  background: #388E3C;
-  padding: 10px;
-}
-nav a {
-  color: white;
-  text-decoration: none;
-  margin: 0 15px;
-  font-size: 1rem;
-  transition: 0.3s;
-}
-nav a:hover {
-  text-decoration: underline;
-  color: #FFD54F;
-}
-
-/* Dashboard sections */
-.dashboard {
-  padding: 20px;
-}
-.section {
-  background: white;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-.section h2 {
-  margin-top: 0;
-  font-size: 1.2rem;
-  color: #388E3C;
-}
-
-/* Notes & Assignments */
-.notes-list, .assignments-list {
-  list-style: none;
-  padding: 0;
-}
-.notes-list li, .assignments-list li {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-}
-.notes-list li:last-child, .assignments-list li:last-child {
-  border-bottom: none;
-}
-
-/* Attendance & Exams */
-.table-container {
-  overflow-x: auto;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-table th, table td {
-  padding: 10px;
-  border: 1px solid #ddd;
-  text-align: left;
-}
-table th {
-  background: #E8F5E9;
-  color: #2E7D32;
-}
-
-/* Chatbot */
-.chatbox {
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  height: 250px;
-  overflow-y: auto;
-  padding: 10px;
-  margin-bottom: 10px;
-  background: #fff;
-}
-.chat-message {
-  margin: 8px 0;
-  padding: 10px;
-  border-radius: 6px;
-  max-width: 80%;
-}
-.chat-message.student {
-  background: #C8E6C9;
-  align-self: flex-end;
-}
-.chat-message.bot {
-  background: #E0E0E0;
-  align-self: flex-start;
-}
-#chatForm {
-  display: flex;
-  gap: 10px;
-}
-#chatInput {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-#chatForm button {
-  background: #4CAF50;
-  border: none;
-  color: white;
-  padding: 8px 15px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-#chatForm button:hover {
-  background: #388E3C;
+.student-btn.secondary:hover {
+  background-color: #ccc;
 }
 
 /* Alerts */
-.alert {
-  margin: 10px 0;
-  padding: 10px;
+.student-alert {
+  padding: 12px 16px;
   border-radius: 6px;
-  text-align: center;
-  font-weight: 500;
+  margin-bottom: 10px;
+  animation: slideIn 0.3s ease forwards;
 }
-.alert.success { background: #C8E6C9; color: #2E7D32; }
-.alert.error { background: #FFCDD2; color: #C62828; }
 
-/* Responsive */
-@media (max-width: 768px) {
-  nav {
-    flex-direction: column;
-  }
-  nav a {
-    margin: 8px 0;
-  }
+.student-alert.success { background-color: #2ecc71; color: #fff; }
+.student-alert.error { background-color: #e74c3c; color: #fff; }
+.student-alert.warning { background-color: #f39c12; color: #fff; }
+
+/* Chatbot Section */
+.student-chatbot {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 320px;
+  max-height: 500px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.student-chatbot-header {
+  background-color: #27ae60;
+  color: #fff;
+  padding: 12px;
+  font-weight: 600;
+}
+
+.student-chatbot-messages {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.student-chatbot-input {
+  display: flex;
+  border-top: 1px solid #ddd;
+}
+
+.student-chatbot-input input {
+  flex: 1;
+  border: none;
+  padding: 10px;
+}
+
+.student-chatbot-input button {
+  background-color: #27ae60;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.student-chatbot-input button:hover {
+  background-color: #1e8449;
 }

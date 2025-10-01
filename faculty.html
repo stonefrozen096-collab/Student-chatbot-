@@ -4,99 +4,107 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Faculty Dashboard</title>
+  <link rel="stylesheet" href="css/common.css">
   <link rel="stylesheet" href="css/faculty.css">
   <link rel="stylesheet" href="css/animation.css">
-  <link rel="stylesheet" href="css/common.css">
 </head>
 <body>
-  <header>
+  <!-- Header -->
+  <header class="faculty-header">
     <h1>Faculty Dashboard</h1>
-    <button id="logoutBtn">Logout</button>
+    <div class="header-right">
+      <span id="greeting"></span>
+      <button class="faculty-btn" id="logoutBtn">Logout</button>
+    </div>
   </header>
 
-  <div class="container">
-    
-    <!-- Greeting -->
-    <div id="greeting" class="stats">
-      <div class="card">
-        <h2 id="totalStudents">0</h2>
-        <p>Total Students</p>
+  <!-- Sidebar -->
+  <aside class="faculty-sidebar">
+    <a href="#notes">Manage Notes</a>
+    <a href="#attendance">Attendance</a>
+    <a href="#assignments">Assignments</a>
+    <a href="#messages">Messages to Admin</a>
+    <a href="#timetable">Timetable</a>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="faculty-main">
+
+    <!-- Notes Section -->
+    <section id="notes" class="faculty-section">
+      <h2>Add Notes</h2>
+      <div class="faculty-actions">
+        <input type="text" id="studentReg" placeholder="Student Reg No">
+        <textarea id="noteText" placeholder="Write note"></textarea>
+        <label><input type="checkbox" id="publicNote"> Public</label>
+        <button class="faculty-btn primary" id="addNoteBtn">Add Note</button>
       </div>
-      <div class="card">
-        <h2 id="totalAssignments">0</h2>
-        <p>Assignments</p>
+      <ul id="notesList"></ul>
+    </section>
+
+    <!-- Attendance Section -->
+    <section id="attendance" class="faculty-section">
+      <h2>Mark Attendance</h2>
+      <div class="faculty-actions">
+        <input type="text" id="attStudentReg" placeholder="Student Reg No">
+        <input type="text" id="attSubject" placeholder="Subject">
+        <input type="number" id="attPercentage" placeholder="Attendance %" min="0" max="100">
+        <button class="faculty-btn primary" id="markAttendanceBtn">Update Attendance</button>
       </div>
-      <div class="card">
-        <h2 id="totalNotes">0</h2>
-        <p>Notes</p>
+      <table class="faculty-table" id="attendanceTable">
+        <thead>
+          <tr>
+            <th>Reg No</th>
+            <th>Subject</th>
+            <th>Attendance %</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Assignments Section -->
+    <section id="assignments" class="faculty-section">
+      <h2>Add Assignments</h2>
+      <div class="faculty-actions">
+        <input type="text" id="assignStudentReg" placeholder="Student Reg No">
+        <input type="file" id="assignFile">
+        <button class="faculty-btn primary" id="addAssignmentBtn">Upload Assignment</button>
       </div>
-    </div>
+      <ul id="assignmentsList"></ul>
+    </section>
 
-    <!-- Add Notes -->
-    <form id="addNoteForm">
-      <h3>Add Note</h3>
-      <label for="studentReg">Student Registration No:</label>
-      <input type="text" id="studentReg" required>
-      
-      <label for="noteContent">Note:</label>
-      <textarea id="noteContent" rows="4" required></textarea>
-      
-      <label for="publicNote">
-        <input type="checkbox" id="publicNote"> Public Note
-      </label>
-      
-      <button type="submit" class="submit-btn">Add Note</button>
-    </form>
-
-    <!-- Mark Attendance -->
-    <form id="markAttendanceForm">
-      <h3>Mark Attendance</h3>
-      <label for="attendanceReg">Student Registration No:</label>
-      <input type="text" id="attendanceReg" required>
-      
-      <label for="subject">Subject:</label>
-      <input type="text" id="subject" required>
-      
-      <label for="percentage">Percentage:</label>
-      <input type="number" id="percentage" min="0" max="100" required>
-      
-      <button type="submit" class="submit-btn">Update Attendance</button>
-    </form>
-
-    <!-- Add Assignment -->
-    <form id="addAssignmentForm">
-      <h3>Add Assignment</h3>
-      <label for="assignmentStudent">Student Registration No:</label>
-      <input type="text" id="assignmentStudent" required>
-      
-      <label for="assignmentFile">Assignment File:</label>
-      <input type="file" id="assignmentFile" accept=".pdf,.doc,.docx,.txt" required>
-      
-      <button type="submit" class="submit-btn">Upload Assignment</button>
-    </form>
-
-    <!-- Chatbot Section -->
-    <div id="chatbotSection">
-      <h3>Chatbot Assistant</h3>
-      <div id="chatWindow" class="chat-window">
-        <!-- Messages will appear here -->
+    <!-- Messages to Admin Section -->
+    <section id="messages" class="faculty-section">
+      <h2>Send Message to Admin</h2>
+      <div class="faculty-actions">
+        <textarea id="adminMessage" placeholder="Write message"></textarea>
+        <button class="faculty-btn primary" id="sendMessageBtn">Send</button>
       </div>
-      <input type="text" id="chatInput" placeholder="Type a message...">
-      <button id="sendChat">Send</button>
-    </div>
+      <ul id="sentMessagesList"></ul>
+    </section>
 
-    <!-- Feedback Section -->
-    <form id="feedbackForm">
-      <h3>Send Feedback to Admin</h3>
-      <textarea id="feedbackMessage" rows="3" placeholder="Your feedback..." required></textarea>
-      <button type="submit" class="submit-btn">Send Feedback</button>
-    </form>
+    <!-- Timetable Section -->
+    <section id="timetable" class="faculty-section">
+      <h2>Timetable</h2>
+      <table class="faculty-table" id="timetableTable">
+        <thead>
+          <tr>
+            <th>Day</th>
+            <th>Time</th>
+            <th>Subject</th>
+            <th>Class</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
 
-  </div>
+  </main>
 
-  <script src="js/main.js"></script>
-  <script src="js/faculty.js"></script>
-  <script src="js/chatbot.js"></script>
+  <!-- JS Scripts -->
   <script src="js/api.js"></script>
+  <script src="js/faculty.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>

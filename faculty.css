@@ -1,197 +1,205 @@
-/* faculty.css */
+/* ===========================
+   Faculty Dashboard Styles
+=========================== */
 
-/* ===== General Reset ===== */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-body {
-  background-color: #f7f7f7;
-  color: #333;
-  min-height: 100vh;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-/* ===== Dark Mode ===== */
-body.dark-mode {
-  background-color: #121212;
-  color: #e0e0e0;
-}
-
-/* ===== Layout ===== */
-.container {
-  max-width: 1200px;
-  margin: 20px auto;
-  padding: 15px;
-}
-
-/* ===== Header ===== */
-header {
+/* Header */
+.faculty-header {
+  background-color: #3498db;
+  color: #fff;
+  padding: 15px 20px;
+  border-radius: 0 0 12px 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #ccc;
-}
-
-header h1 {
-  font-size: 2rem;
-  color: #444;
-}
-
-header button {
-  padding: 8px 12px;
-  border: none;
-  cursor: pointer;
-  background-color: #0077ff;
-  color: white;
-  border-radius: 5px;
-  transition: background 0.3s;
-}
-
-header button:hover {
-  background-color: #005bbb;
-}
-
-/* ===== Forms ===== */
-form {
-  background-color: #fff;
-  padding: 20px;
-  margin: 15px 0;
-  border-radius: 10px;
-  box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
-  transition: transform 0.2s;
-}
-
-form:hover {
-  transform: translateY(-2px);
-}
-
-form label {
-  display: block;
-  margin-bottom: 5px;
+  font-size: 18px;
   font-weight: 600;
 }
 
-form input, form select, form textarea {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  transition: border-color 0.3s;
+/* Sidebar */
+.faculty-sidebar {
+  width: 220px;
+  background-color: #2c3e50;
+  min-height: 100vh;
+  padding-top: 20px;
+  position: fixed;
+  left: 0;
+  top: 0;
+  border-radius: 0 12px 12px 0;
 }
 
-form input:focus, form select:focus, form textarea:focus {
-  border-color: #0077ff;
-  outline: none;
+.faculty-sidebar a {
+  display: block;
+  color: #ecf0f1;
+  padding: 12px 20px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
 }
 
-/* ===== Buttons ===== */
-button.submit-btn {
-  background-color: #28a745;
-  color: white;
-  padding: 10px 18px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.3s;
+.faculty-sidebar a:hover {
+  background-color: #34495e;
+  color: #fff;
 }
 
-button.submit-btn:hover {
-  background-color: #218838;
+/* Main Content */
+.faculty-main {
+  margin-left: 240px;
+  padding: 20px;
 }
 
-/* ===== Tables ===== */
-table {
+/* Cards */
+.faculty-card {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.faculty-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* Tables */
+.faculty-table {
   width: 100%;
   border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.faculty-table th, .faculty-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+.faculty-table th {
+  background-color: #3498db;
+  color: #fff;
+}
+
+/* Notes Section */
+.faculty-notes {
+  margin-bottom: 20px;
+}
+
+.faculty-notes textarea {
+  height: 100px;
+  resize: vertical;
+}
+
+/* Attendance Section */
+.faculty-attendance input[type="number"] {
+  width: 70px;
+}
+
+/* Assignments Section */
+.faculty-assignments {
   margin-top: 20px;
 }
 
-table th, table td {
-  text-align: left;
-  padding: 12px 15px;
-  border-bottom: 1px solid #ddd;
+.faculty-assignments input[type="file"] {
+  display: block;
+  margin-bottom: 10px;
 }
 
-table th {
-  background-color: #0077ff;
-  color: white;
+/* Buttons */
+.faculty-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-table tr:hover {
-  background-color: rgba(0, 119, 255, 0.1);
+.faculty-btn.primary {
+  background-color: #3498db;
+  color: #fff;
 }
 
-/* ===== Alerts ===== */
-.alert {
-  padding: 12px 15px;
-  margin: 10px 0;
+.faculty-btn.primary:hover {
+  background-color: #217dbb;
+}
+
+.faculty-btn.secondary {
+  background-color: #e1e1e1;
+  color: #333;
+}
+
+.faculty-btn.secondary:hover {
+  background-color: #ccc;
+}
+
+/* Modals */
+.faculty-modal .modal-content {
+  max-width: 500px;
+  width: 90%;
+  border-radius: 12px;
+}
+
+/* Alerts */
+.faculty-alert {
+  padding: 12px 16px;
   border-radius: 6px;
-  font-weight: 500;
-  animation: fadeIn 0.5s ease;
+  margin-bottom: 10px;
+  animation: slideIn 0.3s ease forwards;
 }
 
-.alert.success {
-  background-color: #d4edda;
-  color: #155724;
-}
+.faculty-alert.success { background-color: #2ecc71; color: #fff; }
+.faculty-alert.error { background-color: #e74c3c; color: #fff; }
+.faculty-alert.warning { background-color: #f39c12; color: #fff; }
 
-.alert.error {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-/* ===== Counters / Stats ===== */
-.stats {
-  display: flex;
-  justify-content: space-between;
-  margin: 20px 0;
-}
-
-.stats .card {
-  flex: 1;
+/* Chatbot Section (if embedded) */
+.faculty-chatbot {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 320px;
+  max-height: 500px;
   background-color: #fff;
-  padding: 20px;
-  margin: 0 10px;
-  border-radius: 10px;
-  text-align: center;
-  box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
-  transition: transform 0.2s;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-.stats .card:hover {
-  transform: translateY(-3px);
+.faculty-chatbot-header {
+  background-color: #3498db;
+  color: #fff;
+  padding: 12px;
+  font-weight: 600;
 }
 
-.stats .card h2 {
-  font-size: 2rem;
-  margin-bottom: 5px;
-  color: #0077ff;
+.faculty-chatbot-messages {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
 }
 
-/* ===== Animations ===== */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+.faculty-chatbot-input {
+  display: flex;
+  border-top: 1px solid #ddd;
 }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-50px); }
-  to { opacity: 1; transform: translateX(0); }
+.faculty-chatbot-input input {
+  flex: 1;
+  border: none;
+  padding: 10px;
 }
 
-/* ===== Responsive ===== */
-@media (max-width: 768px) {
-  .stats {
-    flex-direction: column;
-  }
+.faculty-chatbot-input button {
+  background-color: #3498db;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
 
-  .stats .card {
-    margin: 10px 0;
-  }
+.faculty-chatbot-input button:hover {
+  background-color: #217dbb;
 }

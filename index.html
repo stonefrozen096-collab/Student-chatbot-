@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Assistant Login</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/animation.css">
+</head>
+<body>
+  <div class="login-container">
+    <h1>Welcome to Student Assistant</h1>
+    <p>Please select your role and login:</p>
+
+    <!-- Role Selection Tabs -->
+    <div class="role-tabs">
+      <button class="role-btn active" data-role="admin">Admin</button>
+      <button class="role-btn" data-role="faculty">Faculty</button>
+      <button class="role-btn" data-role="student">Student</button>
+    </div>
+
+    <!-- Login Form -->
+    <form id="loginForm">
+      <input type="text" id="username" placeholder="Username / Register No" required>
+      <input type="password" id="password" placeholder="Password (if Admin/Faculty)" >
+      <button type="submit" class="primary-btn">Login</button>
+      <p class="forgot-password"><a href="forgot-password.html">Forgot Password?</a></p>
+      <p id="loginMsg" class="feedback-msg"></p>
+    </form>
+  </div>
+
+  <script>
+    const roleButtons = document.querySelectorAll('.role-btn');
+    let selectedRole = 'admin';
+    const loginForm = document.getElementById('loginForm');
+    const loginMsg = document.getElementById('loginMsg');
+
+    roleButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        roleButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedRole = btn.dataset.role;
+        loginMsg.textContent = "";
+        if(selectedRole === 'student') {
+          document.getElementById('password').style.display = 'none';
+        } else {
+          document.getElementById('password').style.display = 'block';
+        }
+      });
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      loginMsg.textContent = "";
+
+      let endpoint = '/login'; // default for students
+      let bodyData = { regno: username };
+
+      if(selectedRole === 'admin') {
+        endpoint = '/admin/login';
+        bodyData = { username, password };
+      } else if(selectedRole === 'faculty') {
+        endpoint = '/faculty/login';
+        bodyData = { username, password };
+      }
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bodyData)
+        });
+        const data = await res.json();
+        if(res.ok){
+          loginMsg.style.color = 'green';
+          loginMsg.textContent = data.msg;
+          // redirect based on role
+          setTimeout(() => {
+            window.location.href = `${selectedRole}.html`;
+          }, 1000);
+        } else {
+          loginMsg.style.color = 'red';
+          loginMsg.textContent = data.msg;
+        }
+      } catch(err) {
+        loginMsg.style.color = 'red';
+        loginMsg.textContent = "Server error. Try again later.";
+      }
+    });
+  </script>
+</body>
+</html>

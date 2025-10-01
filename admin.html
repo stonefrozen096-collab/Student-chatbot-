@@ -1,118 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="../css/admin.css">
-    <link rel="stylesheet" href="../css/common.css">
-    <link rel="stylesheet" href="../css/animation.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/animation.css">
 </head>
 <body>
-    <header>
-        Admin Dashboard
-        <button id="toggleTheme" style="float:right; margin-right:20px;">🌙</button>
-    </header>
-
-    <div class="dashboard">
-
-        <!-- Cards / Stats -->
-        <div class="card">
-            <h2>Total Students</h2>
-            <div class="value" id="totalStudents">0</div>
-        </div>
-        <div class="card">
-            <h2>Total Faculty</h2>
-            <div class="value" id="totalFaculty">0</div>
-        </div>
-        <div class="card">
-            <h2>Total Notices</h2>
-            <div class="value" id="totalNotices">0</div>
-        </div>
-        <div class="card">
-            <h2>Total Exams</h2>
-            <div class="value" id="totalExams">0</div>
-        </div>
-
+  <!-- Header -->
+  <header class="admin-header">
+    <h1>Admin Dashboard</h1>
+    <div class="header-right">
+      <span id="greeting"></span>
+      <button class="admin-btn" id="logoutBtn">Logout</button>
     </div>
+  </header>
 
-    <!-- Add / Remove Students -->
-    <form id="studentForm">
-        <h3>Add Student</h3>
-        <label>Registration Number</label>
-        <input type="text" id="studentReg" required>
-        <label>Name</label>
-        <input type="text" id="studentName" required>
-        <button type="submit">Add Student</button>
-    </form>
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <a href="#users">Manage Students</a>
+    <a href="#faculty">Manage Faculty</a>
+    <a href="#notices">Notices</a>
+    <a href="#exams">Exams</a>
+    <a href="#badges">Badges</a>
+    <a href="#feedback">Feedback</a>
+    <a href="#logs">Logs</a>
+  </aside>
 
-    <form id="removeStudentForm">
-        <h3>Remove Student</h3>
-        <label>Registration Number</label>
-        <input type="text" id="removeStudentReg" required>
-        <button type="submit">Remove Student</button>
-    </form>
+  <!-- Main Content -->
+  <main class="admin-main">
+    <!-- Users Section -->
+    <section id="users" class="admin-section">
+      <h2>Students</h2>
+      <div class="admin-actions">
+        <input type="text" id="studentName" placeholder="Student Name">
+        <input type="text" id="studentRegno" placeholder="Register Number">
+        <button class="admin-btn primary" id="addStudentBtn">Add Student</button>
+      </div>
+      <table class="admin-table" id="studentsTable">
+        <thead>
+          <tr>
+            <th>Reg No</th>
+            <th>Name</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
 
-    <!-- Add / Remove Faculty -->
-    <form id="facultyForm">
-        <h3>Add Faculty</h3>
-        <label>Username</label>
-        <input type="text" id="facultyUsername" required>
-        <label>Password</label>
-        <input type="password" id="facultyPassword" required>
-        <label>Name</label>
-        <input type="text" id="facultyName" required>
-        <label>Department</label>
-        <input type="text" id="facultyDept" required>
-        <button type="submit">Add Faculty</button>
-    </form>
+    <!-- Faculty Section -->
+    <section id="faculty" class="admin-section">
+      <h2>Faculty</h2>
+      <div class="admin-actions">
+        <input type="text" id="facultyName" placeholder="Faculty Name">
+        <input type="text" id="facultyUsername" placeholder="Username">
+        <input type="password" id="facultyPassword" placeholder="Password">
+        <input type="text" id="facultyDept" placeholder="Department">
+        <button class="admin-btn primary" id="addFacultyBtn">Add Faculty</button>
+      </div>
+      <table class="admin-table" id="facultyTable">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
 
-    <form id="removeFacultyForm">
-        <h3>Remove Faculty</h3>
-        <label>Username</label>
-        <input type="text" id="removeFacultyUsername" required>
-        <button type="submit">Remove Faculty</button>
-    </form>
+    <!-- Notices Section -->
+    <section id="notices" class="admin-section">
+      <h2>Notices</h2>
+      <div class="admin-actions">
+        <textarea id="noticeText" placeholder="Write a notice"></textarea>
+        <button class="admin-btn primary" id="addNoticeBtn">Add Notice</button>
+      </div>
+      <ul id="noticesList"></ul>
+    </section>
 
-    <!-- Notices & Exams -->
-    <form id="noticeForm">
-        <h3>Add Notice</h3>
-        <label>Notice</label>
-        <input type="text" id="noticeText" required>
-        <button type="submit">Add Notice</button>
-    </form>
+    <!-- Exams Section -->
+    <section id="exams" class="admin-section">
+      <h2>Exams</h2>
+      <div class="admin-actions">
+        <input type="text" id="examName" placeholder="Exam Name">
+        <input type="date" id="examDate">
+        <button class="admin-btn primary" id="addExamBtn">Add Exam</button>
+      </div>
+      <ul id="examsList"></ul>
+    </section>
 
-    <form id="examForm">
-        <h3>Add Exam</h3>
-        <label>Exam Name</label>
-        <input type="text" id="examName" required>
-        <label>Date</label>
-        <input type="date" id="examDate" required>
-        <button type="submit">Add Exam</button>
-    </form>
-
-    <!-- Assign Badges -->
-    <form id="badgeForm">
-        <h3>Assign Badge</h3>
-        <label>Username</label>
-        <input type="text" id="badgeUsername" required>
-        <label>Role</label>
-        <select id="badgeRole" required>
-            <option value="Admin">Admin</option>
-            <option value="Faculty">Faculty</option>
-            <option value="Student">Student</option>
-            <option value="Moderator">Moderator</option>
-            <option value="Tester">Tester</option>
+    <!-- Badges Section -->
+    <section id="badges" class="admin-section">
+      <h2>Badges</h2>
+      <div class="admin-actions">
+        <input type="text" id="badgeUsername" placeholder="Username">
+        <select id="badgeRole">
+          <option value="Admin">Admin</option>
+          <option value="Faculty">Faculty</option>
+          <option value="Student">Student</option>
+          <option value="Moderator">Moderator</option>
+          <option value="Tester">Tester</option>
         </select>
-        <button type="submit">Assign Badge</button>
-    </form>
+        <button class="admin-btn primary" id="assignBadgeBtn">Assign Badge</button>
+      </div>
+      <ul id="badgesList"></ul>
+    </section>
 
-    <!-- Alerts -->
-    <div id="alertContainer"></div>
+    <!-- Feedback Section -->
+    <section id="feedback" class="admin-section">
+      <h2>Feedback</h2>
+      <ul id="feedbackList"></ul>
+    </section>
 
-    <!-- Scripts -->
-    <script src="../js/main.js"></script>
-    <script src="../js/admin.js"></script>
-    <script src="../js/api.js"></script>
+    <!-- Logs Section -->
+    <section id="logs" class="admin-section">
+      <h2>Action Logs</h2>
+      <ul id="logsList"></ul>
+    </section>
+  </main>
+
+  <!-- JS Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>

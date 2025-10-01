@@ -4,130 +4,67 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Dashboard</title>
-  <link rel="stylesheet" href="student.css">
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/animation.css">
+  <link rel="stylesheet" href="css/student.css">
 </head>
 <body>
-
-  <!-- Header -->
   <header>
-    🎓 Student Dashboard
+    <h1>Welcome, Student!</h1>
+    <p>Manage and view your attendance, notes, exams, and more.</p>
   </header>
 
-  <!-- Navigation -->
-  <nav>
-    <a href="#notes">Notes</a>
-    <a href="#assignments">Assignments</a>
-    <a href="#attendance">Attendance</a>
-    <a href="#exams">Exams</a>
-    <a href="#chatbot">Chatbot</a>
-  </nav>
-
-  <main class="dashboard">
-
-    <!-- Notes Section -->
-    <section id="notes" class="section">
-      <h2>📘 Notes</h2>
-      <ul class="notes-list">
-        <li>Math - Integration Basics.pdf</li>
-        <li>Physics - Thermodynamics.docx</li>
-        <li>Mechanical - CAD Drawings.zip</li>
-      </ul>
-    </section>
-
-    <!-- Assignments Section -->
-    <section id="assignments" class="section">
-      <h2>📝 Assignments</h2>
-      <ul class="assignments-list">
-        <li>Submit CAD Model by Oct 5</li>
-        <li>Thermodynamics Report by Oct 10</li>
-        <li>Math Worksheet by Oct 15</li>
-      </ul>
-    </section>
-
+  <main>
     <!-- Attendance Section -->
-    <section id="attendance" class="section">
-      <h2>📊 Attendance</h2>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Subject</th>
-              <th>Classes Attended</th>
-              <th>Total Classes</th>
-              <th>Percentage</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Math</td>
-              <td>28</td>
-              <td>30</td>
-              <td>93%</td>
-            </tr>
-            <tr>
-              <td>Physics</td>
-              <td>26</td>
-              <td>30</td>
-              <td>87%</td>
-            </tr>
-            <tr>
-              <td>Mechanical</td>
-              <td>25</td>
-              <td>30</td>
-              <td>83%</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <section id="attendanceSection">
+      <h2>Attendance</h2>
+      <table id="attendanceTable">
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Percentage</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </section>
 
     <!-- Exams Section -->
-    <section id="exams" class="section">
-      <h2>📅 Exams</h2>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Exam</th>
-              <th>Date</th>
-              <th>Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Math - Unit Test</td>
-              <td>2025-10-20</td>
-              <td>10:00 AM</td>
-            </tr>
-            <tr>
-              <td>Physics - Unit Test</td>
-              <td>2025-10-22</td>
-              <td>2:00 PM</td>
-            </tr>
-            <tr>
-              <td>Mechanical - Lab Exam</td>
-              <td>2025-10-25</td>
-              <td>9:00 AM</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <section id="examsSection">
+      <h2>Exams</h2>
+      <ul id="examsList"></ul>
+    </section>
+
+    <!-- Notices Section -->
+    <section id="noticesSection">
+      <h2>Notices</h2>
+      <ul id="noticesList"></ul>
+    </section>
+
+    <!-- Notes Section -->
+    <section id="notesSection">
+      <h2>Notes</h2>
+      <ul id="notesList"></ul>
+    </section>
+
+    <!-- Assignments Section -->
+    <section id="assignmentsSection">
+      <h2>Assignments</h2>
+      <ul id="assignmentsList"></ul>
     </section>
 
     <!-- Chatbot Section -->
-    <section id="chatbot" class="section">
-      <h2>💬 Chatbot Assistant</h2>
-      <div class="chatbox" id="chatbox">
-        <div class="chat-message bot">Hello! 👋 I’m your assistant. How can I help?</div>
+    <section id="chatbotSection">
+      <h2>Chatbot Assistant</h2>
+      <div id="chatWindow">
+        <div id="messages"></div>
+        <input type="text" id="chatInput" placeholder="Ask something..." />
+        <button id="sendBtn">Send</button>
       </div>
-      <form id="chatForm">
-        <input type="text" id="chatInput" placeholder="Ask me something..." required>
-        <button type="submit">Send</button>
-      </form>
     </section>
-
   </main>
 
-  <script src="student.js"></script>
+  <script src="js/student.js"></script>
+  <script src="js/chatbot.js"></script>
 </body>
 </html>

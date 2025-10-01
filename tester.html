@@ -4,42 +4,41 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tester Dashboard</title>
-  <link rel="stylesheet" href="tester.css">
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/animation.css">
+  <link rel="stylesheet" href="css/tester.css">
 </head>
 <body>
-  <div class="tester-container">
-    <h1>Tester Dashboard</h1>
+  <header>
+    <h1>Welcome, Tester!</h1>
+    <p>Test the system and provide feedback to the admin.</p>
+  </header>
 
-    <!-- Test Form -->
-    <form class="test-form" id="testForm">
-      <label for="testName">Test Name:</label>
-      <input type="text" id="testName" name="testName" placeholder="Enter test name" required>
+  <main>
+    <!-- Test Messages Section -->
+    <section id="testMessagesSection">
+      <h2>Send Message to Admin</h2>
+      <textarea id="testerMessage" placeholder="Type your message here..."></textarea>
+      <button id="sendMessageBtn">Send</button>
+      <p id="messageStatus"></p>
+    </section>
 
-      <label for="testType">Test Type:</label>
-      <select id="testType" name="testType" required>
-        <option value="">Select test type</option>
-        <option value="unit">Unit Test</option>
-        <option value="integration">Integration Test</option>
-        <option value="ui">UI/UX Test</option>
-        <option value="performance">Performance Test</option>
-      </select>
+    <!-- Feedback Section -->
+    <section id="feedbackSection">
+      <h2>Submit Feedback</h2>
+      <textarea id="testerFeedback" placeholder="Enter your feedback..."></textarea>
+      <button id="submitFeedbackBtn">Submit</button>
+      <p id="feedbackStatus"></p>
+    </section>
 
-      <label for="testNotes">Notes:</label>
-      <textarea id="testNotes" name="testNotes" rows="4" placeholder="Write test details here..."></textarea>
+    <!-- Test API Section -->
+    <section id="testAPISection">
+      <h2>Test API Responses</h2>
+      <button id="fetchUsersBtn">Fetch Users</button>
+      <pre id="apiResult"></pre>
+    </section>
+  </main>
 
-      <button type="submit">Run Test</button>
-    </form>
-
-    <!-- Test Results -->
-    <div class="test-results" id="testResults" style="display:none;">
-      <h2>Test Results</h2>
-      <p><strong>Name:</strong> <span id="resultName"></span></p>
-      <p><strong>Type:</strong> <span id="resultType"></span></p>
-      <p><strong>Status:</strong> ✅ Test executed successfully</p>
-      <p><strong>Notes:</strong> <span id="resultNotes"></span></p>
-    </div>
-  </div>
-
-  <script src="tester.js"></script>
+  <script src="js/tester.js"></script>
 </body>
 </html>
