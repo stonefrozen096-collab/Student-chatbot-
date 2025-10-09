@@ -3,108 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Faculty Dashboard</title>
-  <link rel="stylesheet" href="css/common.css">
-  <link rel="stylesheet" href="css/faculty.css">
-  <link rel="stylesheet" href="css/animation.css">
+  <title>Faculty Portal</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    form { margin-bottom: 20px; }
+    input, button, textarea { padding: 8px; margin: 5px 0; width: 100%; }
+    button { cursor: pointer; }
+  </style>
 </head>
 <body>
-  <!-- Header -->
-  <header class="faculty-header">
-    <h1>Faculty Dashboard</h1>
-    <div class="header-right">
-      <span id="greeting"></span>
-      <button class="faculty-btn" id="logoutBtn">Logout</button>
-    </div>
-  </header>
+  <h1>Faculty Portal</h1>
 
-  <!-- Sidebar -->
-  <aside class="faculty-sidebar">
-    <a href="#notes">Manage Notes</a>
-    <a href="#attendance">Attendance</a>
-    <a href="#assignments">Assignments</a>
-    <a href="#messages">Messages to Admin</a>
-    <a href="#timetable">Timetable</a>
-  </aside>
+  <!-- Faculty Login -->
+  <form id="facultyLoginForm">
+    <h2>Login</h2>
+    <input type="text" id="facultyUsername" placeholder="Username" required>
+    <input type="password" id="facultyPassword" placeholder="Password" required>
+    <button type="submit">Login</button>
+  </form>
 
-  <!-- Main Content -->
-  <main class="faculty-main">
+  <!-- Add Note for Student -->
+  <form id="addNoteForm">
+    <h2>Add Note for Student</h2>
+    <input type="text" id="noteRegno" placeholder="Student RegNo" required>
+    <textarea id="noteText" placeholder="Note content..." required></textarea>
+    <label><input type="checkbox" id="isPrivate"> Private</label>
+    <button type="submit">Add Note</button>
+  </form>
 
-    <!-- Notes Section -->
-    <section id="notes" class="faculty-section">
-      <h2>Add Notes</h2>
-      <div class="faculty-actions">
-        <input type="text" id="studentReg" placeholder="Student Reg No">
-        <textarea id="noteText" placeholder="Write note"></textarea>
-        <label><input type="checkbox" id="publicNote"> Public</label>
-        <button class="faculty-btn primary" id="addNoteBtn">Add Note</button>
-      </div>
-      <ul id="notesList"></ul>
-    </section>
+  <script type="module">
+    const BASE_URL = "https://feathers-26g1.onrender.com";
 
-    <!-- Attendance Section -->
-    <section id="attendance" class="faculty-section">
-      <h2>Mark Attendance</h2>
-      <div class="faculty-actions">
-        <input type="text" id="attStudentReg" placeholder="Student Reg No">
-        <input type="text" id="attSubject" placeholder="Subject">
-        <input type="number" id="attPercentage" placeholder="Attendance %" min="0" max="100">
-        <button class="faculty-btn primary" id="markAttendanceBtn">Update Attendance</button>
-      </div>
-      <table class="faculty-table" id="attendanceTable">
-        <thead>
-          <tr>
-            <th>Reg No</th>
-            <th>Subject</th>
-            <th>Attendance %</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
+    async function postData(endpoint="", data={}) {
+      const res = await fetch(`${BASE_URL}/api${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      return res.json();
+    }
 
-    <!-- Assignments Section -->
-    <section id="assignments" class="faculty-section">
-      <h2>Add Assignments</h2>
-      <div class="faculty-actions">
-        <input type="text" id="assignStudentReg" placeholder="Student Reg No">
-        <input type="file" id="assignFile">
-        <button class="faculty-btn primary" id="addAssignmentBtn">Upload Assignment</button>
-      </div>
-      <ul id="assignmentsList"></ul>
-    </section>
+    // Faculty Login
+    const facultyLoginForm = document.getElementById("facultyLoginForm");
+    facultyLoginForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const username = document.getElementById("facultyUsername").value;
+      const password = document.getElementById("facultyPassword").value;
+      const res = await postData("/faculty/login", { username, password });
+      alert(res.msg);
+    });
 
-    <!-- Messages to Admin Section -->
-    <section id="messages" class="faculty-section">
-      <h2>Send Message to Admin</h2>
-      <div class="faculty-actions">
-        <textarea id="adminMessage" placeholder="Write message"></textarea>
-        <button class="faculty-btn primary" id="sendMessageBtn">Send</button>
-      </div>
-      <ul id="sentMessagesList"></ul>
-    </section>
-
-    <!-- Timetable Section -->
-    <section id="timetable" class="faculty-section">
-      <h2>Timetable</h2>
-      <table class="faculty-table" id="timetableTable">
-        <thead>
-          <tr>
-            <th>Day</th>
-            <th>Time</th>
-            <th>Subject</th>
-            <th>Class</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-
-  </main>
-
-  <!-- JS Scripts -->
-  <script src="js/api.js"></script>
-  <script src="js/faculty.js"></script>
-  <script src="js/main.js"></script>
+    // Add Note
+    const addNoteForm = document.getElementById("addNoteForm");
+    addNoteForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const faculty = document.getElementById("facultyUsername").value;
+      const regno = document.getElementById("noteRegno").value;
+      const note = document.getElementById("noteText").value;
+      const isPrivate = document.getElementById("isPrivate").checked;
+      const res = await postData("/faculty/add-note", { faculty, regno, note, isPrivate });
+      alert(res.msg);
+    });
+  </script>
 </body>
 </html>
