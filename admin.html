@@ -3,131 +3,204 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="css/common.css">
-  <link rel="stylesheet" href="css/admin.css">
-  <link rel="stylesheet" href="css/animation.css">
+  <title>Admin Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    form { margin-bottom: 20px; }
+    input, button { padding: 8px; margin: 5px 0; width: 100%; }
+    button { cursor: pointer; }
+  </style>
 </head>
 <body>
-  <!-- Header -->
-  <header class="admin-header">
-    <h1>Admin Dashboard</h1>
-    <div class="header-right">
-      <span id="greeting"></span>
-      <button class="admin-btn" id="logoutBtn">Logout</button>
-    </div>
-  </header>
+  <h1>Admin Panel</h1>
 
-  <!-- Sidebar -->
-  <aside class="admin-sidebar">
-    <a href="#users">Manage Students</a>
-    <a href="#faculty">Manage Faculty</a>
-    <a href="#notices">Notices</a>
-    <a href="#exams">Exams</a>
-    <a href="#badges">Badges</a>
-    <a href="#feedback">Feedback</a>
-    <a href="#logs">Logs</a>
-  </aside>
+  <!-- Admin Login -->
+  <form id="adminLoginForm">
+    <h2>Login</h2>
+    <input type="text" id="adminUsername" placeholder="Username" required>
+    <input type="password" id="adminPassword" placeholder="Password" required>
+    <button type="submit">Login</button>
+  </form>
 
-  <!-- Main Content -->
-  <main class="admin-main">
-    <!-- Users Section -->
-    <section id="users" class="admin-section">
-      <h2>Students</h2>
-      <div class="admin-actions">
-        <input type="text" id="studentName" placeholder="Student Name">
-        <input type="text" id="studentRegno" placeholder="Register Number">
-        <button class="admin-btn primary" id="addStudentBtn">Add Student</button>
-      </div>
-      <table class="admin-table" id="studentsTable">
-        <thead>
-          <tr>
-            <th>Reg No</th>
-            <th>Name</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
+  <!-- Add Student -->
+  <form id="addStudentForm">
+    <h2>Add Student</h2>
+    <input type="text" id="studentRegno" placeholder="Registration Number" required>
+    <input type="text" id="studentName" placeholder="Name" required>
+    <button type="submit">Add Student</button>
+  </form>
 
-    <!-- Faculty Section -->
-    <section id="faculty" class="admin-section">
-      <h2>Faculty</h2>
-      <div class="admin-actions">
-        <input type="text" id="facultyName" placeholder="Faculty Name">
-        <input type="text" id="facultyUsername" placeholder="Username">
-        <input type="password" id="facultyPassword" placeholder="Password">
-        <input type="text" id="facultyDept" placeholder="Department">
-        <button class="admin-btn primary" id="addFacultyBtn">Add Faculty</button>
-      </div>
-      <table class="admin-table" id="facultyTable">
-        <thead>
-          <tr>
-            <th>Username</th>
-            <th>Name</th>
-            <th>Department</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
+  <!-- Remove Student -->
+  <form id="removeStudentForm">
+    <h2>Remove Student</h2>
+    <input type="text" id="removeStudentRegno" placeholder="Registration Number" required>
+    <button type="submit">Remove Student</button>
+  </form>
 
-    <!-- Notices Section -->
-    <section id="notices" class="admin-section">
-      <h2>Notices</h2>
-      <div class="admin-actions">
-        <textarea id="noticeText" placeholder="Write a notice"></textarea>
-        <button class="admin-btn primary" id="addNoticeBtn">Add Notice</button>
-      </div>
-      <ul id="noticesList"></ul>
-    </section>
+  <!-- Add Faculty -->
+  <form id="addFacultyForm">
+    <h2>Add Faculty</h2>
+    <input type="text" id="facultyUsername" placeholder="Username" required>
+    <input type="password" id="facultyPassword" placeholder="Password" required>
+    <input type="text" id="facultyName" placeholder="Name" required>
+    <input type="text" id="facultyDept" placeholder="Department" required>
+    <button type="submit">Add Faculty</button>
+  </form>
 
-    <!-- Exams Section -->
-    <section id="exams" class="admin-section">
-      <h2>Exams</h2>
-      <div class="admin-actions">
-        <input type="text" id="examName" placeholder="Exam Name">
-        <input type="date" id="examDate">
-        <button class="admin-btn primary" id="addExamBtn">Add Exam</button>
-      </div>
-      <ul id="examsList"></ul>
-    </section>
+  <!-- Remove Faculty -->
+  <form id="removeFacultyForm">
+    <h2>Remove Faculty</h2>
+    <input type="text" id="removeFacultyUsername" placeholder="Username" required>
+    <button type="submit">Remove Faculty</button>
+  </form>
 
-    <!-- Badges Section -->
-    <section id="badges" class="admin-section">
-      <h2>Badges</h2>
-      <div class="admin-actions">
-        <input type="text" id="badgeUsername" placeholder="Username">
-        <select id="badgeRole">
-          <option value="Admin">Admin</option>
-          <option value="Faculty">Faculty</option>
-          <option value="Student">Student</option>
-          <option value="Moderator">Moderator</option>
-          <option value="Tester">Tester</option>
-        </select>
-        <button class="admin-btn primary" id="assignBadgeBtn">Assign Badge</button>
-      </div>
-      <ul id="badgesList"></ul>
-    </section>
+  <!-- Add Notice -->
+  <form id="addNoticeForm">
+    <h2>Add Notice</h2>
+    <input type="text" id="noticeText" placeholder="Notice Text" required>
+    <button type="submit">Add Notice</button>
+  </form>
 
-    <!-- Feedback Section -->
-    <section id="feedback" class="admin-section">
-      <h2>Feedback</h2>
-      <ul id="feedbackList"></ul>
-    </section>
+  <!-- Add Exam -->
+  <form id="addExamForm">
+    <h2>Add Exam</h2>
+    <input type="text" id="examName" placeholder="Exam Name" required>
+    <input type="date" id="examDate" required>
+    <button type="submit">Add Exam</button>
+  </form>
 
-    <!-- Logs Section -->
-    <section id="logs" class="admin-section">
-      <h2>Action Logs</h2>
-      <ul id="logsList"></ul>
-    </section>
-  </main>
+  <!-- Assign Badge -->
+  <form id="assignBadgeForm">
+    <h2>Assign Badge</h2>
+    <input type="text" id="badgeUsername" placeholder="Username" required>
+    <input type="text" id="badgeRole" placeholder="Role" required>
+    <button type="submit">Assign Badge</button>
+  </form>
 
-  <!-- JS Scripts -->
-  <script src="js/api.js"></script>
-  <script src="js/admin.js"></script>
-  <script src="js/main.js"></script>
+  <!-- Fetch Logs -->
+  <button id="fetchLogsBtn">Fetch Logs</button>
+
+  <!-- ----------------------
+       Updated JS Code
+  ---------------------- -->
+  <script type="module">
+    const BASE_URL = "https://feathers-26g1.onrender.com";
+
+    async function postData(endpoint = "", data = {}) {
+      const response = await fetch(`${BASE_URL}/api${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      return response.json();
+    }
+
+    // Admin Login
+    const adminLoginForm = document.getElementById("adminLoginForm");
+    if (adminLoginForm) {
+      adminLoginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const username = document.getElementById("adminUsername").value;
+        const password = document.getElementById("adminPassword").value;
+        const res = await postData("/admin/login", { username, password });
+        alert(res.msg);
+        if (!res.msg.includes("❌")) window.location.href = "admin.html";
+      });
+    }
+
+    // Add Student
+    const addStudentForm = document.getElementById("addStudentForm");
+    if (addStudentForm) {
+      addStudentForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const regno = document.getElementById("studentRegno").value;
+        const name = document.getElementById("studentName").value;
+        const res = await postData("/admin/add-user", { username: "admin", password: "adminpassword", regno, name });
+        alert(res.msg);
+      });
+    }
+
+    // Remove Student
+    const removeStudentForm = document.getElementById("removeStudentForm");
+    if (removeStudentForm) {
+      removeStudentForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const regno = document.getElementById("removeStudentRegno").value;
+        const res = await postData("/admin/remove-user", { username: "admin", password: "adminpassword", regno });
+        alert(res.msg);
+      });
+    }
+
+    // Add Faculty
+    const addFacultyForm = document.getElementById("addFacultyForm");
+    if (addFacultyForm) {
+      addFacultyForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const facultyUsername = document.getElementById("facultyUsername").value;
+        const facultyPassword = document.getElementById("facultyPassword").value;
+        const name = document.getElementById("facultyName").value;
+        const department = document.getElementById("facultyDept").value;
+        const res = await postData("/admin/add-faculty", { username: "admin", password: "adminpassword", username: facultyUsername, password: facultyPassword, name, department });
+        alert(res.msg);
+      });
+    }
+
+    // Remove Faculty
+    const removeFacultyForm = document.getElementById("removeFacultyForm");
+    if (removeFacultyForm) {
+      removeFacultyForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const facultyUsername = document.getElementById("removeFacultyUsername").value;
+        const res = await postData("/admin/remove-faculty", { username: "admin", password: "adminpassword", username: facultyUsername });
+        alert(res.msg);
+      });
+    }
+
+    // Add Notice
+    const addNoticeForm = document.getElementById("addNoticeForm");
+    if (addNoticeForm) {
+      addNoticeForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const notice = document.getElementById("noticeText").value;
+        const res = await postData("/admin/add-notice", { username: "admin", password: "adminpassword", notice });
+        alert(res.msg);
+      });
+    }
+
+    // Add Exam
+    const addExamForm = document.getElementById("addExamForm");
+    if (addExamForm) {
+      addExamForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const name = document.getElementById("examName").value;
+        const date = document.getElementById("examDate").value;
+        const res = await postData("/admin/add-exam", { username: "admin", password: "adminpassword", name, date });
+        alert(res.msg);
+      });
+    }
+
+    // Assign Badge
+    const assignBadgeForm = document.getElementById("assignBadgeForm");
+    if (assignBadgeForm) {
+      assignBadgeForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const badgeUsername = document.getElementById("badgeUsername").value;
+        const role = document.getElementById("badgeRole").value;
+        const res = await postData("/admin/assign-badge", { username: "admin", password: "adminpassword", username: badgeUsername, role });
+        alert(res.msg);
+      });
+    }
+
+    // Fetch Logs
+    const fetchLogsBtn = document.getElementById("fetchLogsBtn");
+    if (fetchLogsBtn) {
+      fetchLogsBtn.addEventListener("click", async () => {
+        const res = await fetch(`${BASE_URL}/api/admin/logs`);
+        const data = await res.json();
+        console.log("Logs:", data);
+        alert("Logs fetched! Check console.");
+      });
+    }
+  </script>
 </body>
 </html>
