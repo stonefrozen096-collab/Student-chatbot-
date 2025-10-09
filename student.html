@@ -3,68 +3,103 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Dashboard</title>
-  <link rel="stylesheet" href="css/common.css">
-  <link rel="stylesheet" href="css/animation.css">
-  <link rel="stylesheet" href="css/student.css">
+  <title>Student Portal</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    form { margin-bottom: 20px; }
+    input, button, textarea { padding: 8px; margin: 5px 0; width: 100%; }
+    button { cursor: pointer; }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>Welcome, Student!</h1>
-    <p>Manage and view your attendance, notes, exams, and more.</p>
-  </header>
+  <h1>Student Portal</h1>
 
-  <main>
-    <!-- Attendance Section -->
-    <section id="attendanceSection">
-      <h2>Attendance</h2>
-      <table id="attendanceTable">
-        <thead>
-          <tr>
-            <th>Subject</th>
-            <th>Percentage</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
+  <!-- Student Login -->
+  <form id="studentLoginForm">
+    <h2>Login</h2>
+    <input type="text" id="studentRegno" placeholder="Registration Number" required>
+    <button type="submit">Login</button>
+  </form>
 
-    <!-- Exams Section -->
-    <section id="examsSection">
-      <h2>Exams</h2>
-      <ul id="examsList"></ul>
-    </section>
+  <!-- View Student Data -->
+  <form id="getStudentDataForm">
+    <h2>Get My Data</h2>
+    <input type="text" id="viewRegno" placeholder="Registration Number" required>
+    <button type="submit">Fetch Data</button>
+  </form>
+  <pre id="studentDataOutput"></pre>
 
-    <!-- Notices Section -->
-    <section id="noticesSection">
-      <h2>Notices</h2>
-      <ul id="noticesList"></ul>
-    </section>
+  <!-- Ask Chatbot -->
+  <form id="chatbotForm">
+    <h2>Chatbot</h2>
+    <textarea id="chatMessage" placeholder="Ask something..." required></textarea>
+    <button type="submit">Send</button>
+  </form>
+  <pre id="chatbotOutput"></pre>
 
-    <!-- Notes Section -->
-    <section id="notesSection">
-      <h2>Notes</h2>
-      <ul id="notesList"></ul>
-    </section>
+  <!-- Send Feedback -->
+  <form id="feedbackForm">
+    <h2>Send Feedback</h2>
+    <input type="text" id="feedbackUser" placeholder="Your Name / RegNo" required>
+    <textarea id="feedbackText" placeholder="Your feedback..." required></textarea>
+    <button type="submit">Send Feedback</button>
+  </form>
 
-    <!-- Assignments Section -->
-    <section id="assignmentsSection">
-      <h2>Assignments</h2>
-      <ul id="assignmentsList"></ul>
-    </section>
+  <script type="module">
+    const BASE_URL = "https://feathers-26g1.onrender.com";
 
-    <!-- Chatbot Section -->
-    <section id="chatbotSection">
-      <h2>Chatbot Assistant</h2>
-      <div id="chatWindow">
-        <div id="messages"></div>
-        <input type="text" id="chatInput" placeholder="Ask something..." />
-        <button id="sendBtn">Send</button>
-      </div>
-    </section>
-  </main>
+    async function postData(endpoint="", data={}) {
+      const res = await fetch(`${BASE_URL}/api${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      return res.json();
+    }
 
-  <script src="js/student.js"></script>
-  <script src="js/chatbot.js"></script>
+    async function getData(endpoint="") {
+      const res = await fetch(`${BASE_URL}/api${endpoint}`);
+      return res.json();
+    }
+
+    // Student Login
+    const studentLoginForm = document.getElementById("studentLoginForm");
+    studentLoginForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const regno = document.getElementById("studentRegno").value;
+      const res = await postData("/student/login", { regno });
+      alert(res.msg);
+    });
+
+    // Get Student Data
+    const getStudentDataForm = document.getElementById("getStudentDataForm");
+    const studentDataOutput = document.getElementById("studentDataOutput");
+    getStudentDataForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const regno = document.getElementById("viewRegno").value;
+      const res = await getData(`/student/data?regno=${regno}`);
+      studentDataOutput.textContent = JSON.stringify(res, null, 2);
+    });
+
+    // Chatbot
+    const chatbotForm = document.getElementById("chatbotForm");
+    const chatbotOutput = document.getElementById("chatbotOutput");
+    chatbotForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const message = document.getElementById("chatMessage").value;
+      const res = await postData("/chatbot/query", { message });
+      chatbotOutput.textContent = res.reply || JSON.stringify(res, null, 2);
+    });
+
+    // Feedback
+    const feedbackForm = document.getElementById("feedbackForm");
+    feedbackForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const user = document.getElementById("feedbackUser").value;
+      const feedback = document.getElementById("feedbackText").value;
+      const res = await postData("/feedback", { user, feedback });
+      alert(res.msg);
+    });
+  </script>
 </body>
 </html>
