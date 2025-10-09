@@ -3,42 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tester Dashboard</title>
-  <link rel="stylesheet" href="css/common.css">
-  <link rel="stylesheet" href="css/animation.css">
-  <link rel="stylesheet" href="css/tester.css">
+  <title>Tester Portal</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input, textarea, button { padding: 8px; margin: 5px 0; width: 100%; }
+    #testResults { display: none; margin-top: 20px; padding: 10px; border: 1px solid #000; }
+    .highlight { background: #ffffcc; transition: 0.5s; }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>Welcome, Tester!</h1>
-    <p>Test the system and provide feedback to the admin.</p>
-  </header>
+  <h1>Tester Portal</h1>
 
-  <main>
-    <!-- Test Messages Section -->
-    <section id="testMessagesSection">
-      <h2>Send Message to Admin</h2>
-      <textarea id="testerMessage" placeholder="Type your message here..."></textarea>
-      <button id="sendMessageBtn">Send</button>
-      <p id="messageStatus"></p>
-    </section>
+  <form id="testForm">
+    <input type="text" id="testName" placeholder="Test Name" required>
+    <input type="text" id="testType" placeholder="Test Type" required>
+    <textarea id="testNotes" placeholder="Additional Notes"></textarea>
+    <button type="submit">Submit Test</button>
+  </form>
 
-    <!-- Feedback Section -->
-    <section id="feedbackSection">
-      <h2>Submit Feedback</h2>
-      <textarea id="testerFeedback" placeholder="Enter your feedback..."></textarea>
-      <button id="submitFeedbackBtn">Submit</button>
-      <p id="feedbackStatus"></p>
-    </section>
+  <div id="testResults">
+    <h2>Test Results</h2>
+    <p><strong>Name:</strong> <span id="resultName"></span></p>
+    <p><strong>Type:</strong> <span id="resultType"></span></p>
+    <p><strong>Notes:</strong> <span id="resultNotes"></span></p>
+  </div>
 
-    <!-- Test API Section -->
-    <section id="testAPISection">
-      <h2>Test API Responses</h2>
-      <button id="fetchUsersBtn">Fetch Users</button>
-      <pre id="apiResult"></pre>
-    </section>
-  </main>
+  <script type="module">
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("testForm");
+      const results = document.getElementById("testResults");
 
-  <script src="js/tester.js"></script>
+      const resultName = document.getElementById("resultName");
+      const resultType = document.getElementById("resultType");
+      const resultNotes = document.getElementById("resultNotes");
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        // Get form values
+        const testName = document.getElementById("testName").value;
+        const testType = document.getElementById("testType").value;
+        const testNotes = document.getElementById("testNotes").value;
+
+        // Populate results
+        resultName.textContent = testName;
+        resultType.textContent = testType;
+        resultNotes.textContent = testNotes || "No additional notes provided.";
+
+        // Show results section
+        results.style.display = "block";
+
+        // Clear form after submission
+        form.reset();
+
+        // Fancy effect: highlight result box
+        results.classList.add("highlight");
+        setTimeout(() => results.classList.remove("highlight"), 1500);
+      });
+    });
+  </script>
 </body>
 </html>
