@@ -3,98 +3,166 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Moderator Dashboard</title>
-  <link rel="stylesheet" href="css/common.css">
-  <link rel="stylesheet" href="css/animation.css">
-  <link rel="stylesheet" href="css/moderator.css">
+  <title>Moderator Portal</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .alert { padding: 10px; margin-bottom: 10px; }
+    .alert.success { background: #c8e6c9; color: #256029; }
+    .alert.error { background: #ffcdd2; color: #b71c1c; }
+    .chat-message { margin-bottom: 5px; }
+    .chat-message.moderator { font-weight: bold; }
+    table, th, td { border: 1px solid #000; border-collapse: collapse; padding: 5px; }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>Moderator Dashboard</h1>
-    <p>Monitor system activities and login attempts</p>
-  </header>
+  <h1>Moderator Portal</h1>
 
-  <main>
-    <!-- Logs Table -->
-    <section class="logs-section">
-      <h2>Activity Logs</h2>
-      <input type="text" id="searchLogs" placeholder="Search logs..." class="search-bar">
-      <table id="logsTable">
-        <thead>
-          <tr>
-            <th>Timestamp</th>
-            <th>User</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Logs populated via JS -->
-        </tbody>
-      </table>
-    </section>
+  <div id="alert-box"></div>
 
-    <!-- Alerts Section -->
-    <section class="alerts-section">
-      <h2>Unauthorized Access Attempts</h2>
-      <ul id="alertsList">
-        <!-- Alerts populated via JS -->
-      </ul>
-    </section>
-  </main>
+  <button onclick="logout()">Logout</button>
+  <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
 
-  <script>
+  <h2>Logs</h2>
+  <div id="logs-container"></div>
+
+  <h2>Suspicious Activity</h2>
+  <table id="suspicious-table">
+    <tr>
+      <th>User</th><th>Role</th><th>IP</th><th>Time</th>
+    </tr>
+  </table>
+
+  <h2>Message Admin</h2>
+  <form id="messageForm">
+    <textarea id="messageText" placeholder="Type your message..." required></textarea>
+    <button type="submit">Send</button>
+  </form>
+
+  <h2>Chat</h2>
+  <div id="chatBox"></div>
+
+  <script type="module">
+    const BASE_URL = "https://feathers-26g1.onrender.com";
+
+    function showAlert(message, type = "success") {
+      const alertBox = document.getElementById("alert-box");
+      alertBox.textContent = message;
+      alertBox.className = `alert ${type}`;
+      setTimeout(() => (alertBox.textContent = ""), 3000);
+    }
+
+    function logout() {
+      showAlert("Logging out...", "success");
+      setTimeout(() => { window.location.href = "../index.html"; }, 1000);
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+      const mode = document.body.classList.contains("dark-mode") ? "Dark" : "Light";
+      showAlert(`${mode} Mode Enabled`, "success");
+    }
+
     async function loadLogs() {
       try {
-        const res = await fetch('/logs'); // endpoint to fetch logs
-        const data = await res.json();
-        const tableBody = document.querySelector('#logsTable tbody');
-        tableBody.innerHTML = '';
-        data.forEach(log => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${new Date(log.timestamp).toLocaleString()}</td>
-                          <td>${log.user}</td>
-                          <td>${log.action}</td>`;
-          tableBody.appendChild(tr);
+        const res = await fetch(`${BASE_URL}/moderator/logs`);
+        if (!res.ok) throw new Error("Failed to fetch logs");
+        const logs = await res.json();
+
+        const logsContainer = document.getElementById("logs-container");
+        logsContainer.innerHTML = "";
+        logs.forEach(log => {
+          const div = document.createElement("div");
+          div.className = "log-entry";
+          div.innerHTML = `<strong>${log.user}</strong>: ${log.action} <em>(${new Date(log.timestamp).toLocaleString()})</em>`;
+          logsContainer.appendChild(div);
         });
-      } catch(err) {
-        console.error("Failed to load logs", err);
+      } catch (err) {
+        console.error(err);
+        showAlert("⚠️ Error loading logs", "error");
       }
     }
 
-    async function loadAlerts() {
+    async function loadSuspiciousActivity() {
       try {
-        const res = await fetch('/alerts'); // endpoint for unauthorized access attempts
-        const data = await res.json();
-        const alertsList = document.getElementById('alertsList');
-        alertsList.innerHTML = '';
-        data.forEach(alert => {
-          const li = document.createElement('li');
-          li.textContent = `${new Date(alert.timestamp).toLocaleString()} - ${alert.user}: ${alert.action}`;
-          alertsList.appendChild(li);
+        const res = await fetch(`${BASE_URL}/moderator/suspicious`);
+        if (!res.ok) throw new Error("Failed to fetch suspicious activity");
+        const suspicious = await res.json();
+
+        const table = document.getElementById("suspicious-table");
+        table.innerHTML = "<tr><th>User</th><th>Role</th><th>IP</th><th>Time</th></tr>";
+
+        suspicious.forEach(item => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${item.user}</td>
+            <td>${item.role}</td>
+            <td>${item.ip}</td>
+            <td>${new Date(item.time).toLocaleString()}</td>
+          `;
+          table.appendChild(row);
         });
-      } catch(err) {
-        console.error("Failed to load alerts", err);
+      } catch (err) {
+        console.error(err);
+        showAlert("⚠️ Error loading suspicious activity", "error");
       }
     }
 
-    // Search logs
-    document.getElementById('searchLogs').addEventListener('input', function() {
-      const filter = this.value.toLowerCase();
-      document.querySelectorAll('#logsTable tbody tr').forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(filter) ? '' : 'none';
-      });
+    document.getElementById("messageForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const message = document.getElementById("messageText").value;
+      try {
+        const res = await fetch(`${BASE_URL}/moderator/message`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message })
+        });
+        if (!res.ok) throw new Error("Failed to send message");
+        await res.json();
+        showAlert("Message sent to Admin ✅", "success");
+
+        const chatBox = document.getElementById("chatBox");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "chat-message moderator";
+        msgDiv.textContent = `You: ${message}`;
+        chatBox.appendChild(msgDiv);
+
+        document.getElementById("messageText").value = "";
+      } catch (err) {
+        console.error(err);
+        showAlert("⚠️ Error sending message", "error");
+      }
     });
 
-    // Load data on page load
-    loadLogs();
-    loadAlerts();
+    async function loadMessages() {
+      try {
+        const res = await fetch(`${BASE_URL}/moderator/messages`);
+        if (!res.ok) throw new Error("Failed to fetch messages");
+        const messages = await res.json();
 
-    // Optional: auto-refresh every 30 seconds
-    setInterval(() => {
+        const chatBox = document.getElementById("chatBox");
+        chatBox.innerHTML = "";
+        messages.forEach(msg => {
+          const div = document.createElement("div");
+          div.className = `chat-message ${msg.sender}`;
+          div.textContent = `${msg.sender}: ${msg.text}`;
+          chatBox.appendChild(div);
+        });
+      } catch (err) {
+        console.error(err);
+        showAlert("⚠️ Error loading messages", "error");
+      }
+    }
+
+    window.onload = () => {
       loadLogs();
-      loadAlerts();
-    }, 30000);
+      loadSuspiciousActivity();
+      loadMessages();
+      setInterval(() => {
+        loadLogs();
+        loadSuspiciousActivity();
+        loadMessages();
+      }, 15000);
+    };
   </script>
 </body>
 </html>
