@@ -6,9 +6,8 @@ const BASE_URL = "https://feathers-26g1.onrender.com";
 // ----------------------
 // ADMIN
 // ----------------------
-
 export async function adminLogin(username, password) {
-  const res = await fetch(`${BASE_URL}/admin/login`, {
+  const res = await fetch(`${BASE_URL}/api/admin/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
@@ -17,7 +16,7 @@ export async function adminLogin(username, password) {
 }
 
 export async function adminSetup(password) {
-  const res = await fetch(`${BASE_URL}/admin/setup`, {
+  const res = await fetch(`${BASE_URL}/api/admin/setup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ password }),
@@ -26,7 +25,7 @@ export async function adminSetup(password) {
 }
 
 export async function adminForgotPassword(email) {
-  const res = await fetch(`${BASE_URL}/admin/forgot-password`, {
+  const res = await fetch(`${BASE_URL}/api/admin/forgot-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
@@ -35,7 +34,7 @@ export async function adminForgotPassword(email) {
 }
 
 export async function adminResetPassword(token, newPassword) {
-  const res = await fetch(`${BASE_URL}/admin/reset-password`, {
+  const res = await fetch(`${BASE_URL}/api/admin/reset-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token, newPassword }),
@@ -46,9 +45,8 @@ export async function adminResetPassword(token, newPassword) {
 // ----------------------
 // FACULTY
 // ----------------------
-
 export async function facultyLogin(username, password) {
-  const res = await fetch(`${BASE_URL}/faculty/login`, {
+  const res = await fetch(`${BASE_URL}/api/faculty/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
@@ -57,7 +55,7 @@ export async function facultyLogin(username, password) {
 }
 
 export async function addNoteForStudent(faculty, regno, note, isPrivate) {
-  const res = await fetch(`${BASE_URL}/faculty/add-note`, {
+  const res = await fetch(`${BASE_URL}/api/faculty/add-note`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ faculty, regno, note, isPrivate }),
@@ -68,9 +66,8 @@ export async function addNoteForStudent(faculty, regno, note, isPrivate) {
 // ----------------------
 // STUDENT
 // ----------------------
-
 export async function studentLogin(regno) {
-  const res = await fetch(`${BASE_URL}/student/login`, {
+  const res = await fetch(`${BASE_URL}/api/student/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ regno }),
@@ -79,16 +76,15 @@ export async function studentLogin(regno) {
 }
 
 export async function getStudentData(regno) {
-  const res = await fetch(`${BASE_URL}/student/data?regno=${regno}`);
+  const res = await fetch(`${BASE_URL}/api/student/data?regno=${regno}`);
   return res.json();
 }
 
 // ----------------------
 // CHATBOT
 // ----------------------
-
 export async function askChatbot(message) {
-  const res = await fetch(`${BASE_URL}/chatbot/query`, {
+  const res = await fetch(`${BASE_URL}/api/chatbot/query`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message }),
@@ -99,19 +95,18 @@ export async function askChatbot(message) {
 // ----------------------
 // GENERAL UTILITIES
 // ----------------------
-
 export async function getNotices() {
-  const res = await fetch(`${BASE_URL}/notices`);
+  const res = await fetch(`${BASE_URL}/api/notices`);
   return res.json();
 }
 
 export async function getExams() {
-  const res = await fetch(`${BASE_URL}/exams`);
+  const res = await fetch(`${BASE_URL}/api/exams`);
   return res.json();
 }
 
 export async function sendFeedback(user, feedback) {
-  const res = await fetch(`${BASE_URL}/feedback`, {
+  const res = await fetch(`${BASE_URL}/api/feedback`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ user, feedback }),
