@@ -59,7 +59,6 @@ function saveData(file, data) {
 // ----------------------
 // Load all data
 // ----------------------
-let users = loadData(USERS_FILE, {});
 let facultyAccounts = loadData(FACULTY_FILE, []);
 let attendance = loadData(ATTENDANCE_FILE, []);
 let exams = loadData(EXAMS_FILE, []);
@@ -105,15 +104,30 @@ const transporter = nodemailer.createTransport({
 });
 
 // ----------------------
-// Admin Authentication Middleware
+// Admin Authentication Middleware (fixed)
 // ----------------------
 async function authenticateAdmin(req, res, next) {
   const { username, password } = req.body; // username = email
-  const user = users[username];
+  let user;
+
+  try {
+    // Reload users.json fresh on every login
+    const usersData = JSON.parse(fs.readFileSync(USERS_FILE));
+    user = usersData[username];
+  } catch (err) {
+    console.error("❌ Failed to read users.json:", err);
+    return res.status(500).json({ msg: "❌ Server error" });
+  }
 
   console.log("🔍 Checking admin login for:", username);
   if (!user) {
     console.log("❌ No user found");
+    return res.status(401).json({ msg: "❌ Invalid admin credentials" });
+  }
+
+  // Make sure password field exists
+  if (!user.password) {
+    console.log("❌ Password missing in user record");
     return res.status(401).json({ msg: "❌ Invalid admin credentials" });
   }
 
@@ -140,7 +154,9 @@ app.post("/admin/login", authenticateAdmin, (req, res) => {
 // ----------------------
 app.post("/admin/forgot-password", (req, res) => {
   const { username } = req.body;
-  const user = users[username];
+  const usersData = loadData(USERS_FILE, {});
+  const user = usersData[username];
+
   if (!user) return res.status(404).json({ msg: "❌ User not found" });
 
   const token = generateToken();
@@ -170,8 +186,9 @@ app.post("/admin/reset-password", async (req, res) => {
   if (!record || record.token !== token || record.expires < Date.now())
     return res.status(400).json({ msg: "❌ Invalid or expired token" });
 
-  users[username].password = await bcrypt.hash(newPassword, 10);
-  saveData(USERS_FILE, users);
+  const usersData = loadData(USERS_FILE, {});
+  usersData[username].password = await bcrypt.hash(newPassword, 10);
+  saveData(USERS_FILE, usersData);
 
   delete tokens[username];
   saveData(TOKENS_FILE, tokens);
