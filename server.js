@@ -47,7 +47,7 @@ function saveData(file, data) { fs.writeFileSync(file, JSON.stringify(data, null
 // ----------------------
 // Load data
 // ----------------------
-let users = loadData(USERS_FILE, {});
+let users = loadData(USERS_FILE, {});           // <--- FIXED: use empty object, not array
 let facultyAccounts = loadData(FACULTY_FILE, []);
 let attendance = loadData(ATTENDANCE_FILE, []);
 let exams = loadData(EXAMS_FILE, []);
@@ -91,7 +91,7 @@ const transporter = nodemailer.createTransport({
 // Admin authentication
 // ----------------------
 async function authenticateAdmin(req, res, next){
-  const { username, password } = req.body;
+  const { username, password } = req.body; // username is email
   const user = users[username];
   if(!user) return res.status(401).json({ msg:"❌ Invalid admin credentials" });
 
@@ -118,7 +118,7 @@ app.post("/admin/forgot-password", (req, res) => {
   if(!user) return res.status(404).json({ msg:"❌ User not found" });
 
   const token = crypto.randomBytes(20).toString("hex");
-  tokens[username] = { token, expires: Date.now() + 3600000 };
+  tokens[username] = { token, expires: Date.now() + 3600000 }; // 1 hour expiry
   saveData(TOKENS_FILE, tokens);
 
   const mailOptions = {
