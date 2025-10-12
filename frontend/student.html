@@ -14,7 +14,6 @@
       padding: 0;
     }
 
-    /* === Moving background canvas === */
     #bg-canvas {
       position: fixed;
       inset: 0;
@@ -122,20 +121,20 @@
       color: #2563eb;
     }
 
-    .faculty-list, .attendance-list {
+    ul {
       list-style: none;
       padding: 0;
       margin: 0;
     }
 
-    .faculty-list li, .attendance-list li {
+    li {
       padding: 6px 0;
       border-bottom: 1px solid #e5e7eb;
       font-size: 14px;
       color: #334155;
     }
 
-    .faculty-list li:last-child, .attendance-list li:last-child { border-bottom: none; }
+    li:last-child { border-bottom: none; }
 
     .logout-btn {
       padding: 8px 15px;
@@ -146,6 +145,35 @@
       cursor: pointer;
       float: right;
       font-weight: bold;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      cursor: pointer;
+    }
+
+    .tab {
+      padding: 8px 15px;
+      border-radius: 8px;
+      background: #e0e7ff;
+      color: #1e3a8a;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+
+    .tab.active {
+      background: #4f46e5;
+      color: #fff;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
     }
   </style>
 </head>
@@ -167,39 +195,93 @@
       <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
-    <!-- Assigned Faculty -->
-    <div class="section-card">
-      <h3>Assigned Faculty</h3>
-      <ul class="faculty-list" id="assignedFaculty">
-        <!-- Assigned faculty populate dynamically -->
-      </ul>
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" data-tab="facultyTab">Assigned Faculty</div>
+      <div class="tab" data-tab="attendanceTab">Attendance</div>
+      <div class="tab" data-tab="notesTab">Notes</div>
+      <div class="tab" data-tab="testsTab">Tests / Assignments</div>
+      <div class="tab" data-tab="noticesTab">Notices</div>
+      <div class="tab" data-tab="chatbotTab">Chatbot</div>
     </div>
 
-    <!-- Attendance Summary -->
-    <div class="section-card">
-      <h3>Attendance Summary</h3>
-      <ul class="attendance-list" id="attendanceList">
-        <!-- Attendance populate dynamically -->
-      </ul>
+    <!-- Tab Contents -->
+    <div class="tab-content active" id="facultyTab">
+      <div class="section-card">
+        <h3>Assigned Faculty</h3>
+        <ul id="assignedFaculty">
+          <!-- Faculty populate dynamically -->
+        </ul>
+      </div>
     </div>
+
+    <div class="tab-content" id="attendanceTab">
+      <div class="section-card">
+        <h3>Attendance Summary</h3>
+        <ul id="attendanceList">
+          <!-- Attendance populate dynamically -->
+        </ul>
+      </div>
+    </div>
+    <div class="tab-content" id="notesTab">
+      <div class="section-card">
+        <h3>Notes</h3>
+        <ul id="notesList">
+          <!-- Notes populate dynamically -->
+        </ul>
+      </div>
+    </div>
+
+    <div class="tab-content" id="testsTab">
+      <div class="section-card">
+        <h3>Tests / Assignments</h3>
+        <ul id="testsList">
+          <!-- Tests / assignments populate dynamically -->
+        </ul>
+      </div>
+    </div>
+
+    <div class="tab-content" id="noticesTab">
+      <div class="section-card">
+        <h3>Notices</h3>
+        <ul id="noticesList">
+          <!-- Notices populate dynamically -->
+        </ul>
+      </div>
+    </div>
+
+    <div class="tab-content" id="chatbotTab">
+      <div class="section-card">
+        <h3>Chatbot Assistant</h3>
+        <div id="chatbotContainer">
+          <div id="chatMessages" style="max-height:300px; overflow-y:auto; border:1px solid #ccc; padding:8px; border-radius:8px; background:#f9f9f9;"></div>
+          <input type="text" id="chatInput" placeholder="Type a message..." style="width:80%; padding:8px; margin-top:10px;">
+          <button onclick="sendMessage()" style="padding:8px 12px; margin-top:10px;">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // Example data (replace with API fetch later)
+    // Sample data for demonstration
     const studentData = {
       name: "Hari Prasath",
       regno: "DME123",
       email: "hari@example.com",
       badges: ["student", "tester"],
       assignedFaculty: ["Mr. John Doe", "Ms. Jane Smith"],
-      attendance: ["Maths - 95%", "Physics - 90%", "Mechanics - 92%"]
+      attendance: ["Maths - 95%", "Physics - 90%", "Mechanics - 92%"],
+      notes: ["Chapter 1 Summary", "Lab Safety Notes", "Mechanics Revision"],
+      tests: ["Math Test 1", "Physics Assignment 2", "Mechanics Quiz"],
+      notices: ["Midterm Exams Next Week", "Lab Closed Tomorrow"]
     };
 
-    // Populate profile info
+    // Populate profile
     document.getElementById("studentName").textContent = studentData.name;
     document.getElementById("studentReg").textContent = studentData.regno;
     document.getElementById("studentEmail").textContent = studentData.email;
 
-    // Populate badges dynamically
+    // Populate badges
     const badgeContainer = document.getElementById("badgeContainer");
     studentData.badges.forEach(b => {
       const span = document.createElement("span");
@@ -208,7 +290,7 @@
       badgeContainer.appendChild(span);
     });
 
-    // Populate assigned faculty dynamically
+    // Populate faculty
     const facultyList = document.getElementById("assignedFaculty");
     studentData.assignedFaculty.forEach(f => {
       const li = document.createElement("li");
@@ -216,7 +298,7 @@
       facultyList.appendChild(li);
     });
 
-    // Populate attendance dynamically
+    // Populate attendance
     const attendanceList = document.getElementById("attendanceList");
     studentData.attendance.forEach(a => {
       const li = document.createElement("li");
@@ -224,10 +306,68 @@
       attendanceList.appendChild(li);
     });
 
-    // Logout function
+    // Populate notes
+    const notesList = document.getElementById("notesList");
+    studentData.notes.forEach(n => {
+      const li = document.createElement("li");
+      li.textContent = n;
+      notesList.appendChild(li);
+    });
+
+    // Populate tests/assignments
+    const testsList = document.getElementById("testsList");
+    studentData.tests.forEach(t => {
+      const li = document.createElement("li");
+      li.textContent = t;
+      testsList.appendChild(li);
+    });
+
+    // Populate notices
+    const noticesList = document.getElementById("noticesList");
+    studentData.notices.forEach(n => {
+      const li = document.createElement("li");
+      li.textContent = n;
+      noticesList.appendChild(li);
+    });
+
+    // Tab switching
+    const tabs = document.querySelectorAll(".tab");
+    const tabContents = document.querySelectorAll(".tab-content");
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        const target = tab.dataset.tab;
+        tabContents.forEach(tc => {
+          tc.classList.remove("active");
+          if(tc.id === target) tc.classList.add("active");
+        });
+      });
+    });
+
+    // Logout
     function logout() {
       alert("Logging out...");
       window.location.href = "index.html";
+    }
+
+    // --- Simple Chatbot Demo ---
+    function sendMessage() {
+      const input = document.getElementById("chatInput");
+      const messages = document.getElementById("chatMessages");
+      if(input.value.trim() === "") return;
+      const userMsg = document.createElement("div");
+      userMsg.style.textAlign = "right";
+      userMsg.textContent = "You: " + input.value;
+      messages.appendChild(userMsg);
+
+      // Dummy bot response
+      const botMsg = document.createElement("div");
+      botMsg.textContent = "Bot: " + "I received: " + input.value;
+      messages.appendChild(botMsg);
+
+      messages.scrollTop = messages.scrollHeight;
+      input.value = "";
     }
   </script>
 
@@ -239,11 +379,9 @@
     const ctx = canvas.getContext('2d', { alpha: true });
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
-
     const baseCount = Math.round((width * height) / 60000);
     let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
     if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
-
     const particles = [];
     function rand(min, max) { return Math.random() * (max - min) + min; }
 
@@ -280,7 +418,6 @@
         const p = particles[i];
         p.x += p.vx;
         p.y -= p.vy * 0.3;
-
         if (p.x < -50) p.x = width + 50;
         if (p.x > width + 50) p.x = -50;
         if (p.y < -50) p.y = height + 50;
@@ -298,7 +435,7 @@
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 120) {
             ctx.beginPath();
-            ctx.strokeStyle = `hsla(${(p.hue + p2.hue)/2}, 70%, 60%, ${Math.max(0, 0.08 - dist/1500)})`;
+            ctx.strokeStyle = `hsla(${(p.hue + p2.hue)/2}, 70%, 60%, ${Math.max(0,0.08 - dist/1500)})`;
             ctx.lineWidth = 0.6;
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
