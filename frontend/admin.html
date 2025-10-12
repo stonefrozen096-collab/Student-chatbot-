@@ -58,10 +58,22 @@
       flex-shrink: 0;
     }
 
-    .profile-info h2 { margin: 0; font-size: 22px; color: #0f172a; }
-    .profile-info p { margin: 4px 0; color: #475569; font-size: 14px; }
+    .profile-info h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #0f172a;
+    }
 
-    .badge-container { margin-top: 10px; }
+    .profile-info p {
+      margin: 4px 0;
+      color: #475569;
+      font-size: 14px;
+    }
+
+    .badge-container {
+      margin-top: 10px;
+    }
+
     .badge {
       display: inline-block;
       padding: 5px 12px;
@@ -72,6 +84,7 @@
       animation: pop 0.3s ease forwards;
       cursor: default;
     }
+
     .badge.admin { background-color: #e74c3c; color: #fff; }
     .badge.moderator { background-color: #8b5cf6; color: #fff; }
     .badge.tester { background-color: #f59e0b; color: #fff; }
@@ -91,7 +104,10 @@
       margin-bottom: 20px;
     }
 
-    .section-card h3 { margin-top: 0; color: #2563eb; }
+    .section-card h3 {
+      margin-top: 0;
+      color: #2563eb;
+    }
 
     .logout-btn {
       padding: 8px 15px;
@@ -123,12 +139,14 @@
       cursor: pointer;
       transition: 0.3s;
     }
-    button.primary-btn:hover { transform: scale(1.03); }
 
-    .user-list, .academic-list, .attendance-list, .feedback-list {
+    button.primary-btn:hover {
+      transform: scale(1.03);
+    }
+
+    .user-list, .attendance-list, .feedback-list {
       max-height: 300px;
       overflow-y: auto;
-      margin-top: 10px;
     }
 
     table {
@@ -136,347 +154,386 @@
       border-collapse: collapse;
       margin-bottom: 15px;
     }
+
     table th, table td {
       padding: 8px;
       text-align: left;
       border-bottom: 1px solid #e5e7eb;
     }
-    table th { background: #f3f4f6; }
+
+    table th {
+      background: #f3f4f6;
+    }
   </style>
 </head>
 <body>
-  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
 
-  <div class="container">
-    <!-- Admin Profile -->
-    <div class="profile-card">
-      <div class="profile-avatar" id="adminAvatar">A</div>
-      <div class="profile-info">
-        <h2 id="adminName">Admin Name</h2>
-        <p><strong>Email:</strong> <span id="adminEmail">admin@example.com</span></p>
-        <div class="badge-container" id="adminBadges">
-          <span class="badge admin">ADMIN</span>
-        </div>
-      </div>
-      <button class="logout-btn" onclick="logout()">Logout</button>
-    </div>
-
-    <!-- User Management -->
-    <div class="section-card">
-      <h3>User Management</h3>
-      <form id="createUserForm">
-        <label for="role">Role:</label>
-        <select id="role" required>
-          <option value="admin">Admin</option>
-          <option value="moderator">Moderator</option>
-          <option value="tester">Tester</option>
-          <option value="faculty">Faculty</option>
-          <option value="student">Student</option>
-        </select>
-
-        <label for="username">Username / Email / Reg No:</label>
-        <input type="text" id="username" placeholder="Enter username or reg no" required>
-
-        <label for="password">Password (if applicable):</label>
-        <input type="password" id="password" placeholder="Password">
-
-        <button type="submit" class="primary-btn">Create User</button>
-      </form>
-
-      <div class="user-list" id="userList">
-        <!-- Populated dynamically -->
+<div class="container">
+  <!-- Admin Profile -->
+  <div class="profile-card">
+    <div class="profile-avatar" id="adminAvatar">A</div>
+    <div class="profile-info">
+      <h2 id="adminName">Admin Name</h2>
+      <p><strong>Email:</strong> <span id="adminEmail">admin@example.com</span></p>
+      <div class="badge-container" id="adminBadges">
+        <span class="badge admin">ADMIN</span>
       </div>
     </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
 
-    <!-- Badge Management -->
-    <div class="section-card">
-      <h3>Badge Management</h3>
-      <form id="badgeForm">
-        <label for="badgeUser">Select User:</label>
-        <select id="badgeUser"></select>
+  <!-- User Management -->
+  <div class="section-card">
+    <h3>User Management</h3>
+    <form id="createUserForm">
+      <label for="role">Role:</label>
+      <select id="role" required>
+        <option value="admin">Admin</option>
+        <option value="moderator">Moderator</option>
+        <option value="tester">Tester</option>
+        <option value="faculty">Faculty</option>
+        <option value="student">Student</option>
+      </select>
 
-        <label for="badgeRole">Assign Badge:</label>
-        <select id="badgeRole">
-          <option value="admin">Admin</option>
-          <option value="moderator">Moderator</option>
-          <option value="tester">Tester</option>
-          <option value="faculty">Faculty</option>
-          <option value="student">Student</option>
-        </select>
+      <label for="username">Username / Email / Reg No:</label>
+      <input type="text" id="username" placeholder="Enter username or reg no" required>
 
-        <button type="submit" class="primary-btn">Assign Badge</button>
-      </form>
+      <label for="password">Password (if applicable):</label>
+      <input type="password" id="password" placeholder="Password">
+
+      <button type="submit" class="primary-btn">Create User</button>
+    </form>
+
+    <div class="user-list" id="userList">
+      <!-- Populated dynamically -->
+    </div>
+  </div>
+
+  <!-- Badges Management -->
+  <div class="section-card">
+    <h3>Badges</h3>
+    <form id="badgeForm">
+      <label for="badgeUser">Select User:</label>
+      <select id="badgeUser"></select>
+
+      <label for="badgeRole">Assign Badge:</label>
+      <select id="badgeRole">
+        <option value="admin">Admin</option>
+        <option value="moderator">Moderator</option>
+        <option value="tester">Tester</option>
+        <option value="faculty">Faculty</option>
+        <option value="student">Student</option>
+      </select>
+
+      <button type="submit" class="primary-btn">Assign Badge</button>
+    </form>
+  </div>
+
+  <!-- Academic Data Management -->
+  <div class="section-card">
+    <h3>Academic Data</h3>
+    <form id="academicForm">
+      <label for="acadType">Type:</label>
+      <select id="acadType">
+        <option value="note">Note</option>
+        <option value="assignment">Assignment</option>
+        <option value="test">Test</option>
+        <option value="notice">Notice</option>
+      </select>
+
+      <label for="acadTitle">Title / Subject:</label>
+      <input type="text" id="acadTitle" placeholder="Enter title or subject" required>
+
+      <label for="acadContent">Content / Description:</label>
+      <textarea id="acadContent" rows="3" placeholder="Enter content here" required></textarea>
+
+      <label for="acadStudent">Assign to Student (optional):</label>
+      <select id="acadStudent">
+        <!-- Dynamically populated -->
+      </select>
+
+      <button type="submit" class="primary-btn">Add / Update</button>
+    </form>
+
+    <div class="academic-list" id="academicList">
+      <!-- Academic data entries populate here -->
+    </div>
+  </div>
+
+  <!-- Attendance Management -->
+  <div class="section-card">
+    <h3>Attendance</h3>
+    <div class="attendance-list" id="attendanceList">
+      <!-- Attendance records populate here -->
+    </div>
+  </div>
+
+  <!-- Feedback & Logs -->
+  <div class="section-card">
+    <h3>Feedback & Logs</h3>
+    <div class="feedback-list" id="feedbackList">
+      <!-- Feedback entries populate here -->
     </div>
 
-    <!-- Academic Data Management -->
-    <div class="section-card">
-      <h3>Academic Data</h3>
-      <form id="academicForm">
-        <label for="acadType">Type:</label>
-        <select id="acadType">
-          <option value="note">Note</option>
-          <option value="assignment">Assignment</option>
-          <option value="test">Test</option>
-          <option value="notice">Notice</option>
-        </select>
-
-        <label for="acadTitle">Title / Subject:</label>
-        <input type="text" id="acadTitle" placeholder="Enter title or subject" required>
-
-        <label for="acadContent">Content / Description:</label>
-        <textarea id="acadContent" rows="3" placeholder="Enter content here" required></textarea>
-
-        <label for="acadStudent">Assign to Student (optional):</label>
-        <select id="acadStudent">
-          <!-- Dynamically populated -->
-        </select>
-
-        <button type="submit" class="primary-btn">Add / Update</button>
-      </form>
-
-      <div class="academic-list" id="academicList">
-        <!-- Academic data entries populate here -->
-      </div>
+    <div class="admin-logs" id="adminLogs">
+      <!-- Logs populate dynamically -->
     </div>
-    <!-- Attendance Management -->
-    <div class="section-card">
-      <h3>Attendance</h3>
-      <div class="attendance-list" id="attendanceList">
-        <!-- Attendance records populate here -->
-      </div>
-    </div>
+  </div>
+  <!-- Analytics Dashboard -->
+  <div class="section-card">
+    <h3>Analytics</h3>
+    <label for="analyticsSubject">Edit Subject Name:</label>
+    <input type="text" id="analyticsSubject" placeholder="Enter new subject name">
+    <button class="primary-btn" id="updateChartLabel">Update Subject</button>
+    <canvas id="attendanceChart" width="400" height="200"></canvas>
+    <canvas id="testChart" width="400" height="200"></canvas>
+    <canvas id="completionChart" width="400" height="200"></canvas>
+  </div>
 
-    <!-- Feedback & Logs -->
-    <div class="section-card">
-      <h3>Feedback & Logs</h3>
-      <div class="feedback-list" id="feedbackList">
-        <!-- Feedback entries populate here -->
-      </div>
+  <!-- Deletion Management -->
+  <div class="section-card">
+    <h3>Deletion Management</h3>
+    <form id="deleteForm">
+      <label for="deleteUserSelect">Delete User:</label>
+      <select id="deleteUserSelect"></select>
+      <button type="button" class="primary-btn" id="deleteUserBtn">Delete User</button>
 
-      <div class="admin-logs" id="adminLogs">
-        <!-- Admin logs populate dynamically -->
-      </div>
-    </div>
+      <label for="deleteBadgeSelect">Delete Badge from User:</label>
+      <select id="deleteBadgeSelect"></select>
+      <button type="button" class="primary-btn" id="deleteBadgeBtn">Delete Badge</button>
 
-    <!-- Analytics Dashboard -->
-    <div class="section-card">
-      <h3>Analytics</h3>
-      <label for="attendanceSubjects">Edit Attendance Subjects (comma separated):</label>
-      <input type="text" id="attendanceSubjects" placeholder="Maths, Physics, Mechanics">
-      <button class="primary-btn" onclick="updateAttendanceChart()">Update Attendance Subjects</button>
-      <canvas id="attendanceChart" width="400" height="200"></canvas>
+      <label for="deleteBatchRole">Delete All Users of Role:</label>
+      <select id="deleteBatchRole">
+        <option value="admin">Admin</option>
+        <option value="moderator">Moderator</option>
+        <option value="tester">Tester</option>
+        <option value="faculty">Faculty</option>
+        <option value="student">Student</option>
+      </select>
+      <button type="button" class="primary-btn" id="deleteBatchBtn">Delete Batch</button>
+    </form>
+  </div>
+</div> <!-- end container -->
 
-      <label for="testNames">Edit Test Names (comma separated):</label>
-      <input type="text" id="testNames" placeholder="Test1, Test2, Test3">
-      <button class="primary-btn" onclick="updateTestChart()">Update Test Names</button>
-      <canvas id="testChart" width="400" height="200"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Sample Data
+  const users = [
+    { role: 'student', username: 'DME123', badges: ['student'] },
+    { role: 'faculty', username: 'johndoe@example.com', badges: ['faculty'] },
+    { role: 'moderator', username: 'mod1@example.com', badges: ['moderator'] },
+  ];
 
-      <canvas id="completionChart" width="400" height="200"></canvas>
-    </div>
+  // Populate User List
+  const userList = document.getElementById('userList');
+  const badgeUserSelect = document.getElementById('badgeUser');
+  const deleteUserSelect = document.getElementById('deleteUserSelect');
+  const deleteBadgeSelect = document.getElementById('deleteBadgeSelect');
 
-  </div> <!-- end container -->
+  function refreshUserList() {
+    userList.innerHTML = '';
+    badgeUserSelect.innerHTML = '';
+    deleteUserSelect.innerHTML = '';
+    deleteBadgeSelect.innerHTML = '';
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    // Sample Data
-    let users = [
-      { role: 'student', username: 'DME123', badges: ['student'] },
-      { role: 'faculty', username: 'johndoe@example.com', badges: ['faculty'] },
-      { role: 'moderator', username: 'mod1@example.com', badges: ['moderator'] },
-    ];
+    users.forEach(u => {
+      const div = document.createElement('div');
+      div.textContent = `${u.username} (${u.role.toUpperCase()}) - Badges: ${u.badges.join(', ')}`;
+      userList.appendChild(div);
 
-    let academicData = [];
-    let feedbacks = [];
-    let attendanceData = [
-      { subject: 'Maths', value: 95 },
-      { subject: 'Physics', value: 90 },
-      { subject: 'Mechanics', value: 92 },
-    ];
+      const opt1 = document.createElement('option');
+      opt1.value = u.username;
+      opt1.textContent = `${u.username} (${u.role})`;
+      badgeUserSelect.appendChild(opt1);
 
-    let testData = [
-      { name: 'Test1', score: 80 },
-      { name: 'Test2', score: 90 },
-      { name: 'Test3', score: 75 },
-    ];
+      const opt2 = opt1.cloneNode(true);
+      deleteUserSelect.appendChild(opt2);
 
-    // Populate User List
-    const userList = document.getElementById('userList');
-    const badgeUserSelect = document.getElementById('badgeUser');
+      const opt3 = opt1.cloneNode(true);
+      deleteBadgeSelect.appendChild(opt3);
+    });
+  }
+  refreshUserList();
 
-    function refreshUserList() {
-      userList.innerHTML = '';
-      badgeUserSelect.innerHTML = '';
-      users.forEach(u => {
-        const div = document.createElement('div');
-        div.textContent = `${u.username} (${u.role.toUpperCase()}) - Badges: ${u.badges.join(', ')}`;
-        userList.appendChild(div);
+  // Create User
+  document.getElementById('createUserForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const role = document.getElementById('role').value;
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    users.push({ role, username, badges: [role] });
+    refreshUserList();
+    alert('User created successfully!');
+  });
 
-        const opt = document.createElement('option');
-        opt.value = u.username;
-        opt.textContent = `${u.username} (${u.role})`;
-        badgeUserSelect.appendChild(opt);
-      });
+  // Assign Badge
+  document.getElementById('badgeForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const selectedUser = badgeUserSelect.value;
+    const badge = document.getElementById('badgeRole').value;
+    const user = users.find(u => u.username === selectedUser);
+    if (user && !user.badges.includes(badge)) user.badges.push(badge);
+    refreshUserList();
+    alert('Badge assigned successfully!');
+  });
+
+  // Delete User
+  document.getElementById('deleteUserBtn').addEventListener('click', () => {
+    const username = deleteUserSelect.value;
+    const index = users.findIndex(u => u.username === username);
+    if (index > -1) {
+      users.splice(index, 1);
+      refreshUserList();
+      alert(`User ${username} deleted successfully!`);
+    }
+  });
+
+  // Delete Badge
+  document.getElementById('deleteBadgeBtn').addEventListener('click', () => {
+    const username = deleteBadgeSelect.value;
+    const badge = document.getElementById('badgeRole').value;
+    const user = users.find(u => u.username === username);
+    if (user) {
+      const bIndex = user.badges.indexOf(badge);
+      if (bIndex > -1) {
+        user.badges.splice(bIndex, 1);
+        refreshUserList();
+        alert(`Badge ${badge} removed from ${username}`);
+      }
+    }
+  });
+
+  // Delete Batch
+  document.getElementById('deleteBatchBtn').addEventListener('click', () => {
+    const role = document.getElementById('deleteBatchRole').value;
+    for (let i = users.length -1; i >= 0; i--) {
+      if(users[i].role === role) users.splice(i,1);
     }
     refreshUserList();
+    alert(`All users with role ${role} deleted`);
+  });
 
-    // Create User
-    document.getElementById('createUserForm').addEventListener('submit', e => {
-      e.preventDefault();
-      const role = document.getElementById('role').value;
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-      users.push({ role, username, badges: [role] });
-      refreshUserList();
-      alert('User created successfully!');
-    });
+  // Logout
+  function logout() {
+    alert("Logging out...");
+    window.location.href = "index.html";
+  }
 
-    // Assign Badge
-    document.getElementById('badgeForm').addEventListener('submit', e => {
-      e.preventDefault();
-      const selectedUser = document.getElementById('badgeUser').value;
-      const badge = document.getElementById('badgeRole').value;
-      const user = users.find(u => u.username === selectedUser);
-      if (user && !user.badges.includes(badge)) user.badges.push(badge);
-      refreshUserList();
-      alert('Badge assigned successfully!');
-    });
-
-    // Logout
-    function logout() {
-      alert("Logging out...");
-      window.location.href = "index.html";
+  // Charts
+  const attendanceChart = new Chart(document.getElementById('attendanceChart'), {
+    type: 'pie',
+    data: {
+      labels: ['Maths', 'Physics', 'Mechanics'],
+      datasets: [{ data: [95, 90, 92], backgroundColor: ['#4f46e5','#3b82f6','#16a34a'] }]
     }
+  });
 
-    // Charts
-    let attendanceChart = new Chart(document.getElementById('attendanceChart'), {
-      type: 'pie',
-      data: {
-        labels: attendanceData.map(d => d.subject),
-        datasets: [{ data: attendanceData.map(d => d.value), backgroundColor: ['#4f46e5','#3b82f6','#16a34a'] }]
-      }
-    });
-
-    let testChart = new Chart(document.getElementById('testChart'), {
-      type: 'bar',
-      data: {
-        labels: testData.map(d => d.name),
-        datasets: [{ label: 'Scores', data: testData.map(d => d.score), backgroundColor: '#2563eb' }]
-      }
-    });
-
-    let completionChart = new Chart(document.getElementById('completionChart'), {
-      type: 'doughnut',
-      data: {
-        labels: ['Completed', 'Pending'],
-        datasets: [{ data: [12, 3], backgroundColor: ['#10b981','#f59e0b'] }]
-      }
-    });
-
-    // Update Attendance Chart Labels
-    function updateAttendanceChart() {
-      const subjects = document.getElementById('attendanceSubjects').value.split(',').map(s => s.trim());
-      if(subjects.length === attendanceData.length){
-        attendanceChart.data.labels = subjects;
-        attendanceChart.update();
-        alert('Attendance subjects updated!');
-      } else {
-        alert('Number of subjects must match existing data length.');
-      }
+  const testChart = new Chart(document.getElementById('testChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Test1', 'Test2', 'Test3'],
+      datasets: [{ label: 'Scores', data: [80, 90, 75], backgroundColor: '#2563eb' }]
     }
+  });
 
-    // Update Test Chart Labels
-    function updateTestChart() {
-      const tests = document.getElementById('testNames').value.split(',').map(s => s.trim());
-      if(tests.length === testData.length){
-        testChart.data.labels = tests;
-        testChart.update();
-        alert('Test names updated!');
-      } else {
-        alert('Number of tests must match existing data length.');
-      }
+  const completionChart = new Chart(document.getElementById('completionChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Completed', 'Pending'],
+      datasets: [{ data: [12, 3], backgroundColor: ['#10b981','#f59e0b'] }]
     }
+  });
 
-  </script>
-
-  <!-- Background Animation -->
-  <script>
-  (() => {
-    const canvas = document.getElementById('bg-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: true });
-    let width = canvas.width = window.innerWidth;
-    let height = canvas.height = window.innerHeight;
-    const baseCount = Math.round((width * height) / 60000);
-    let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
-    if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
-    const particles = [];
-    function rand(min, max) { return Math.random() * (max - min) + min; }
-
-    function initParticles() {
-      particles.length = 0;
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const size = rand(1, 3.2);
-        particles.push({
-          x: rand(0, width),
-          y: rand(0, height),
-          vx: rand(-0.12, 0.12),
-          vy: rand(-0.02, 0.6),
-          size,
-          alpha: rand(0.06, 0.22),
-          hue: rand(200, 240)
-        });
-      }
+  // Update subject label dynamically
+  document.getElementById('updateChartLabel').addEventListener('click', () => {
+    const newLabel = document.getElementById('analyticsSubject').value.trim();
+    if(newLabel) {
+      attendanceChart.data.labels[0] = newLabel;
+      attendanceChart.update();
+      alert(`Subject name updated to ${newLabel}`);
     }
+  });
+</script>
 
-    function resize() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      initParticles();
+<!-- Moving Background Animation Script -->
+<script>
+(() => {
+  const canvas = document.getElementById('bg-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d', { alpha: true });
+  let width = canvas.width = window.innerWidth;
+  let height = canvas.height = window.innerHeight;
+  const baseCount = Math.round((width * height) / 60000);
+  let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
+  if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
+  const particles = [];
+  function rand(min, max) { return Math.random() * (max - min) + min; }
+
+  function initParticles() {
+    particles.length = 0;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const size = rand(1, 3.2);
+      particles.push({
+        x: rand(0, width),
+        y: rand(0, height),
+        vx: rand(-0.12, 0.12),
+        vy: rand(-0.02, 0.6),
+        size,
+        alpha: rand(0.06, 0.22),
+        hue: rand(200, 240)
+      });
     }
+  }
 
-    window.addEventListener('resize', () => {
-      clearTimeout(window._bgResizeTimer);
-      window._bgResizeTimer = setTimeout(resize, 120);
-    });
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    initParticles();
+  }
 
-    function draw() {
-      ctx.clearRect(0, 0, width, height);
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y -= p.vy * 0.3;
-        if (p.x < -50) p.x = width + 50;
-        if (p.x > width + 50) p.x = -50;
-        if (p.y < -50) p.y = height + 50;
-        if (p.y > height + 50) p.y = -50;
+  window.addEventListener('resize', () => {
+    clearTimeout(window._bgResizeTimer);
+    window._bgResizeTimer = setTimeout(resize, 120);
+  });
 
-        ctx.beginPath();
-        ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y -= p.vy * 0.3;
+      if (p.x < -50) p.x = width + 50;
+      if (p.x > width + 50) p.x = -50;
+      if (p.y < -50) p.y = height + 50;
+      if (p.y > height + 50) p.y = -50;
 
-        for (let j = i + 1; j < particles.length && j < i + 6; j++) {
-          const p2 = particles[j];
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx*dx + dy*dy);
-          if (dist < 120) {
-            ctx.beginPath();
-            ctx.strokeStyle = `hsla(${(p.hue+p2.hue)/2}, 70%, 60%, ${Math.max(0, 0.08 - dist/1500)})`;
-            ctx.lineWidth = 0.6;
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-          }
+      ctx.beginPath();
+      ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+
+      for (let j = i + 1; j < particles.length && j < i + 6; j++) {
+        const p2 = particles[j];
+        const dx = p.x - p2.x;
+        const dy = p.y - p2.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.strokeStyle = `hsla(${(p.hue + p2.hue)/2}, 70%, 60%, ${Math.max(0, 0.08 - dist/1500)})`;
+          ctx.lineWidth = 0.6;
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
         }
       }
-      window.requestAnimationFrame(draw);
     }
+    window.requestAnimationFrame(draw);
+  }
 
-    initParticles();
-    draw();
-  })();
-  </script>
-
+  initParticles();
+  draw();
+})();
+</script>
 </body>
 </html>
