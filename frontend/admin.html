@@ -1,206 +1,453 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    form { margin-bottom: 20px; }
-    input, button { padding: 8px; margin: 5px 0; width: 100%; }
-    button { cursor: pointer; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="css/animation.css">
+<style>
+  body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f4f6f9;
+  }
+
+  /* === Moving background canvas === */
+  #bg-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    pointer-events: none;
+    background: linear-gradient(120deg, #0f172a 0%, #0b1320 50%, #061026 100%);
+    opacity: 0.4;
+  }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+
+  h1 {
+    color: #0f172a;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  }
+
+  .section-title {
+    margin-top: 0;
+    color: #2563eb;
+  }
+
+  /* === Tabs for different management sections === */
+  .tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    padding: 8px 15px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    background: #e5e7eb;
+    transition: 0.3s;
+  }
+
+  .tab-btn.active {
+    background: #4f46e5;
+    color: #fff;
+  }
+
+  .tab-btn:hover {
+    background: #dbeafe;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0 12px 0;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    outline: none;
+  }
+
+  button.primary-btn {
+    padding: 10px 15px;
+    background: #4f46e5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+  }
+
+  button.primary-btn:hover {
+    transform: scale(1.03);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 12px;
+    margin: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    animation: pop 0.3s ease forwards;
+  }
+
+  .badge.admin { background-color: #e74c3c; color: #fff; }
+  .badge.moderator { background-color: #8b5cf6; color: #fff; }
+  .badge.tester { background-color: #f59e0b; color: #fff; }
+  .badge.faculty { background-color: #3b82f6; color: #fff; }
+  .badge.student { background-color: #2ecc71; color: #fff; }
+
+  @keyframes pop {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  table th, table td {
+    padding: 8px;
+    border: 1px solid #e2e8f0;
+    text-align: left;
+  }
+
+  .logout-btn {
+    float: right;
+    padding: 8px 15px;
+    border: none;
+    background: #ef4444;
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+</style>
 </head>
 <body>
-  <h1>Admin Panel</h1>
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
 
-  <!-- Admin Login -->
-  <form id="adminLoginForm">
-    <h2>Login</h2>
-    <input type="text" id="adminUsername" placeholder="Username" required>
-    <input type="password" id="adminPassword" placeholder="Password" required>
-    <button type="submit">Login</button>
-  </form>
+  <div class="container">
+    <h1>Admin Dashboard</h1>
+    <button class="logout-btn" onclick="logout()">Logout</button>
 
-  <!-- Add Student -->
-  <form id="addStudentForm">
-    <h2>Add Student</h2>
-    <input type="text" id="studentRegno" placeholder="Registration Number" required>
-    <input type="text" id="studentName" placeholder="Name" required>
-    <button type="submit">Add Student</button>
-  </form>
+    <!-- Tabs for sections -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="userManagement">User Management</button>
+      <button class="tab-btn" data-tab="badges">Badges</button>
+      <button class="tab-btn" data-tab="academic">Academic Data</button>
+      <button class="tab-btn" data-tab="attendance">Attendance</button>
+      <button class="tab-btn" data-tab="feedback">Feedback & Logs</button>
+      <button class="tab-btn" data-tab="analytics">Analytics</button>
+    </div>
 
-  <!-- Remove Student -->
-  <form id="removeStudentForm">
-    <h2>Remove Student</h2>
-    <input type="text" id="removeStudentRegno" placeholder="Registration Number" required>
-    <button type="submit">Remove Student</button>
-  </form>
+    <!-- === User Management Section === -->
+    <div id="userManagement" class="card tab-section">
+      <h2 class="section-title">Manage Users</h2>
 
-  <!-- Add Faculty -->
-  <form id="addFacultyForm">
-    <h2>Add Faculty</h2>
-    <input type="text" id="facultyUsername" placeholder="Username" required>
-    <input type="password" id="facultyPassword" placeholder="Password" required>
-    <input type="text" id="facultyName" placeholder="Name" required>
-    <input type="text" id="facultyDept" placeholder="Department" required>
-    <button type="submit">Add Faculty</button>
-  </form>
+      <h3>Create User</h3>
+      <form id="createUserForm">
+        <select id="userRole" required>
+          <option value="">Select Role</option>
+          <option value="admin">Admin</option>
+          <option value="moderator">Moderator</option>
+          <option value="tester">Tester</option>
+          <option value="faculty">Faculty</option>
+          <option value="student">Student</option>
+        </select>
+        <input type="text" id="createUserName" placeholder="Full Name" required>
+        <input type="text" id="createUserUsername" placeholder="Username / Email / RegNo" required>
+        <input type="password" id="createUserPassword" placeholder="Password (optional)">
+        <button type="submit" class="primary-btn">Create User</button>
+      </form>
 
-  <!-- Remove Faculty -->
-  <form id="removeFacultyForm">
-    <h2>Remove Faculty</h2>
-    <input type="text" id="removeFacultyUsername" placeholder="Username" required>
-    <button type="submit">Remove Faculty</button>
-  </form>
+      <h3>Existing Users</h3>
+      <table id="usersTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Badges</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamically populated -->
+        </tbody>
+      </table>
+    </div>
+    <!-- === Badges Section === -->
+    <div id="badges" class="card tab-section hidden">
+      <h2 class="section-title">Badges Management</h2>
+      <p>Select a user and assign badges:</p>
+      <select id="badgeUserSelect">
+        <option value="">Select User</option>
+        <!-- Dynamically populated -->
+      </select>
+      <div>
+        <label><input type="checkbox" value="admin"> Admin</label>
+        <label><input type="checkbox" value="moderator"> Moderator</label>
+        <label><input type="checkbox" value="tester"> Tester</label>
+        <label><input type="checkbox" value="faculty"> Faculty</label>
+        <label><input type="checkbox" value="student"> Student</label>
+      </div>
+      <button id="assignBadgeBtn" class="primary-btn">Assign Badges</button>
+    </div>
 
-  <!-- Add Notice -->
-  <form id="addNoticeForm">
-    <h2>Add Notice</h2>
-    <input type="text" id="noticeText" placeholder="Notice Text" required>
-    <button type="submit">Add Notice</button>
-  </form>
+    <!-- === Academic Data Section === -->
+    <div id="academic" class="card tab-section hidden">
+      <h2 class="section-title">Academic Data Management</h2>
 
-  <!-- Add Exam -->
-  <form id="addExamForm">
-    <h2>Add Exam</h2>
-    <input type="text" id="examName" placeholder="Exam Name" required>
-    <input type="date" id="examDate" required>
-    <button type="submit">Add Exam</button>
-  </form>
+      <h3>Notes</h3>
+      <form id="addNoteForm">
+        <input type="text" id="noteTitle" placeholder="Note Title" required>
+        <textarea id="noteContent" placeholder="Content" rows="4" required></textarea>
+        <select id="noteType" required>
+          <option value="">Select Type</option>
+          <option value="public">Public</option>
+          <option value="private">Private</option>
+        </select>
+        <input type="text" id="noteFor" placeholder="Specific Student/Faculty (if private)">
+        <button type="submit" class="primary-btn">Add Note</button>
+      </form>
 
-  <!-- Assign Badge -->
-  <form id="assignBadgeForm">
-    <h2>Assign Badge</h2>
-    <input type="text" id="badgeUsername" placeholder="Username" required>
-    <input type="text" id="badgeRole" placeholder="Role" required>
-    <button type="submit">Assign Badge</button>
-  </form>
+      <h3>Assignments / Tests</h3>
+      <form id="addAssignmentForm">
+        <input type="text" id="assignmentTitle" placeholder="Title" required>
+        <textarea id="assignmentDesc" placeholder="Description" rows="3" required></textarea>
+        <select id="assignmentType" required>
+          <option value="">Select Type</option>
+          <option value="assignment">Assignment</option>
+          <option value="test">Test</option>
+        </select>
+        <input type="date" id="assignmentDue" required>
+        <button type="submit" class="primary-btn">Add</button>
+      </form>
 
-  <!-- Fetch Logs -->
-  <button id="fetchLogsBtn">Fetch Logs</button>
+      <h3>Notices</h3>
+      <form id="addNoticeForm">
+        <input type="text" id="noticeTitle" placeholder="Title" required>
+        <textarea id="noticeContent" placeholder="Content" rows="3" required></textarea>
+        <button type="submit" class="primary-btn">Add Notice</button>
+      </form>
+    </div>
 
-  <!-- ----------------------
-       Updated JS Code
-  ---------------------- -->
-  <script type="module">
-    const BASE_URL = "https://feathers-26g1.onrender.com";
+    <!-- === Attendance Section === -->
+    <div id="attendance" class="card tab-section hidden">
+      <h2 class="section-title">Attendance Overview</h2>
+      <table id="attendanceTable">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Subject</th>
+            <th>Attendance %</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamically populated -->
+        </tbody>
+      </table>
+    </div>
 
-    async function postData(endpoint = "", data = {}) {
-      const response = await fetch(`${BASE_URL}/api${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-      return response.json();
+    <!-- === Feedback & Logs Section === -->
+    <div id="feedback" class="card tab-section hidden">
+      <h2 class="section-title">Feedback & Logs</h2>
+      <h3>Student / Faculty Feedback</h3>
+      <ul id="feedbackList">
+        <!-- Dynamically populated -->
+      </ul>
+
+      <h3>Admin Logs</h3>
+      <ul id="adminLogs">
+        <!-- Dynamically populated -->
+      </ul>
+    </div>
+
+    <!-- === Analytics Section === -->
+    <div id="analytics" class="card tab-section hidden">
+      <h2 class="section-title">Analytics Dashboard</h2>
+      <canvas id="analyticsChart" height="200"></canvas>
+    </div>
+
+  </div> <!-- end container -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // === Tab Switching ===
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabSections = document.querySelectorAll('.tab-section');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const target = btn.dataset.tab;
+      tabSections.forEach(s => s.classList.add('hidden'));
+      document.getElementById(target).classList.remove('hidden');
+    });
+  });
+
+  // === Logout ===
+  function logout() {
+    alert("Logging out...");
+    window.location.href = "index.html";
+  }
+
+  // === Example Dynamic Population for Users Table ===
+  const usersTableBody = document.querySelector('#usersTable tbody');
+  const badgeUserSelect = document.getElementById('badgeUserSelect');
+
+  const users = [
+    { name: "Hari Prasath", username: "hari@example.com", role: "student", badges: ["student"] },
+    { name: "Mr. John Doe", username: "john@example.com", role: "faculty", badges: ["faculty"] },
+    { name: "Admin User", username: "admin@example.com", role: "admin", badges: ["admin"] }
+  ];
+
+  function populateUsers() {
+    usersTableBody.innerHTML = "";
+    badgeUserSelect.innerHTML = '<option value="">Select User</option>';
+    users.forEach((u, idx) => {
+      // Users table
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${u.name}</td>
+        <td>${u.username}</td>
+        <td>${u.role}</td>
+        <td>${u.badges.map(b => `<span class="badge ${b}">${b.toUpperCase()}</span>`).join('')}</td>
+        <td>
+          <button onclick="editUser(${idx})" class="primary-btn">Edit</button>
+          <button onclick="deleteUser(${idx})" class="primary-btn">Delete</button>
+        </td>
+      `;
+      usersTableBody.appendChild(tr);
+
+      // Badge select
+      const option = document.createElement('option');
+      option.value = idx;
+      option.textContent = u.name + " (" + u.role + ")";
+      badgeUserSelect.appendChild(option);
+    });
+  }
+
+  populateUsers();
+
+  // === Create User Form ===
+  document.getElementById('createUserForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const name = document.getElementById('createUserName').value;
+    const username = document.getElementById('createUserUsername').value;
+    const password = document.getElementById('createUserPassword').value;
+    const role = document.getElementById('userRole').value;
+    if(!role) return alert("Select role");
+    users.push({name, username, role, badges: [role]});
+    populateUsers();
+    e.target.reset();
+  });
+
+  // === Badge Assignment ===
+  document.getElementById('assignBadgeBtn').addEventListener('click', ()=>{
+    const idx = badgeUserSelect.value;
+    if(idx === "") return alert("Select user");
+    const checkboxes = document.querySelectorAll('#badges input[type="checkbox"]:checked');
+    users[idx].badges = Array.from(checkboxes).map(c => c.value);
+    populateUsers();
+  });
+
+  // === Analytics Chart Example ===
+  const ctx = document.getElementById('analyticsChart').getContext('2d');
+  const analyticsChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Attendance', 'Assignments', 'Tests', 'Completion'],
+      datasets: [{
+        label: 'Percentage',
+        data: [85, 90, 78, 88],
+        backgroundColor: ['#3b82f6','#4f46e5','#f59e0b','#2ecc71']
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, max: 100 } }
     }
+  });
 
-    // Admin Login
-    const adminLoginForm = document.getElementById("adminLoginForm");
-    if (adminLoginForm) {
-      adminLoginForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const username = document.getElementById("adminUsername").value;
-        const password = document.getElementById("adminPassword").value;
-        const res = await postData("/admin/login", { username, password });
-        alert(res.msg);
-        if (!res.msg.includes("❌")) window.location.href = "admin.html";
-      });
-    }
+  // === Moving Background Animation (reuse) ===
+  (() => {
+    const canvas = document.getElementById('bg-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { alpha: true });
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    const baseCount = Math.round((width * height) / 60000);
+    let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
+    if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
+    const particles = [];
+    function rand(min, max) { return Math.random() * (max - min) + min; }
 
-    // Add Student
-    const addStudentForm = document.getElementById("addStudentForm");
-    if (addStudentForm) {
-      addStudentForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const regno = document.getElementById("studentRegno").value;
-        const name = document.getElementById("studentName").value;
-        const res = await postData("/admin/add-user", { username: "admin", password: "adminpassword", regno, name });
-        alert(res.msg);
-      });
+    function initParticles() {
+      particles.length = 0;
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const size = rand(1, 3.2);
+        particles.push({
+          x: rand(0, width),
+          y: rand
+          for (let j = i + 1; j < particles.length && j < i + 6; j++) {
+        const p2 = particles[j];
+        const dx = p.x - p2.x;
+        const dy = p.y - p2.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.strokeStyle = `hsla(${(p.hue + p2.hue) / 2}, 70%, 60%, ${Math.max(0, 0.08 - dist/1500)})`;
+          ctx.lineWidth = 0.6;
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+      }
     }
+    window.requestAnimationFrame(draw);
+  }
 
-    // Remove Student
-    const removeStudentForm = document.getElementById("removeStudentForm");
-    if (removeStudentForm) {
-      removeStudentForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const regno = document.getElementById("removeStudentRegno").value;
-        const res = await postData("/admin/remove-user", { username: "admin", password: "adminpassword", regno });
-        alert(res.msg);
-      });
-    }
+  initParticles();
+  draw();
+})();
+</script>
 
-    // Add Faculty
-    const addFacultyForm = document.getElementById("addFacultyForm");
-    if (addFacultyForm) {
-      addFacultyForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const facultyUsername = document.getElementById("facultyUsername").value;
-        const facultyPassword = document.getElementById("facultyPassword").value;
-        const name = document.getElementById("facultyName").value;
-        const department = document.getElementById("facultyDept").value;
-        const res = await postData("/admin/add-faculty", { username: "admin", password: "adminpassword", username: facultyUsername, password: facultyPassword, name, department });
-        alert(res.msg);
-      });
-    }
-
-    // Remove Faculty
-    const removeFacultyForm = document.getElementById("removeFacultyForm");
-    if (removeFacultyForm) {
-      removeFacultyForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const facultyUsername = document.getElementById("removeFacultyUsername").value;
-        const res = await postData("/admin/remove-faculty", { username: "admin", password: "adminpassword", username: facultyUsername });
-        alert(res.msg);
-      });
-    }
-
-    // Add Notice
-    const addNoticeForm = document.getElementById("addNoticeForm");
-    if (addNoticeForm) {
-      addNoticeForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const notice = document.getElementById("noticeText").value;
-        const res = await postData("/admin/add-notice", { username: "admin", password: "adminpassword", notice });
-        alert(res.msg);
-      });
-    }
-
-    // Add Exam
-    const addExamForm = document.getElementById("addExamForm");
-    if (addExamForm) {
-      addExamForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const name = document.getElementById("examName").value;
-        const date = document.getElementById("examDate").value;
-        const res = await postData("/admin/add-exam", { username: "admin", password: "adminpassword", name, date });
-        alert(res.msg);
-      });
-    }
-
-    // Assign Badge
-    const assignBadgeForm = document.getElementById("assignBadgeForm");
-    if (assignBadgeForm) {
-      assignBadgeForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const badgeUsername = document.getElementById("badgeUsername").value;
-        const role = document.getElementById("badgeRole").value;
-        const res = await postData("/admin/assign-badge", { username: "admin", password: "adminpassword", username: badgeUsername, role });
-        alert(res.msg);
-      });
-    }
-
-    // Fetch Logs
-    const fetchLogsBtn = document.getElementById("fetchLogsBtn");
-    if (fetchLogsBtn) {
-      fetchLogsBtn.addEventListener("click", async () => {
-        const res = await fetch(`${BASE_URL}/api/admin/logs`);
-        const data = await res.json();
-        console.log("Logs:", data);
-        alert("Logs fetched! Check console.");
-      });
-    }
-  </script>
 </body>
 </html>
