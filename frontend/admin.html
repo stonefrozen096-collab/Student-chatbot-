@@ -1,412 +1,382 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard</title>
-<link rel="stylesheet" href="css/common.css">
-<link rel="stylesheet" href="css/animation.css">
-<style>
-  body {
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 0;
-    background: #f4f6f9;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/animation.css">
+  <style>
+    body {
+      background: #f4f6f9;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
 
-  /* === Moving background canvas === */
-  #bg-canvas {
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 0;
-    pointer-events: none;
-    background: linear-gradient(120deg, #0f172a 0%, #0b1320 50%, #061026 100%);
-    opacity: 0.4;
-  }
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      background: linear-gradient(120deg, #0f172a 0%, #0b1320 50%, #061026 100%);
+      opacity: 0.4;
+    }
 
-  .container {
-    position: relative;
-    z-index: 2;
-    max-width: 1200px;
-    margin: 40px auto;
-    padding: 20px;
-  }
+    .container {
+      position: relative;
+      z-index: 2;
+      max-width: 1200px;
+      margin: 50px auto;
+      padding: 20px;
+    }
 
-  h1 {
-    color: #0f172a;
-    text-align: center;
-    margin-bottom: 20px;
-  }
+    .profile-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      padding: 20px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 25px;
+    }
 
-  .card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    padding: 20px;
-    margin-bottom: 20px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #4f46e5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 28px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
 
-  .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-  }
+    .profile-info h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #0f172a;
+    }
 
-  .section-title {
-    margin-top: 0;
-    color: #2563eb;
-  }
+    .profile-info p {
+      margin: 4px 0;
+      color: #475569;
+      font-size: 14px;
+    }
 
-  /* === Tabs for different management sections === */
-  .tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
+    .badge-container {
+      margin-top: 10px;
+    }
 
-  .tab-btn {
-    padding: 8px 15px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    background: #e5e7eb;
-    transition: 0.3s;
-  }
+    .badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 12px;
+      margin: 3px;
+      font-size: 12px;
+      font-weight: 600;
+      animation: pop 0.3s ease forwards;
+      cursor: default;
+    }
 
-  .tab-btn.active {
-    background: #4f46e5;
-    color: #fff;
-  }
+    .badge.admin { background-color: #e74c3c; color: #fff; }
+    .badge.moderator { background-color: #8b5cf6; color: #fff; }
+    .badge.tester { background-color: #f59e0b; color: #fff; }
+    .badge.faculty { background-color: #3b82f6; color: #fff; }
+    .badge.student { background-color: #2ecc71; color: #fff; }
 
-  .tab-btn:hover {
-    background: #dbeafe;
-  }
+    @keyframes pop {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
 
-  .hidden {
-    display: none;
-  }
+    .section-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
 
-  input, select, textarea {
-    width: 100%;
-    padding: 10px;
-    margin: 5px 0 12px 0;
-    border-radius: 8px;
-    border: 1px solid #cbd5e1;
-    outline: none;
-  }
+    .section-card h3 {
+      margin-top: 0;
+      color: #2563eb;
+    }
 
-  button.primary-btn {
-    padding: 10px 15px;
-    background: #4f46e5;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.3s;
-  }
+    .logout-btn {
+      padding: 8px 15px;
+      border: none;
+      background: #ef4444;
+      color: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      float: right;
+      font-weight: bold;
+    }
 
-  button.primary-btn:hover {
-    transform: scale(1.03);
-  }
+    input, select, textarea {
+      width: 100%;
+      margin-bottom: 12px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      outline: none;
+    }
 
-  .badge {
-    display: inline-block;
-    padding: 5px 12px;
-    border-radius: 12px;
-    margin: 3px;
-    font-size: 12px;
-    font-weight: 600;
-    animation: pop 0.3s ease forwards;
-  }
+    button.primary-btn {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #4f46e5, #3b82f6);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
 
-  .badge.admin { background-color: #e74c3c; color: #fff; }
-  .badge.moderator { background-color: #8b5cf6; color: #fff; }
-  .badge.tester { background-color: #f59e0b; color: #fff; }
-  .badge.faculty { background-color: #3b82f6; color: #fff; }
-  .badge.student { background-color: #2ecc71; color: #fff; }
+    button.primary-btn:hover {
+      transform: scale(1.03);
+    }
 
-  @keyframes pop {
-    0% { transform: scale(0.8); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-  }
+    .user-list, .attendance-list, .feedback-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
 
-  table th, table td {
-    padding: 8px;
-    border: 1px solid #e2e8f0;
-    text-align: left;
-  }
+    table th, table td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
 
-  .logout-btn {
-    float: right;
-    padding: 8px 15px;
-    border: none;
-    background: #ef4444;
-    color: #fff;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-  }
-</style>
+    table th {
+      background: #f3f4f6;
+    }
+
+  </style>
 </head>
 <body>
   <canvas id="bg-canvas" aria-hidden="true"></canvas>
 
   <div class="container">
-    <h1>Admin Dashboard</h1>
-    <button class="logout-btn" onclick="logout()">Logout</button>
-
-    <!-- Tabs for sections -->
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="userManagement">User Management</button>
-      <button class="tab-btn" data-tab="badges">Badges</button>
-      <button class="tab-btn" data-tab="academic">Academic Data</button>
-      <button class="tab-btn" data-tab="attendance">Attendance</button>
-      <button class="tab-btn" data-tab="feedback">Feedback & Logs</button>
-      <button class="tab-btn" data-tab="analytics">Analytics</button>
+    <!-- Admin Profile -->
+    <div class="profile-card">
+      <div class="profile-avatar" id="adminAvatar">A</div>
+      <div class="profile-info">
+        <h2 id="adminName">Admin Name</h2>
+        <p><strong>Email:</strong> <span id="adminEmail">admin@example.com</span></p>
+        <div class="badge-container" id="adminBadges">
+          <span class="badge admin">ADMIN</span>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
-    <!-- === User Management Section === -->
-    <div id="userManagement" class="card tab-section">
-      <h2 class="section-title">Manage Users</h2>
-
-      <h3>Create User</h3>
+    <!-- User Management -->
+    <div class="section-card">
+      <h3>User Management</h3>
       <form id="createUserForm">
-        <select id="userRole" required>
-          <option value="">Select Role</option>
+        <label for="role">Role:</label>
+        <select id="role" required>
           <option value="admin">Admin</option>
           <option value="moderator">Moderator</option>
           <option value="tester">Tester</option>
           <option value="faculty">Faculty</option>
           <option value="student">Student</option>
         </select>
-        <input type="text" id="createUserName" placeholder="Full Name" required>
-        <input type="text" id="createUserUsername" placeholder="Username / Email / RegNo" required>
-        <input type="password" id="createUserPassword" placeholder="Password (optional)">
+
+        <label for="username">Username / Email / Reg No:</label>
+        <input type="text" id="username" placeholder="Enter username or reg no" required>
+
+        <label for="password">Password (if applicable):</label>
+        <input type="password" id="password" placeholder="Password">
+
         <button type="submit" class="primary-btn">Create User</button>
       </form>
 
-      <h3>Existing Users</h3>
-      <table id="usersTable">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Username</th>
-            <th>Role</th>
-            <th>Badges</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Dynamically populated -->
-        </tbody>
-      </table>
-    </div>
-    <!-- === Badges Section === -->
-    <div id="badges" class="card tab-section hidden">
-      <h2 class="section-title">Badges Management</h2>
-      <p>Select a user and assign badges:</p>
-      <select id="badgeUserSelect">
-        <option value="">Select User</option>
-        <!-- Dynamically populated -->
-      </select>
-      <div>
-        <label><input type="checkbox" value="admin"> Admin</label>
-        <label><input type="checkbox" value="moderator"> Moderator</label>
-        <label><input type="checkbox" value="tester"> Tester</label>
-        <label><input type="checkbox" value="faculty"> Faculty</label>
-        <label><input type="checkbox" value="student"> Student</label>
+      <div class="user-list" id="userList">
+        <!-- Populated dynamically -->
       </div>
-      <button id="assignBadgeBtn" class="primary-btn">Assign Badges</button>
     </div>
 
-    <!-- === Academic Data Section === -->
-    <div id="academic" class="card tab-section hidden">
-      <h2 class="section-title">Academic Data Management</h2>
+    <!-- Badges Management -->
+    <div class="section-card">
+      <h3>Badges</h3>
+      <form id="badgeForm">
+        <label for="badgeUser">Select User:</label>
+        <select id="badgeUser"></select>
 
-      <h3>Notes</h3>
-      <form id="addNoteForm">
-        <input type="text" id="noteTitle" placeholder="Note Title" required>
-        <textarea id="noteContent" placeholder="Content" rows="4" required></textarea>
-        <select id="noteType" required>
-          <option value="">Select Type</option>
-          <option value="public">Public</option>
-          <option value="private">Private</option>
+        <label for="badgeRole">Assign Badge:</label>
+        <select id="badgeRole">
+          <option value="admin">Admin</option>
+          <option value="moderator">Moderator</option>
+          <option value="tester">Tester</option>
+          <option value="faculty">Faculty</option>
+          <option value="student">Student</option>
         </select>
-        <input type="text" id="noteFor" placeholder="Specific Student/Faculty (if private)">
-        <button type="submit" class="primary-btn">Add Note</button>
-      </form>
 
-      <h3>Assignments / Tests</h3>
-      <form id="addAssignmentForm">
-        <input type="text" id="assignmentTitle" placeholder="Title" required>
-        <textarea id="assignmentDesc" placeholder="Description" rows="3" required></textarea>
-        <select id="assignmentType" required>
-          <option value="">Select Type</option>
+        <button type="submit" class="primary-btn">Assign Badge</button>
+      </form>
+    </div>
+    <!-- Academic Data Management -->
+    <div class="section-card">
+      <h3>Academic Data</h3>
+      <form id="academicForm">
+        <label for="acadType">Type:</label>
+        <select id="acadType">
+          <option value="note">Note</option>
           <option value="assignment">Assignment</option>
           <option value="test">Test</option>
+          <option value="notice">Notice</option>
         </select>
-        <input type="date" id="assignmentDue" required>
-        <button type="submit" class="primary-btn">Add</button>
-      </form>
 
-      <h3>Notices</h3>
-      <form id="addNoticeForm">
-        <input type="text" id="noticeTitle" placeholder="Title" required>
-        <textarea id="noticeContent" placeholder="Content" rows="3" required></textarea>
-        <button type="submit" class="primary-btn">Add Notice</button>
-      </form>
-    </div>
+        <label for="acadTitle">Title / Subject:</label>
+        <input type="text" id="acadTitle" placeholder="Enter title or subject" required>
 
-    <!-- === Attendance Section === -->
-    <div id="attendance" class="card tab-section hidden">
-      <h2 class="section-title">Attendance Overview</h2>
-      <table id="attendanceTable">
-        <thead>
-          <tr>
-            <th>Student</th>
-            <th>Subject</th>
-            <th>Attendance %</th>
-          </tr>
-        </thead>
-        <tbody>
+        <label for="acadContent">Content / Description:</label>
+        <textarea id="acadContent" rows="3" placeholder="Enter content here" required></textarea>
+
+        <label for="acadStudent">Assign to Student (optional):</label>
+        <select id="acadStudent">
           <!-- Dynamically populated -->
-        </tbody>
-      </table>
+        </select>
+
+        <button type="submit" class="primary-btn">Add / Update</button>
+      </form>
+
+      <div class="academic-list" id="academicList">
+        <!-- Academic data entries populate here -->
+      </div>
     </div>
 
-    <!-- === Feedback & Logs Section === -->
-    <div id="feedback" class="card tab-section hidden">
-      <h2 class="section-title">Feedback & Logs</h2>
-      <h3>Student / Faculty Feedback</h3>
-      <ul id="feedbackList">
-        <!-- Dynamically populated -->
-      </ul>
-
-      <h3>Admin Logs</h3>
-      <ul id="adminLogs">
-        <!-- Dynamically populated -->
-      </ul>
+    <!-- Attendance Management -->
+    <div class="section-card">
+      <h3>Attendance</h3>
+      <div class="attendance-list" id="attendanceList">
+        <!-- Attendance records populate here -->
+      </div>
     </div>
 
-    <!-- === Analytics Section === -->
-    <div id="analytics" class="card tab-section hidden">
-      <h2 class="section-title">Analytics Dashboard</h2>
-      <canvas id="analyticsChart" height="200"></canvas>
+    <!-- Feedback & Logs -->
+    <div class="section-card">
+      <h3>Feedback & Logs</h3>
+      <div class="feedback-list" id="feedbackList">
+        <!-- Feedback entries populate here -->
+      </div>
+
+      <div class="admin-logs" id="adminLogs">
+        <!-- Logs populate dynamically -->
+      </div>
+    </div>
+
+    <!-- Analytics Dashboard -->
+    <div class="section-card">
+      <h3>Analytics</h3>
+      <canvas id="attendanceChart" width="400" height="200"></canvas>
+      <canvas id="testChart" width="400" height="200"></canvas>
+      <canvas id="completionChart" width="400" height="200"></canvas>
     </div>
 
   </div> <!-- end container -->
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  // === Tab Switching ===
-  const tabBtns = document.querySelectorAll('.tab-btn');
-  const tabSections = document.querySelectorAll('.tab-section');
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Sample Data
+    const users = [
+      { role: 'student', username: 'DME123', badges: ['student'] },
+      { role: 'faculty', username: 'johndoe@example.com', badges: ['faculty'] },
+      { role: 'moderator', username: 'mod1@example.com', badges: ['moderator'] },
+    ];
 
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      tabBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const target = btn.dataset.tab;
-      tabSections.forEach(s => s.classList.add('hidden'));
-      document.getElementById(target).classList.remove('hidden');
-    });
-  });
-
-  // === Logout ===
-  function logout() {
-    alert("Logging out...");
-    window.location.href = "index.html";
-  }
-
-  // === Example Dynamic Population for Users Table ===
-  const usersTableBody = document.querySelector('#usersTable tbody');
-  const badgeUserSelect = document.getElementById('badgeUserSelect');
-
-  const users = [
-    { name: "Hari Prasath", username: "hari@example.com", role: "student", badges: ["student"] },
-    { name: "Mr. John Doe", username: "john@example.com", role: "faculty", badges: ["faculty"] },
-    { name: "Admin User", username: "admin@example.com", role: "admin", badges: ["admin"] }
-  ];
-
-  function populateUsers() {
-    usersTableBody.innerHTML = "";
-    badgeUserSelect.innerHTML = '<option value="">Select User</option>';
-    users.forEach((u, idx) => {
-      // Users table
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${u.name}</td>
-        <td>${u.username}</td>
-        <td>${u.role}</td>
-        <td>${u.badges.map(b => `<span class="badge ${b}">${b.toUpperCase()}</span>`).join('')}</td>
-        <td>
-          <button onclick="editUser(${idx})" class="primary-btn">Edit</button>
-          <button onclick="deleteUser(${idx})" class="primary-btn">Delete</button>
-        </td>
-      `;
-      usersTableBody.appendChild(tr);
-
-      // Badge select
-      const option = document.createElement('option');
-      option.value = idx;
-      option.textContent = u.name + " (" + u.role + ")";
-      badgeUserSelect.appendChild(option);
-    });
-  }
-
-  populateUsers();
-
-  // === Create User Form ===
-  document.getElementById('createUserForm').addEventListener('submit', (e)=>{
-    e.preventDefault();
-    const name = document.getElementById('createUserName').value;
-    const username = document.getElementById('createUserUsername').value;
-    const password = document.getElementById('createUserPassword').value;
-    const role = document.getElementById('userRole').value;
-    if(!role) return alert("Select role");
-    users.push({name, username, role, badges: [role]});
-    populateUsers();
-    e.target.reset();
-  });
-
-  // === Badge Assignment ===
-  document.getElementById('assignBadgeBtn').addEventListener('click', ()=>{
-    const idx = badgeUserSelect.value;
-    if(idx === "") return alert("Select user");
-    const checkboxes = document.querySelectorAll('#badges input[type="checkbox"]:checked');
-    users[idx].badges = Array.from(checkboxes).map(c => c.value);
-    populateUsers();
-  });
-
-  // === Analytics Chart Example ===
-  const ctx = document.getElementById('analyticsChart').getContext('2d');
-  const analyticsChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Attendance', 'Assignments', 'Tests', 'Completion'],
-      datasets: [{
-        label: 'Percentage',
-        data: [85, 90, 78, 88],
-        backgroundColor: ['#3b82f6','#4f46e5','#f59e0b','#2ecc71']
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true, max: 100 } }
+    // Populate User List
+    const userList = document.getElementById('userList');
+    function refreshUserList() {
+      userList.innerHTML = '';
+      users.forEach(u => {
+        const div = document.createElement('div');
+        div.textContent = `${u.username} (${u.role.toUpperCase()}) - Badges: ${u.badges.join(', ')}`;
+        userList.appendChild(div);
+      });
     }
-  });
+    refreshUserList();
 
-  // === Moving Background Animation (reuse) ===
+    // Populate Badge User Select
+    const badgeUserSelect = document.getElementById('badgeUser');
+    users.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.username;
+      opt.textContent = `${u.username} (${u.role})`;
+      badgeUserSelect.appendChild(opt);
+    });
+
+    // Form Handlers
+    document.getElementById('createUserForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const role = document.getElementById('role').value;
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      users.push({ role, username, badges: [role] });
+      refreshUserList();
+      alert('User created successfully!');
+    });
+
+    document.getElementById('badgeForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const selectedUser = document.getElementById('badgeUser').value;
+      const badge = document.getElementById('badgeRole').value;
+      const user = users.find(u => u.username === selectedUser);
+      if (user && !user.badges.includes(badge)) user.badges.push(badge);
+      refreshUserList();
+      alert('Badge assigned successfully!');
+    });
+
+    // Logout
+    function logout() {
+      alert("Logging out...");
+      window.location.href = "index.html";
+    }
+
+    // Charts
+    const attendanceChart = new Chart(document.getElementById('attendanceChart'), {
+      type: 'pie',
+      data: {
+        labels: ['Maths', 'Physics', 'Mechanics'],
+        datasets: [{ data: [95, 90, 92], backgroundColor: ['#4f46e5','#3b82f6','#16a34a'] }]
+      }
+    });
+
+    const testChart = new Chart(document.getElementById('testChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Test1', 'Test2', 'Test3'],
+        datasets: [{ label: 'Scores', data: [80, 90, 75], backgroundColor: '#2563eb' }]
+      }
+    });
+
+    const completionChart = new Chart(document.getElementById('completionChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Completed', 'Pending'],
+        datasets: [{ data: [12, 3], backgroundColor: ['#10b981','#f59e0b'] }]
+      }
+    });
+
+  </script>
+
+  <!-- Moving Background Animation Script -->
+  <script>
   (() => {
     const canvas = document.getElementById('bg-canvas');
     if (!canvas) return;
@@ -425,29 +395,64 @@
         const size = rand(1, 3.2);
         particles.push({
           x: rand(0, width),
-          y: rand
-          for (let j = i + 1; j < particles.length && j < i + 6; j++) {
-        const p2 = particles[j];
-        const dx = p.x - p2.x;
-        const dy = p.y - p2.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 120) {
-          ctx.beginPath();
-          ctx.strokeStyle = `hsla(${(p.hue + p2.hue) / 2}, 70%, 60%, ${Math.max(0, 0.08 - dist/1500)})`;
-          ctx.lineWidth = 0.6;
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(p2.x, p2.y);
-          ctx.stroke();
-        }
+          y: rand(0, height),
+          vx: rand(-0.12, 0.12),
+          vy: rand(-0.02, 0.6),
+          size,
+          alpha: rand(0.06, 0.22),
+          hue: rand(200, 240)
+        });
       }
     }
-    window.requestAnimationFrame(draw);
-  }
 
-  initParticles();
-  draw();
-})();
-</script>
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      initParticles();
+    }
 
+    window.addEventListener('resize', () => {
+      clearTimeout(window._bgResizeTimer);
+      window._bgResizeTimer = setTimeout(resize, 120);
+    });
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y -= p.vy * 0.3;
+        if (p.x < -50) p.x = width + 50;
+        if (p.x > width + 50) p.x = -50;
+        if (p.y < -50) p.y = height + 50;
+        if (p.y > height + 50) p.y = -50;
+
+        ctx.beginPath();
+        ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        for (let j = i + 1; j < particles.length && j < i + 6; j++) {
+          const p2 = particles[j];
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.strokeStyle = `hsla(${(p.hue + p2.hue)/2}, 70%, 60%, ${Math.max(0, 0.08 - dist/1500)})`;
+            ctx.lineWidth = 0.6;
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+        }
+      }
+      window.requestAnimationFrame(draw);
+    }
+
+    initParticles();
+    draw();
+  })();
+  </script>
 </body>
 </html>
