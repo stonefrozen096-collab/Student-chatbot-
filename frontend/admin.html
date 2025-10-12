@@ -2,296 +2,313 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="css/common.css">
-  <link rel="stylesheet" href="css/animation.css">
   <style>
-    body { background: #f4f6f9; font-family: "Segoe UI", sans-serif; margin:0; padding:0; }
-    #bg-canvas { position: fixed; inset:0; width:100vw; height:100vh; z-index:0; pointer-events:none; opacity:0.4; }
-    .container { position: relative; z-index:2; max-width:1200px; margin:50px auto; padding:20px; }
-    .profile-card { background:#fff; border-radius:12px; padding:20px; display:flex; gap:20px; align-items:center; margin-bottom:25px; box-shadow:0 4px 15px rgba(0,0,0,0.1);}
-    .profile-avatar { width:80px; height:80px; border-radius:50%; background:#4f46e5; display:flex; align-items:center; justify-content:center; color:#fff; font-size:28px; font-weight:bold; }
-    .profile-info h2 { margin:0; font-size:22px; color:#0f172a; }
-    .profile-info p { margin:4px 0; color:#475569; font-size:14px; }
-    .badge-container { margin-top:10px; }
-    .badge { display:inline-block; padding:5px 12px; border-radius:12px; margin:3px; font-size:12px; font-weight:600; cursor:default; }
-    .badge.admin { background:#e74c3c; color:#fff; }
-    .badge.moderator { background:#8b5cf6; color:#fff; }
-    .badge.tester { background:#f59e0b; color:#fff; }
-    .badge.faculty { background:#3b82f6; color:#fff; }
-    .badge.student { background:#2ecc71; color:#fff; }
-    .section-card { background:#fff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.08); padding:20px; margin-bottom:20px; }
-    .section-card h3 { margin-top:0; color:#2563eb; }
-    .logout-btn { padding:8px 15px; border:none; background:#ef4444; color:#fff; border-radius:8px; cursor:pointer; float:right; font-weight:bold; }
-    input, select, textarea { width:100%; margin-bottom:12px; padding:10px; border-radius:8px; border:1px solid #d1d5db; outline:none; }
-    button.primary-btn { padding:10px 15px; border:none; border-radius:8px; background:linear-gradient(90deg,#4f46e5,#3b82f6); color:white; font-weight:bold; cursor:pointer; transition:0.3s; }
-    button.primary-btn:hover { transform:scale(1.03); }
-    .user-list, .attendance-list, .feedback-list, .academic-list { max-height:300px; overflow-y:auto; margin-top:10px; }
-    table { width:100%; border-collapse:collapse; margin-bottom:15px; }
-    table th, table td { padding:8px; text-align:left; border-bottom:1px solid #e5e7eb; }
-    table th { background:#f3f4f6; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    h2, h3 { color: #38bdf8; }
+    .container { width: 90%; max-width: 1000px; margin: auto; padding: 20px; }
+    .section-card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    label { display: block; margin-top: 10px; }
+    input, select, textarea {
+      width: 100%; padding: 8px; margin-top: 5px;
+      border-radius: 8px; border: none;
+    }
+    .primary-btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .primary-btn:hover { background: #1d4ed8; }
+    table {
+      width: 100%; margin-top: 10px; border-collapse: collapse;
+    }
+    th, td { padding: 8px; border-bottom: 1px solid #334155; text-align: left; }
   </style>
 </head>
 <body>
-  <canvas id="bg-canvas"></canvas>
   <div class="container">
-    <!-- Admin Profile -->
-    <div class="profile-card">
-      <div class="profile-avatar" id="adminAvatar">A</div>
-      <div class="profile-info">
-        <h2 id="adminName">Admin Name</h2>
-        <p><strong>Email:</strong> <span id="adminEmail">admin@example.com</span></p>
-        <div class="badge-container" id="adminBadges"><span class="badge admin">ADMIN</span></div>
-        <button class="primary-btn" onclick="editProfile()">Edit Profile</button>
-      </div>
-      <button class="logout-btn" onclick="logout()">Logout</button>
-    </div>
+    <h2>Admin Dashboard</h2>
+    <p>Welcome, <span id="adminName">Admin</span> (<span id="adminEmail">admin@example.com</span>)
+      <button onclick="editProfile()" class="primary-btn">Edit Profile</button>
+      <button onclick="logout()" class="primary-btn">Logout</button>
+    </p>
 
-    <!-- User Management -->
+    <!-- USER MANAGEMENT -->
     <div class="section-card">
       <h3>User Management</h3>
       <form id="createUserForm">
-        <label for="role">Role:</label>
-        <select id="role" required>
-          <option value="admin">Admin</option>
-          <option value="moderator">Moderator</option>
-          <option value="tester">Tester</option>
-          <option value="faculty">Faculty</option>
+        <label>Role:</label>
+        <select id="role">
           <option value="student">Student</option>
+          <option value="faculty">Faculty</option>
+          <option value="moderator">Moderator</option>
+          <option value="admin">Admin</option>
         </select>
-        <label for="username">Username / Email / Reg No:</label>
-        <input type="text" id="username" placeholder="Enter username or reg no" required>
-        <label for="password">Password (if applicable):</label>
-        <input type="password" id="password" placeholder="Password">
+
+        <label>Username:</label>
+        <input type="text" id="username" placeholder="Enter username" required>
+
+        <label>Password:</label>
+        <input type="password" id="password" placeholder="Enter password" required>
+
         <button type="submit" class="primary-btn">Create User</button>
       </form>
-      <div class="user-list" id="userList"></div>
 
-      <!-- Delete Options -->
-      <h4>Delete Options</h4>
-      <label for="deleteUser">Select User:</label>
+      <h4>Delete User</h4>
       <select id="deleteUser"></select>
-      <button class="primary-btn" onclick="deleteUser()">Delete User</button>
-      <label for="deleteBadgeUser">Select User for Badge:</label>
-      <select id="deleteBadgeUser"></select>
-      <button class="primary-btn" onclick="deleteBadge()">Delete Badge</button>
-      <label for="deleteBatch">Select Batch:</label>
-      <select id="deleteBatch"></select>
-      <button class="primary-btn" onclick="deleteBatch()">Delete Batch</button>
+      <button onclick="deleteUser()" class="primary-btn">Delete User</button>
+
+      <div id="userList"></div>
     </div>
-    // Sample Data Arrays
-let users = [];
-let batches = Array.from({length:20},(_,i)=>i+1);
-let academicData = [];
-let attendanceData = [];
-let testData = [];
-let feedbackData = [];
-let adminLogs = [];
 
-// User select elements
-const userList = document.getElementById('userList');
-const deleteUserSelect = document.getElementById('deleteUser');
-const badgeUserSelect = document.getElementById('badgeUser');
-const deleteBadgeSelect = document.getElementById('deleteBadgeUser');
-const deleteBatchSelect = document.getElementById('deleteBatch');
+    <!-- BATCH MANAGEMENT -->
+    <div class="section-card">
+      <h3>Batch Management</h3>
+      <label>Select Batch (1–20):</label>
+      <select id="deleteBatch"></select>
+      <button onclick="deleteBatch()" class="primary-btn">Delete Batch</button>
+    </div>
 
-// Refresh UI lists
-function refreshUserLists() {
-  userList.innerHTML='';
-  deleteUserSelect.innerHTML='';
-  badgeUserSelect.innerHTML='';
-  deleteBadgeSelect.innerHTML='';
-  users.forEach(u=>{
-    const div=document.createElement('div');
-    div.textContent=`${u.username} (${u.role.toUpperCase()}) - Badges: ${u.badges.join(', ')}`;
-    userList.appendChild(div);
-    [deleteUserSelect,badgeUserSelect,deleteBadgeSelect].forEach(sel=>{
-      const opt=document.createElement('option'); opt.value=u.username; opt.textContent=u.username; sel.appendChild(opt);
+    <!-- BADGE MANAGEMENT -->
+    <div class="section-card">
+      <h3>Badge Management</h3>
+      <label>User:</label>
+      <select id="badgeUser"></select>
+
+      <label>Badge Role:</label>
+      <select id="badgeRole">
+        <option value="admin">Admin</option>
+        <option value="moderator">Moderator</option>
+        <option value="faculty">Faculty</option>
+        <option value="student">Student</option>
+      </select>
+
+      <button onclick="assignBadge()" class="primary-btn">Assign Badge</button>
+
+      <h4>Delete Badge</h4>
+      <select id="deleteBadgeUser"></select>
+      <button onclick="deleteBadge()" class="primary-btn">Delete Badge</button>
+    </div>
+
+    <!-- ACADEMIC / ATTENDANCE / TEST -->
+    <div class="section-card">
+      <h3>Academic Data</h3>
+      <form id="academicForm">
+        <label>Type:</label>
+        <select id="acadType">
+          <option value="note">Note</option>
+          <option value="assignment">Assignment</option>
+          <option value="notice">Notice</option>
+        </select>
+
+        <label>Title:</label>
+        <input type="text" id="acadTitle" placeholder="Enter title">
+
+        <label>Description:</label>
+        <textarea id="acadContent" rows="3"></textarea>
+
+        <button type="submit" class="primary-btn">Add Academic Data</button>
+      </form>
+      <div id="academicList"></div>
+    </div>
+    <!-- ATTENDANCE MANAGEMENT -->
+    <div class="section-card">
+      <h3>Attendance Management</h3>
+      <form id="attendanceForm">
+        <label>Subject Name:</label>
+        <input type="text" id="attendanceSubject" required>
+        <label>Percentage:</label>
+        <input type="number" id="attendancePercent" required min="0" max="100">
+        <button type="submit" class="primary-btn">Add / Update Attendance</button>
+      </form>
+
+      <h4>Delete Subject</h4>
+      <select id="deleteSubject"></select>
+      <button onclick="deleteSubject()" class="primary-btn">Delete Subject</button>
+
+      <div id="attendanceList"></div>
+    </div>
+
+    <!-- TEST MANAGEMENT -->
+    <div class="section-card">
+      <h3>Test Score Management</h3>
+      <form id="testForm">
+        <label>Subject Name:</label>
+        <input type="text" id="testSubject" required>
+        <label>Marks:</label>
+        <input type="number" id="testMarks" required>
+        <button type="submit" class="primary-btn">Add / Update Test</button>
+      </form>
+
+      <h4>Delete Test</h4>
+      <select id="deleteTest"></select>
+      <button onclick="deleteTest()" class="primary-btn">Delete Test</button>
+
+      <div id="testList"></div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="section-card">
+      <h3>Analytics Charts</h3>
+      <canvas id="attendanceChart"></canvas>
+      <canvas id="testChart"></canvas>
+    </div>
+
+  </div> <!-- end container -->
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    let users = [];
+    let batches = Array.from({ length: 20 }, (_, i) => i + 1);
+    let attendance = [];
+    let tests = [];
+    let academicData = [];
+
+    const userList = document.getElementById('userList');
+    const deleteUserSelect = document.getElementById('deleteUser');
+    const deleteBatchSelect = document.getElementById('deleteBatch');
+    const badgeUser = document.getElementById('badgeUser');
+    const deleteBadgeUser = document.getElementById('deleteBadgeUser');
+
+    function refreshUsers() {
+      userList.innerHTML = users.map(u => `<div>${u.username} (${u.role})</div>`).join('');
+      deleteUserSelect.innerHTML = users.map(u => `<option>${u.username}</option>`).join('');
+      badgeUser.innerHTML = deleteBadgeUser.innerHTML = users.map(u => `<option>${u.username}</option>`).join('');
+      deleteBatchSelect.innerHTML = batches.map(b => `<option>Batch ${b}</option>`).join('');
+    }
+
+    document.getElementById('createUserForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const role = role.value, username = document.getElementById('username').value;
+      users.push({ username, role, badges: [role] });
+      refreshUsers();
+      e.target.reset();
     });
-  });
-  deleteBatchSelect.innerHTML='';
-  batches.forEach(b=>{
-    const opt=document.createElement('option'); opt.value=b; opt.textContent=`Batch ${b}`; deleteBatchSelect.appendChild(opt);
-  });
-}
 
-// Create User
-document.getElementById('createUserForm').addEventListener('submit',e=>{
-  e.preventDefault();
-  const role=document.getElementById('role').value;
-  const username=document.getElementById('username').value;
-  users.push({role, username, badges:[role]});
-  refreshUserLists();
-  adminLogs.push(`Created ${role}: ${username}`);
-  renderFeedbackLogs();
-  alert('User created!');
-});
+    function deleteUser() {
+      const u = deleteUserSelect.value;
+      users = users.filter(x => x.username !== u);
+      refreshUsers();
+    }
 
-// Assign Badge
-document.getElementById('badgeForm').addEventListener('submit',e=>{
-  e.preventDefault();
-  const selectedUser = badgeUserSelect.value;
-  const badge = document.getElementById('badgeRole').value;
-  const user = users.find(u=>u.username===selectedUser);
-  if(user && !user.badges.includes(badge)) user.badges.push(badge);
-  refreshUserLists();
-  adminLogs.push(`Assigned badge ${badge} to ${selectedUser}`);
-  renderFeedbackLogs();
-  alert('Badge assigned!');
-});
+    function assignBadge() {
+      const u = badgeUser.value, badge = badgeRole.value;
+      const user = users.find(x => x.username === u);
+      if (user && !user.badges.includes(badge)) user.badges.push(badge);
+      refreshUsers();
+    }
 
-// Delete User / Badge / Batch
-function deleteUser() {
-  const selected = deleteUserSelect.value;
-  users = users.filter(u=>u.username!==selected);
-  refreshUserLists();
-  adminLogs.push(`Deleted user: ${selected}`);
-  renderFeedbackLogs();
-}
-function deleteBadge() {
-  const selected = deleteBadgeSelect.value;
-  const badgeRole = document.getElementById('badgeRole').value;
-  const user = users.find(u=>u.username===selected);
-  if(user && user.badges.includes(badgeRole)) user.badges = user.badges.filter(b=>b!==badgeRole);
-  refreshUserLists();
-  adminLogs.push(`Deleted badge ${badgeRole} from ${selected}`);
-  renderFeedbackLogs();
-}
-function deleteBatch() {
-  const selected = parseInt(deleteBatchSelect.value);
-  batches = batches.filter(b=>b!==selected);
-  refreshUserLists();
-  adminLogs.push(`Deleted batch ${selected}`);
-  renderFeedbackLogs();
-}
+    function deleteBadge() {
+      const u = deleteBadgeUser.value, badge = badgeRole.value;
+      const user = users.find(x => x.username === u);
+      if (user) user.badges = user.badges.filter(b => b !== badge);
+      refreshUsers();
+    }
 
-// Academic Data
-document.getElementById('academicForm').addEventListener('submit',e=>{
-  e.preventDefault();
-  const type=document.getElementById('acadType').value;
-  const title=document.getElementById('acadTitle').value;
-  const content=document.getElementById('acadContent').value;
-  const student=document.getElementById('acadStudent').value||'All';
-  academicData.push({type,title,content,student});
-  renderAcademic();
-  adminLogs.push(`Added ${type}: ${title} for ${student}`);
-  renderFeedbackLogs();
-});
-function renderAcademic() {
-  const container=document.getElementById('academicList');
-  container.innerHTML='';
-  academicData.forEach(a=>{
-    const div=document.createElement('div');
-    div.textContent=`[${a.type.toUpperCase()}] ${a.title} -> ${a.student}`;
-    // Add delete button
-    const btn = document.createElement('button'); btn.textContent='Delete'; btn.className='primary-btn';
-    btn.onclick = ()=>{ academicData = academicData.filter(d=>d!==a); renderAcademic(); adminLogs.push(`Deleted ${a.type}: ${a.title}`); renderFeedbackLogs(); };
-    div.appendChild(btn);
-    container.appendChild(div);
-  });
-}
-    // Attendance Form
-document.getElementById('attendanceForm').addEventListener('submit',e=>{
-  e.preventDefault();
-  const subject=document.getElementById('attendanceSubject').value;
-  const percent=parseFloat(document.getElementById('attendancePercent').value);
-  const idx = attendanceData.findIndex(a=>a.subject===subject);
-  if(idx!==-1) attendanceData[idx].percent = percent;
-  else attendanceData.push({subject,percent});
-  renderAttendance();
-  updateChart();
-  adminLogs.push(`Updated attendance ${subject}: ${percent}%`);
-  renderFeedbackLogs();
-});
-function renderAttendance() {
-  const container=document.getElementById('attendanceList');
-  container.innerHTML='';
-  attendanceData.forEach(a=>{
-    const div=document.createElement('div');
-    div.textContent=`${a.subject}: ${a.percent}%`;
-    const btn=document.createElement('button'); btn.textContent='Delete'; btn.className='primary-btn';
-    btn.onclick=()=>{ attendanceData=attendanceData.filter(d=>d!==a); renderAttendance(); updateChart(); adminLogs.push(`Deleted attendance ${a.subject}`); renderFeedbackLogs(); };
-    div.appendChild(btn);
-    container.appendChild(div);
-  });
-}
+    function deleteBatch() {
+      const selected = parseInt(deleteBatchSelect.value.replace('Batch ', ''));
+      batches = batches.filter(b => b !== selected);
+      refreshUsers();
+    }
 
-// Test Scores
-function addTestScore(subject,score){
-  const idx = testData.findIndex(t=>t.subject===subject);
-  if(idx!==-1) testData[idx].score=score;
-  else testData.push({subject,score});
-  renderTestScores();
-  updateChart();
-  adminLogs.push(`Added test score ${score} for ${subject}`);
-  renderFeedbackLogs();
-}
-function renderTestScores(){
-  const container=document.getElementById('testList');
-  if(!container) return;
-  container.innerHTML='';
-  testData.forEach(t=>{
-    const div=document.createElement('div');
-    div.textContent=`${t.subject}: ${t.score}`;
-    const btn=document.createElement('button'); btn.textContent='Delete'; btn.className='primary-btn';
-    btn.onclick=()=>{ testData=testData.filter(d=>d!==t); renderTestScores(); updateChart(); adminLogs.push(`Deleted test score ${t.subject}`); renderFeedbackLogs(); };
-    div.appendChild(btn);
-    container.appendChild(div);
-  });
-}
+    // Academic
+    document.getElementById('academicForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const type = acadType.value, title = acadTitle.value, desc = acadContent.value;
+      academicData.push({ type, title, desc });
+      document.getElementById('academicList').innerHTML =
+        academicData.map(a => `<div>[${a.type}] ${a.title}</div>`).join('');
+      e.target.reset();
+    });
 
-// Charts
-let attendanceChart = new Chart(document.getElementById('attendanceChart'),{
-  type:'pie', data:{labels:[],datasets:[{data:[],backgroundColor:[]}]}
-});
-let testChart = new Chart(document.getElementById('testChart'),{
-  type:'bar', data:{labels:[],datasets:[{label:'Scores',data:[],backgroundColor:'#2563eb'}]}
-});
-let completionChart = new Chart(document.getElementById('completionChart'),{
-  type:'doughnut', data:{labels:['Completed','Pending'],datasets:[{data:[0,0],backgroundColor:['#10b981','#f59e0b']}]}
-});
+    // Attendance
+    document.getElementById('attendanceForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const subj = attendanceSubject.value, percent = attendancePercent.value;
+      const existing = attendance.find(a => a.subject === subj);
+      if (existing) existing.percent = percent; else attendance.push({ subject: subj, percent });
+      renderAttendance(); updateCharts(); e.target.reset();
+    });
 
-function updateChart(){
-  // Attendance Chart
-  attendanceChart.data.labels = attendanceData.map(a=>a.subject);
-  attendanceChart.data.datasets[0].data = attendanceData.map(a=>a.percent);
-  attendanceChart.data.datasets[0].backgroundColor = attendanceData.map((_,i)=>`hsl(${i*50%360},70%,50%)`);
-  attendanceChart.update();
+    function renderAttendance() {
+      const list = document.getElementById('attendanceList');
+      list.innerHTML = attendance.map(a => `<div>${a.subject}: ${a.percent}%</div>`).join('');
+      document.getElementById('deleteSubject').innerHTML = attendance.map(a => `<option>${a.subject}</option>`).join('');
+    }
 
-  // Test Chart
-  testChart.data.labels = testData.map(t=>t.subject);
-  testChart.data.datasets[0].data = testData.map(t=>t.score);
-  testChart.update();
-}
+    function deleteSubject() {
+      const subj = deleteSubject.value;
+      attendance = attendance.filter(a => a.subject !== subj);
+      renderAttendance(); updateCharts();
+    }
 
-// Edit Chart values manually
-document.getElementById('chartSubject').addEventListener('change',()=>{});
-document.getElementById('chartValue').addEventListener('change',()=>{});
+    // Tests
+    document.getElementById('testForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const subj = testSubject.value, marks = testMarks.value;
+      const existing = tests.find(t => t.subject === subj);
+      if (existing) existing.marks = marks; else tests.push({ subject: subj, marks });
+      renderTests(); updateCharts(); e.target.reset();
+    });
 
-// Feedback & Logs
-function renderFeedbackLogs(){
-  const fbContainer=document.getElementById('feedbackList');
-  fbContainer.innerHTML='';
-  feedbackData.forEach(f=>{ const div=document.createElement('div'); div.textContent=f; fbContainer.appendChild(div); });
-  const logContainer=document.getElementById('adminLogs');
-  logContainer.innerHTML='';
-  adminLogs.forEach(l=>{ const div=document.createElement('div'); div.textContent=l; logContainer.appendChild(div); });
-}
+    function renderTests() {
+      document.getElementById('testList').innerHTML = tests.map(t => `<div>${t.subject}: ${t.marks}</div>`).join('');
+      document.getElementById('deleteTest').innerHTML = tests.map(t => `<option>${t.subject}</option>`).join('');
+    }
 
-// Admin Profile Edit
-function editProfile(){
-  const newName=prompt("Enter new Admin name:",document.getElementById('adminName').textContent);
-  if(newName){ document.getElementById('adminName').textContent=newName; adminLogs.push(`Admin changed name to ${newName}`); renderFeedbackLogs(); }
-  const newEmail=prompt("Enter new Admin email:",document.getElementById('adminEmail').textContent);
-  if(newEmail){ document.getElementById('adminEmail').textContent=newEmail; adminLogs.push(`Admin changed email to ${newEmail}`); renderFeedbackLogs(); }
-}
+    function deleteTest() {
+      const subj = deleteTest.value;
+      tests = tests.filter(t => t.subject !== subj);
+      renderTests(); updateCharts();
+    }
 
-// Logout
-function logout(){ alert("Logging out..."); window.location.href="index.html"; }
+    // Charts
+    const attChart = new Chart(document.getElementById('attendanceChart'), {
+      type: 'bar', data: { labels: [], datasets: [{ label: 'Attendance %', data: [] }] }
+    });
+    const testChart = new Chart(document.getElementById('testChart'), {
+      type: 'bar', data: { labels: [], datasets: [{ label: 'Test Marks', data: [] }] }
+    });
 
-// Initialize lists and charts
-refreshUserLists();
-renderAcademic();
-renderAttendance();
-renderFeedbackLogs();
+    function updateCharts() {
+      attChart.data.labels = attendance.map(a => a.subject);
+      attChart.data.datasets[0].data = attendance.map(a => a.percent);
+      attChart.update();
+
+      testChart.data.labels = tests.map(t => t.subject);
+      testChart.data.datasets[0].data = tests.map(t => t.marks);
+      testChart.update();
+    }
+
+    function editProfile() {
+      const name = prompt("Enter new Admin name:", document.getElementById('adminName').textContent);
+      if (name) document.getElementById('adminName').textContent = name;
+      const email = prompt("Enter new email:", document.getElementById('adminEmail').textContent);
+      if (email) document.getElementById('adminEmail').textContent = email;
+    }
+
+    function logout() {
+      alert("Logging out...");
+      window.location.href = "index.html";
+    }
+
+    refreshUsers();
+  </script>
+</body>
+</html>
