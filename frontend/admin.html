@@ -96,16 +96,16 @@
       margin-top: 0;
       color: #2563eb;
     }
-    .logout-btn, .primary-btn, .edit-btn {
+    .logout-btn {
       padding: 8px 15px;
       border: none;
+      background: #ef4444;
+      color: #fff;
       border-radius: 8px;
       cursor: pointer;
+      float: right;
       font-weight: bold;
     }
-    .logout-btn { background: #ef4444; color: #fff; float: right; }
-    .primary-btn { background: linear-gradient(90deg, #4f46e5, #3b82f6); color: #fff; }
-    .edit-btn { background: #10b981; color: #fff; margin-left: 10px; }
     input, select, textarea {
       width: 100%;
       margin-bottom: 12px;
@@ -113,6 +113,22 @@
       border-radius: 8px;
       border: 1px solid #d1d5db;
       outline: none;
+    }
+    button.primary-btn {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #4f46e5, #3b82f6);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button.primary-btn:hover { transform: scale(1.03); }
+    .user-list, .attendance-list, .feedback-list, .academic-list {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 10px;
     }
     table {
       width: 100%;
@@ -128,373 +144,340 @@
   </style>
 </head>
 <body>
-<canvas id="bg-canvas" aria-hidden="true"></canvas>
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
 
-<div class="container">
-  <!-- Admin Profile -->
-  <div class="profile-card">
-    <div class="profile-avatar" id="adminAvatar">A</div>
-    <div class="profile-info">
-      <h2 id="adminName">Admin Name <button class="edit-btn" onclick="editAdminProfile()">Edit</button></h2>
-      <p><strong>Email:</strong> <span id="adminEmail">admin@example.com</span></p>
-      <div class="badge-container" id="adminBadges">
-        <span class="badge admin">ADMIN</span>
+  <div class="container">
+    <!-- Admin Profile -->
+    <div class="profile-card">
+      <div class="profile-avatar" id="adminAvatar">A</div>
+      <div class="profile-info">
+        <h2 id="adminName">Admin Name</h2>
+        <p><strong>Email:</strong> <span id="adminEmail">admin@example.com</span></p>
+        <div class="badge-container" id="adminBadges">
+          <span class="badge admin">ADMIN</span>
+        </div>
+        <button class="primary-btn" onclick="editProfile()">Edit Profile</button>
       </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
-    <button class="logout-btn" onclick="logout()">Logout</button>
-  </div>
 
-  <!-- User Management -->
-  <div class="section-card">
-    <h3>User Management</h3>
-    <form id="createUserForm">
-      <label for="role">Role:</label>
-      <select id="role" required>
-        <option value="admin">Admin</option>
-        <option value="moderator">Moderator</option>
-        <option value="tester">Tester</option>
-        <option value="faculty">Faculty</option>
-        <option value="student">Student</option>
-      </select>
+    <!-- User Management -->
+    <div class="section-card">
+      <h3>User Management</h3>
+      <form id="createUserForm">
+        <label for="role">Role:</label>
+        <select id="role" required>
+          <option value="admin">Admin</option>
+          <option value="moderator">Moderator</option>
+          <option value="tester">Tester</option>
+          <option value="faculty">Faculty</option>
+          <option value="student">Student</option>
+        </select>
 
-      <label for="username">Username / Email / Reg No:</label>
-      <input type="text" id="username" placeholder="Enter username or reg no" required>
+        <label for="username">Username / Email / Reg No:</label>
+        <input type="text" id="username" placeholder="Enter username or reg no" required>
 
-      <label for="password">Password (if applicable):</label>
-      <input type="password" id="password" placeholder="Password">
+        <label for="password">Password (if applicable):</label>
+        <input type="password" id="password" placeholder="Password">
 
-      <button type="submit" class="primary-btn">Create User</button>
-    </form>
-    <div class="user-list" id="userList"></div>
-  </div>
+        <button type="submit" class="primary-btn">Create User</button>
+      </form>
 
-  <!-- Badges Management -->
-  <div class="section-card">
-    <h3>Badges</h3>
-    <form id="badgeForm">
-      <label for="badgeUser">Select User:</label>
-      <select id="badgeUser"></select>
+      <div class="user-list" id="userList"></div>
 
-      <label for="badgeRole">Assign Badge:</label>
-      <select id="badgeRole">
-        <option value="admin">Admin</option>
-        <option value="moderator">Moderator</option>
-        <option value="tester">Tester</option>
-        <option value="faculty">Faculty</option>
-        <option value="student">Student</option>
-      </select>
-      <button type="submit" class="primary-btn">Assign Badge</button>
-    </form>
-  </div>
+      <!-- Delete options -->
+      <h4>Delete Options</h4>
+      <label for="deleteUser">Select User:</label>
+      <select id="deleteUser"></select>
+      <button class="primary-btn" onclick="deleteUser()">Delete User</button>
 
-  <!-- Academic Data Management -->
-  <div class="section-card">
-    <h3>Academic Data</h3>
-    <form id="academicForm">
-      <label for="acadType">Type:</label>
-      <select id="acadType">
-        <option value="note">Note</option>
-        <option value="assignment">Assignment</option>
-        <option value="test">Test</option>
-        <option value="notice">Notice</option>
-      </select>
+      <label for="deleteBadgeUser">Select User for Badge:</label>
+      <select id="deleteBadgeUser"></select>
+      <button class="primary-btn" onclick="deleteBadge()">Delete Badge</button>
 
-      <label for="acadTitle">Title / Subject:</label>
-      <input type="text" id="acadTitle" placeholder="Enter title or subject" required>
-
-      <label for="acadContent">Content / Description:</label>
-      <textarea id="acadContent" rows="3" placeholder="Enter content here" required></textarea>
-
-      <label for="acadStudent">Assign to Student (optional):</label>
-      <select id="acadStudent"></select>
-
-      <button type="submit" class="primary-btn">Add / Update</button>
-    </form>
-    <div class="academic-list" id="academicList"></div>
-  </div>
-
-  <!-- Attendance Management -->
-  <div class="section-card">
-    <h3>Attendance</h3>
-    <div class="attendance-list" id="attendanceList"></div>
-  </div>
-
-  <!-- Feedback & Logs -->
-  <div class="section-card">
-    <h3>Feedback & Logs</h3>
-    <div class="feedback-list" id="feedbackList"></div>
-    <div class="admin-logs" id="adminLogs"></div>
-  </div>
-
-  <!-- Analytics Dashboard -->
-  <div class="section-card">
-    <h3>Analytics</h3>
-    <div id="chartEditor">
-      <!-- Unified chart edit panel will go here in Part 2 -->
+      <label for="deleteBatch">Select Batch:</label>
+      <select id="deleteBatch"></select>
+      <button class="primary-btn" onclick="deleteBatch()">Delete Batch</button>
     </div>
-    <canvas id="attendanceChart" width="400" height="200"></canvas>
-    <canvas id="testChart" width="400" height="200"></canvas>
-    <canvas id="completionChart" width="400" height="200"></canvas>
-  </div>
+    <!-- Badges Management -->
+    <div class="section-card">
+      <h3>Badge Management</h3>
+      <form id="badgeForm">
+        <label for="badgeUser">Select User:</label>
+        <select id="badgeUser"></select>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  // --- Sample Data ---
-  const users = [
-    { role: 'student', username: 'DME123', badges: ['student'] },
-    { role: 'faculty', username: 'johndoe@example.com', badges: ['faculty'] },
-    { role: 'moderator', username: 'mod1@example.com', badges: ['moderator'] },
-  ];
+        <label for="badgeRole">Assign Badge:</label>
+        <select id="badgeRole">
+          <option value="admin">Admin</option>
+          <option value="moderator">Moderator</option>
+          <option value="tester">Tester</option>
+          <option value="faculty">Faculty</option>
+          <option value="student">Student</option>
+        </select>
 
-  const academicData = [];
-  const attendanceData = [
-    { subject: 'Maths', percentage: 95 },
-    { subject: 'Physics', percentage: 90 },
-    { subject: 'Mechanics', percentage: 92 }
-  ];
-  const testScores = [
-    { test: 'Test1', score: 80 },
-    { test: 'Test2', score: 90 },
-    { test: 'Test3', score: 75 }
-  ];
-  const completionData = { completed: 12, pending: 3 };
-  const feedbacks = [];
+        <button type="submit" class="primary-btn">Assign Badge</button>
+      </form>
+    </div>
 
-  // --- Utility Functions ---
-  function refreshUserList() {
+    <!-- Academic Data Management -->
+    <div class="section-card">
+      <h3>Academic Data</h3>
+      <form id="academicForm">
+        <label for="acadType">Type:</label>
+        <select id="acadType">
+          <option value="note">Note</option>
+          <option value="assignment">Assignment</option>
+          <option value="test">Test</option>
+          <option value="notice">Notice</option>
+        </select>
+
+        <label for="acadTitle">Title / Subject:</label>
+        <input type="text" id="acadTitle" placeholder="Enter title or subject" required>
+
+        <label for="acadContent">Content / Description:</label>
+        <textarea id="acadContent" rows="3" placeholder="Enter content here" required></textarea>
+
+        <label for="acadStudent">Assign to Student (optional):</label>
+        <select id="acadStudent">
+          <!-- Dynamically populated -->
+        </select>
+
+        <button type="submit" class="primary-btn">Add / Update</button>
+      </form>
+      <div class="academic-list" id="academicList"></div>
+    </div>
+
+    <!-- Attendance Management -->
+    <div class="section-card">
+      <h3>Attendance Management</h3>
+      <form id="attendanceForm">
+        <label for="attendanceSubject">Subject Name:</label>
+        <input type="text" id="attendanceSubject" placeholder="Enter subject name">
+
+        <label for="attendancePercent">Attendance %:</label>
+        <input type="number" id="attendancePercent" placeholder="Enter percentage" min="0" max="100">
+
+        <button type="submit" class="primary-btn">Update Attendance</button>
+      </form>
+      <div class="attendance-list" id="attendanceList"></div>
+    </div>
+
+    <!-- Feedback & Logs -->
+    <div class="section-card">
+      <h3>Feedback & Logs</h3>
+      <div class="feedback-list" id="feedbackList"></div>
+      <div class="admin-logs" id="adminLogs"></div>
+    </div>
+
+    <!-- Analytics Dashboard -->
+    <div class="section-card">
+      <h3>Analytics</h3>
+      <label for="chartSubject">Edit Subject for Chart:</label>
+      <input type="text" id="chartSubject" placeholder="Enter subject name">
+      <label for="chartValue">Enter % / Value:</label>
+      <input type="number" id="chartValue" placeholder="Enter value" min="0" max="100">
+      <button class="primary-btn" onclick="updateChart()">Update Chart</button>
+
+      <canvas id="attendanceChart" width="400" height="200"></canvas>
+      <canvas id="testChart" width="400" height="200"></canvas>
+      <canvas id="completionChart" width="400" height="200"></canvas>
+    </div>
+
+  </div> <!-- end container -->
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Sample Data
+    const users = [
+      { role: 'student', username: 'DME123', badges: ['student'] },
+      { role: 'faculty', username: 'johndoe@example.com', badges: ['faculty'] },
+      { role: 'moderator', username: 'mod1@example.com', badges: ['moderator'] },
+    ];
+
+    const batches = Array.from({length: 20}, (_, i) => i + 1);
+
+    const academicData = [];
+    const attendanceData = [];
+    const feedbackData = [];
+    const adminLogs = [];
+
+    // User List
     const userList = document.getElementById('userList');
-    userList.innerHTML = '';
-    users.forEach(u => {
-      const div = document.createElement('div');
-      div.textContent = `${u.username} (${u.role.toUpperCase()}) - Badges: ${u.badges.join(', ')}`;
-      // Add delete button
-      const delBtn = document.createElement('button');
-      delBtn.textContent = 'Delete';
-      delBtn.className = 'edit-btn';
-      delBtn.onclick = () => {
-        if(confirm(`Delete user ${u.username}?`)){
-          users.splice(users.indexOf(u),1);
-          refreshUserList();
-          refreshBadgeUserSelect();
-        }
-      };
-      div.appendChild(delBtn);
-      userList.appendChild(div);
-    });
-  }
-
-  function refreshBadgeUserSelect() {
+    const deleteUserSelect = document.getElementById('deleteUser');
     const badgeUserSelect = document.getElementById('badgeUser');
-    badgeUserSelect.innerHTML = '';
-    users.forEach(u => {
-      const opt = document.createElement('option');
-      opt.value = u.username;
-      opt.textContent = `${u.username} (${u.role})`;
-      badgeUserSelect.appendChild(opt);
+    const deleteBadgeSelect = document.getElementById('deleteBadgeUser');
+    const deleteBatchSelect = document.getElementById('deleteBatch');
+
+    function refreshUserLists() {
+      userList.innerHTML = '';
+      deleteUserSelect.innerHTML = '';
+      badgeUserSelect.innerHTML = '';
+      deleteBadgeSelect.innerHTML = '';
+      users.forEach(u => {
+        const div = document.createElement('div');
+        div.textContent = `${u.username} (${u.role.toUpperCase()}) - Badges: ${u.badges.join(', ')}`;
+        userList.appendChild(div);
+
+        [deleteUserSelect, badgeUserSelect, deleteBadgeSelect].forEach(sel => {
+          const opt = document.createElement('option');
+          opt.value = u.username;
+          opt.textContent = u.username;
+          sel.appendChild(opt);
+        });
+      });
+
+      deleteBatchSelect.innerHTML = '';
+      batches.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b;
+        opt.textContent = `Batch ${b}`;
+        deleteBatchSelect.appendChild(opt);
+      });
+    }
+    refreshUserLists();
+
+    // Create User
+    document.getElementById('createUserForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const role = document.getElementById('role').value;
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      users.push({ role, username, badges: [role] });
+      refreshUserLists();
+      alert('User created successfully!');
+      adminLogs.push(`Created ${role}: ${username}`);
     });
-  }
 
-  // --- Forms ---
-  document.getElementById('createUserForm').addEventListener('submit', e => {
-    e.preventDefault();
-    const role = document.getElementById('role').value;
-    const username = document.getElementById('username').value;
-    users.push({ role, username, badges: [role] });
-    refreshUserList();
-    refreshBadgeUserSelect();
-    alert('User created successfully!');
-  });
-
-  document.getElementById('badgeForm').addEventListener('submit', e => {
-    e.preventDefault();
-    const selectedUser = document.getElementById('badgeUser').value;
-    const badge = document.getElementById('badgeRole').value;
-    const user = users.find(u => u.username === selectedUser);
-    if(user && !user.badges.includes(badge)) user.badges.push(badge);
-    refreshUserList();
-    alert('Badge assigned successfully!');
-  });
-
-  document.getElementById('academicForm').addEventListener('submit', e=>{
-    e.preventDefault();
-    const type = document.getElementById('acadType').value;
-    const title = document.getElementById('acadTitle').value;
-    const content = document.getElementById('acadContent').value;
-    const student = document.getElementById('acadStudent').value;
-    academicData.push({type,title,content,student});
-    refreshAcademicList();
-  });
-
-  function refreshAcademicList(){
-    const list = document.getElementById('academicList');
-    list.innerHTML = '';
-    academicData.forEach(a=>{
-      const div = document.createElement('div');
-      div.textContent = `[${a.type}] ${a.title} - ${a.student||'All Students'}`;
-      list.appendChild(div);
+    // Badge Assignment
+    document.getElementById('badgeForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const selectedUser = badgeUserSelect.value;
+      const badge = document.getElementById('badgeRole').value;
+      const user = users.find(u => u.username === selectedUser);
+      if(user && !user.badges.includes(badge)) user.badges.push(badge);
+      refreshUserLists();
+      adminLogs.push(`Assigned badge ${badge} to ${selectedUser}`);
+      alert('Badge assigned successfully!');
     });
-  }
 
-  // --- Logout ---
-  function logout(){
-    alert("Logging out...");
-    window.location.href = "index.html";
-  }
-
-  // --- Admin Profile Edit ---
-  function editAdminProfile(){
-    const name = prompt("Enter new admin name:", document.getElementById('adminName').textContent.split('Edit')[0].trim());
-    const email = prompt("Enter new admin email:", document.getElementById('adminEmail').textContent);
-    if(name) document.getElementById('adminName').firstChild.textContent = name + " ";
-    if(email) document.getElementById('adminEmail').textContent = email;
-  }
-
-  // --- Charts ---
-  let attendanceChart = new Chart(document.getElementById('attendanceChart'), {
-    type:'pie',
-    data:{
-      labels: attendanceData.map(a=>a.subject),
-      datasets:[{
-        data: attendanceData.map(a=>a.percentage),
-        backgroundColor:['#4f46e5','#3b82f6','#16a34a']
-      }]
+    // Delete functions
+    function deleteUser() {
+      const selected = deleteUserSelect.value;
+      const index = users.findIndex(u => u.username === selected);
+      if(index !== -1) { users.splice(index, 1); refreshUserLists(); adminLogs.push(`Deleted user: ${selected}`); }
     }
-  });
-
-  let testChart = new Chart(document.getElementById('testChart'),{
-    type:'bar',
-    data:{
-      labels:testScores.map(t=>t.test),
-      datasets:[{label:'Scores', data:testScores.map(t=>t.score), backgroundColor:'#2563eb'}]
+    function deleteBadge() {
+      const selected = deleteBadgeSelect.value;
+      const user = users.find(u => u.username === selected);
+      const badgeRole = document.getElementById('badgeRole').value;
+      if(user && user.badges.includes(badgeRole)) {
+        user.badges = user.badges.filter(b => b !== badgeRole);
+        refreshUserLists();
+        adminLogs.push(`Deleted badge ${badgeRole} from ${selected}`);
+      }
     }
-  });
-
-  let completionChart = new Chart(document.getElementById('completionChart'),{
-    type:'doughnut',
-    data:{
-      labels:['Completed','Pending'],
-      datasets:[{data:[completionData.completed, completionData.pending], backgroundColor:['#10b981','#f59e0b']}]
+    function deleteBatch() {
+      const selected = deleteBatchSelect.value;
+      const idx = batches.indexOf(parseInt(selected));
+      if(idx !== -1) { batches.splice(idx,1); refreshUserLists(); adminLogs.push(`Deleted batch ${selected}`); }
     }
-  });
 
-  // --- Chart Edit Panel ---
-  const chartEditorDiv = document.getElementById('chartEditor');
-  chartEditorDiv.innerHTML = `
-    <h4>Edit Charts</h4>
-    <label>Subject Name:</label>
-    <input type="text" id="chartSubjectInput" placeholder="Enter subject name">
-    <label>Attendance %:</label>
-    <input type="number" id="chartAttendanceInput" placeholder="Enter attendance %" min="0" max="100">
-    <label>Test Name:</label>
-    <input type="text" id="chartTestInput" placeholder="Enter test name">
-    <label>Test Score:</label>
-    <input type="number" id="chartTestScoreInput" placeholder="Enter test score" min="0" max="100">
-    <button class="primary-btn" onclick="updateCharts()">Update Chart</button>
-  `;
+    // Academic Form
+    document.getElementById('academicForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const type = document.getElementById('acadType').value;
+      const title = document.getElementById('acadTitle').value;
+      const content = document.getElementById('acadContent').value;
+      const student = document.getElementById('acadStudent').value || 'All';
+      academicData.push({ type, title, content, student });
+      renderAcademic();
+      adminLogs.push(`Added ${type}: ${title} for ${student}`);
+    });
+    function renderAcademic() {
+      const container = document.getElementById('academicList');
+      container.innerHTML = '';
+      academicData.forEach(a => {
+        const div = document.createElement('div');
+        div.textContent = `[${a.type.toUpperCase()}] ${a.title} -> ${a.student}`;
+        container.appendChild(div);
+      });
+    }
 
-  function updateCharts(){
-    const sub = document.getElementById('chartSubjectInput').value;
-    const att = parseInt(document.getElementById('chartAttendanceInput').value);
-    const testName = document.getElementById('chartTestInput').value;
-    const testScore = parseInt(document.getElementById('chartTestScoreInput').value);
+    // Attendance Form
+    document.getElementById('attendanceForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const subj = document.getElementById('attendanceSubject').value;
+      const percent = parseFloat(document.getElementById('attendancePercent').value);
+      const idx = attendanceData.findIndex(a => a.subject === subj);
+      if(idx !== -1) attendanceData[idx].percent = percent;
+      else attendanceData.push({subject: subj, percent});
+      renderAttendance();
+      updateChart();
+      adminLogs.push(`Updated attendance ${subj}: ${percent}%`);
+    });
+    function renderAttendance() {
+      const container = document.getElementById('attendanceList');
+      container.innerHTML = '';
+      attendanceData.forEach(a => {
+        const div = document.createElement('div');
+        div.textContent = `${a.subject}: ${a.percent}%`;
+        container.appendChild(div);
+      });
+    }
 
-    if(sub && !isNaN(att)){
-      let found = attendanceData.find(a=>a.subject===sub);
-      if(found) found.percentage=att;
-      else attendanceData.push({subject:sub,percentage:att});
+    // Charts
+    let attendanceChart = new Chart(document.getElementById('attendanceChart'), {
+      type: 'pie',
+      data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] }
+    });
+    let testChart = new Chart(document.getElementById('testChart'), {
+      type: 'bar',
+      data: { labels: [], datasets: [{ label:'Scores', data: [], backgroundColor:'#2563eb' }] }
+    });
+    let completionChart = new Chart(document.getElementById('completionChart'), {
+      type: 'doughnut',
+      data: { labels: ['Completed','Pending'], datasets:[{data:[0,0], backgroundColor:['#10b981','#f59e0b']}] }
+    });
+
+    function updateChart() {
+      const subject = document.getElementById('chartSubject').value;
+      const value = parseFloat(document.getElementById('chartValue').value);
+      const idx = attendanceData.findIndex(a=>a.subject===subject);
+      if(idx!==-1) attendanceData[idx].percent=value;
+      else attendanceData.push({subject,value});
+      renderAttendance();
       attendanceChart.data.labels = attendanceData.map(a=>a.subject);
-      attendanceChart.data.datasets[0].data = attendanceData.map(a=>a.percentage);
+      attendanceChart.data.datasets[0].data = attendanceData.map(a=>a.percent);
+      attendanceChart.data.datasets[0].backgroundColor = attendanceData.map((_,i)=>`hsl(${i*50%360},70%,50%)`);
       attendanceChart.update();
     }
 
-    if(testName && !isNaN(testScore)){
-      let found = testScores.find(t=>t.test===testName);
-      if(found) found.score = testScore;
-      else testScores.push({test:testName, score:testScore});
-      testChart.data.labels = testScores.map(t=>t.test);
-      testChart.data.datasets[0].data = testScores.map(t=>t.score);
-      testChart.update();
+    // Feedback & Logs
+    function renderFeedbackLogs() {
+      const fbContainer = document.getElementById('feedbackList');
+      fbContainer.innerHTML = '';
+      feedbackData.forEach(f=>{ const div=document.createElement('div'); div.textContent=f; fbContainer.appendChild(div); });
+
+      const logContainer = document.getElementById('adminLogs');
+      logContainer.innerHTML = '';
+      adminLogs.forEach(l=>{ const div=document.createElement('div'); div.textContent=l; logContainer.appendChild(div); });
     }
 
-    alert("Charts updated!");
-  }
+    // Logout
+    function logout() { alert("Logging out..."); window.location.href="index.html"; }
 
-  // --- Initialize ---
-  refreshUserList();
-  refreshBadgeUserSelect();
-  refreshAcademicList();
-</script>
-
-<!-- Moving Background Animation Script -->
-<script>
-(() => {
-  const canvas = document.getElementById('bg-canvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d',{alpha:true});
-  let width = canvas.width = window.innerWidth;
-  let height = canvas.height = window.innerHeight;
-  const baseCount = Math.round((width*height)/60000);
-  let PARTICLE_COUNT = Math.min(120,Math.max(25,baseCount*40));
-  if(width<800) PARTICLE_COUNT=Math.min(PARTICLE_COUNT,45);
-  const particles = [];
-  function rand(min,max){return Math.random()*(max-min)+min;}
-
-  function initParticles(){
-    particles.length=0;
-    for(let i=0;i<PARTICLE_COUNT;i++){
-      const size=rand(1,3.2);
-      particles.push({x:rand(0,width),y:rand(0,height),vx:rand(-0.12,0.12),vy:rand(-0.02,0.6),size,alpha:rand(0.06,0.22),hue:rand(200,240)});
+    // Edit Profile
+    function editProfile() {
+      const newName = prompt("Enter new Admin name:", document.getElementById('adminName').textContent);
+      if(newName) { document.getElementById('adminName').textContent = newName; adminLogs.push(`Admin changed name to ${newName}`); renderFeedbackLogs(); }
+      const newEmail = prompt("Enter new Admin email:", document.getElementById('adminEmail').textContent);
+      if(newEmail) { document.getElementById('adminEmail').textContent = newEmail; adminLogs.push(`Admin changed email to ${newEmail}`); renderFeedbackLogs(); }
     }
-  }
 
-  function resize(){
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-    initParticles();
-  }
+    // Initialize
+    renderFeedbackLogs();
+  </script>
 
-  window.addEventListener('resize',()=>{
-    clearTimeout(window._bgResizeTimer);
-    window._bgResizeTimer=setTimeout(resize,120);
-  });
-
-  function draw(){
-    ctx.clearRect(0,0,width,height);
-    for(let i=0;i<particles.length;i++){
-      const p = particles[i];
-      p.x+=p.vx;
-      p.y-=p.vy*0.3;
-      if(p.x<-50)p.x=width+50;
-      if(p.x>width+50)p.x=-50;
-      if(p.y<-50)p.y=height+50;
-      if(p.y>height+50)p.y=-50;
-
-      ctx.beginPath();
-      ctx.fillStyle=`hsla(${p.hue},80%,60%,${p.alpha})`;
-      ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
-      ctx.fill();
-
-      for(let j=i+1;j<particles.length&&j<i+6;j++){
-        const p2 = particles[j];
-        const dx = p.x-p2.x;
-        const dy = p.y-p2.y;
-        const dist = Math.sqrt(dx*dx+dy*dy);
-        if(dist<120){
-          ctx.beginPath();
-          ctx.strokeStyle=`hsla(${(p.hue+p2.hue)/2},70%,60%,${Math.max(0,0.08-dist/1500)})`;
-          ctx.lineWidth=0.6;
-          ctx.moveTo(p.x,p.y);
-          ctx.lineTo(p2.x,p2.y);
-          ctx.stroke();
-        }
-      }
-    }
-    window.requestAnimationFrame(draw);
-  }
-
-  initParticles();
-  draw();
-})();
-</script>
+  <!-- Background animation same as Part 1 -->
 </body>
 </html>
