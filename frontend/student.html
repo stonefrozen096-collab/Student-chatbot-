@@ -1,454 +1,339 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Dashboard</title>
-  <link rel="stylesheet" href="css/common.css">
-  <link rel="stylesheet" href="css/animation.css">
-  <style>
-    body {
-      background: #f4f6f9;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dashboard</title>
+<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="css/animation.css">
+<style>
+body {
+  background: #f4f6f9;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+}
 
-    #bg-canvas {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 0;
-      pointer-events: none;
-      background: linear-gradient(120deg, #0f172a 0%, #0b1320 50%, #061026 100%);
-      opacity: 0.4;
-    }
+/* === Moving background canvas === */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg, #0f172a 0%, #0b1320 50%, #061026 100%);
+  opacity: 0.4;
+}
 
-    .container {
-      position: relative;
-      z-index: 2;
-      max-width: 900px;
-      margin: 60px auto;
-      padding: 20px;
-    }
+.container {
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+  margin: 60px auto;
+  padding: 20px;
+}
 
-    .profile-card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      padding: 25px;
-      display: flex;
-      gap: 20px;
-      align-items: center;
-      margin-bottom: 25px;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
+.profile-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  padding: 25px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 25px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
 
-    .profile-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
+.profile-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
 
-    .profile-avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: #4f46e5;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 28px;
-      font-weight: bold;
-      flex-shrink: 0;
-    }
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #4f46e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 28px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
 
-    .profile-info h2 {
-      margin: 0;
-      font-size: 22px;
-      color: #0f172a;
-    }
+.profile-info h2 { margin: 0; font-size: 22px; color: #0f172a; }
+.profile-info p { margin: 4px 0; color: #475569; font-size: 14px; }
 
-    .profile-info p {
-      margin: 4px 0;
-      color: #475569;
-      font-size: 14px;
-    }
+.badge-container { margin-top: 10px; }
+.badge { display: inline-block; padding: 5px 12px; border-radius: 12px; margin: 3px; font-size: 12px; font-weight: 600; animation: pop 0.3s ease forwards; cursor: default; }
+.badge.admin { background-color: #e74c3c; color: #fff; }
+.badge.moderator { background-color: #8b5cf6; color: #fff; }
+.badge.tester { background-color: #f59e0b; color: #fff; }
+.badge.faculty { background-color: #3b82f6; color: #fff; }
+.badge.student { background-color: #2ecc71; color: #fff; }
 
-    .badge-container {
-      margin-top: 10px;
-    }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-    .badge {
-      display: inline-block;
-      padding: 5px 12px;
-      border-radius: 12px;
-      margin: 3px;
-      font-size: 12px;
-      font-weight: 600;
-      animation: pop 0.3s ease forwards;
-      cursor: default;
-    }
+.section-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.section-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+.section-card h3 { margin-top: 0; color: #2563eb; }
 
-    .badge.admin { background-color: #e74c3c; color: #fff; }
-    .badge.moderator { background-color: #8b5cf6; color: #fff; }
-    .badge.tester { background-color: #f59e0b; color: #fff; }
-    .badge.faculty { background-color: #3b82f6; color: #fff; }
-    .badge.student { background-color: #2ecc71; color: #fff; }
+.faculty-list, .attendance-list, .feedback-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.faculty-list li, .attendance-list li, .feedback-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+  color: #334155;
+}
+.faculty-list li:last-child, .attendance-list li:last-child, .feedback-list li:last-child { border-bottom: none; }
 
-    @keyframes pop {
-      0% { transform: scale(0.8); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
+.logout-btn { padding: 8px 15px; border: none; background: #ef4444; color: #fff; border-radius: 8px; cursor: pointer; float: right; font-weight: bold; }
 
-    .section-card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      padding: 20px;
-      margin-bottom: 20px;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
+.feedback-form input, .feedback-form textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  outline: none;
+}
+.feedback-form textarea { resize: vertical; }
 
-    .section-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-    }
-
-    .section-card h3 {
-      margin-top: 0;
-      color: #2563eb;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    li {
-      padding: 6px 0;
-      border-bottom: 1px solid #e5e7eb;
-      font-size: 14px;
-      color: #334155;
-    }
-
-    li:last-child { border-bottom: none; }
-
-    .logout-btn {
-      padding: 8px 15px;
-      border: none;
-      background: #ef4444;
-      color: #fff;
-      border-radius: 8px;
-      cursor: pointer;
-      float: right;
-      font-weight: bold;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 15px;
-      cursor: pointer;
-    }
-
-    .tab {
-      padding: 8px 15px;
-      border-radius: 8px;
-      background: #e0e7ff;
-      color: #1e3a8a;
-      font-weight: bold;
-      transition: 0.2s;
-    }
-
-    .tab.active {
-      background: #4f46e5;
-      color: #fff;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-  </style>
+.feedback-form button {
+  padding: 10px 15px;
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.feedback-form button:hover { transform: scale(1.03); }
+</style>
 </head>
 <body>
-  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
 
-  <div class="container">
-    <!-- Profile Card -->
-    <div class="profile-card">
-      <div class="profile-avatar" id="studentAvatar">S</div>
-      <div class="profile-info">
-        <h2 id="studentName">Student Name</h2>
-        <p><strong>Reg No:</strong> <span id="studentReg">12345</span></p>
-        <p><strong>Email:</strong> <span id="studentEmail">student@example.com</span></p>
-        <div class="badge-container" id="badgeContainer">
-          <!-- Badges populate dynamically -->
-        </div>
-      </div>
-      <button class="logout-btn" onclick="logout()">Logout</button>
-    </div>
-
-    <!-- Tabs -->
-    <div class="tabs">
-      <div class="tab active" data-tab="facultyTab">Assigned Faculty</div>
-      <div class="tab" data-tab="attendanceTab">Attendance</div>
-      <div class="tab" data-tab="notesTab">Notes</div>
-      <div class="tab" data-tab="testsTab">Tests / Assignments</div>
-      <div class="tab" data-tab="noticesTab">Notices</div>
-      <div class="tab" data-tab="chatbotTab">Chatbot</div>
-    </div>
-
-    <!-- Tab Contents -->
-    <div class="tab-content active" id="facultyTab">
-      <div class="section-card">
-        <h3>Assigned Faculty</h3>
-        <ul id="assignedFaculty">
-          <!-- Faculty populate dynamically -->
-        </ul>
+<div class="container">
+  <!-- Profile Card -->
+  <div class="profile-card">
+    <div class="profile-avatar" id="studentAvatar">S</div>
+    <div class="profile-info">
+      <h2 id="studentName">Student Name</h2>
+      <p><strong>Reg No:</strong> <span id="studentReg">12345</span></p>
+      <p><strong>Email:</strong> <span id="studentEmail">student@example.com</span></p>
+      <div class="badge-container" id="badgeContainer">
+        <!-- Badges populate here -->
       </div>
     </div>
-
-    <div class="tab-content" id="attendanceTab">
-      <div class="section-card">
-        <h3>Attendance Summary</h3>
-        <ul id="attendanceList">
-          <!-- Attendance populate dynamically -->
-        </ul>
-      </div>
-    </div>
-    <div class="tab-content" id="notesTab">
-      <div class="section-card">
-        <h3>Notes</h3>
-        <ul id="notesList">
-          <!-- Notes populate dynamically -->
-        </ul>
-      </div>
-    </div>
-
-    <div class="tab-content" id="testsTab">
-      <div class="section-card">
-        <h3>Tests / Assignments</h3>
-        <ul id="testsList">
-          <!-- Tests / assignments populate dynamically -->
-        </ul>
-      </div>
-    </div>
-
-    <div class="tab-content" id="noticesTab">
-      <div class="section-card">
-        <h3>Notices</h3>
-        <ul id="noticesList">
-          <!-- Notices populate dynamically -->
-        </ul>
-      </div>
-    </div>
-
-    <div class="tab-content" id="chatbotTab">
-      <div class="section-card">
-        <h3>Chatbot Assistant</h3>
-        <div id="chatbotContainer">
-          <div id="chatMessages" style="max-height:300px; overflow-y:auto; border:1px solid #ccc; padding:8px; border-radius:8px; background:#f9f9f9;"></div>
-          <input type="text" id="chatInput" placeholder="Type a message..." style="width:80%; padding:8px; margin-top:10px;">
-          <button onclick="sendMessage()" style="padding:8px 12px; margin-top:10px;">Send</button>
-        </div>
-      </div>
-    </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
 
-  <script>
-    // Sample data for demonstration
-    const studentData = {
-      name: "Hari Prasath",
-      regno: "DME123",
-      email: "hari@example.com",
-      badges: ["student", "tester"],
-      assignedFaculty: ["Mr. John Doe", "Ms. Jane Smith"],
-      attendance: ["Maths - 95%", "Physics - 90%", "Mechanics - 92%"],
-      notes: ["Chapter 1 Summary", "Lab Safety Notes", "Mechanics Revision"],
-      tests: ["Math Test 1", "Physics Assignment 2", "Mechanics Quiz"],
-      notices: ["Midterm Exams Next Week", "Lab Closed Tomorrow"]
-    };
+  <!-- Assigned Faculty -->
+  <div class="section-card">
+    <h3>Assigned Faculty</h3>
+    <ul class="faculty-list" id="assignedFaculty">
+      <!-- Faculty populate dynamically -->
+    </ul>
+  </div>
 
-    // Populate profile
-    document.getElementById("studentName").textContent = studentData.name;
-    document.getElementById("studentReg").textContent = studentData.regno;
-    document.getElementById("studentEmail").textContent = studentData.email;
+  <!-- Attendance Summary -->
+  <div class="section-card">
+    <h3>Attendance Summary</h3>
+    <ul class="attendance-list" id="attendanceList">
+      <!-- Attendance data populate dynamically -->
+    </ul>
+  </div>
 
-    // Populate badges
-    const badgeContainer = document.getElementById("badgeContainer");
-    studentData.badges.forEach(b => {
-      const span = document.createElement("span");
-      span.className = `badge ${b}`;
-      span.textContent = b.toUpperCase();
-      badgeContainer.appendChild(span);
-    });
+  <!-- Feedback Section -->
+  <div class="section-card">
+    <h3>Submit Feedback</h3>
+    <form class="feedback-form" id="feedbackForm">
+      <input type="text" id="feedbackSubject" placeholder="Subject" required>
+      <textarea id="feedbackMessage" placeholder="Write your feedback here..." rows="4" required></textarea>
+      <button type="submit">Send Feedback</button>
+    </form>
+    <h3 style="margin-top:20px;">Feedback Responses</h3>
+    <ul class="feedback-list" id="feedbackList">
+      <!-- Feedback responses populate dynamically -->
+    </ul>
+  </div>
+  </div> <!-- container ends -->
 
-    // Populate faculty
-    const facultyList = document.getElementById("assignedFaculty");
-    studentData.assignedFaculty.forEach(f => {
+<script>
+  // === Example student data for demo ===
+  const studentData = {
+    name: "Hari Prasath",
+    regno: "DME123",
+    email: "hari@example.com",
+    badges: ["student", "tester"],
+    assignedFaculty: ["Mr. John Doe", "Ms. Jane Smith"],
+    attendance: ["Maths - 95%", "Physics - 90%", "Mechanics - 92%"],
+    feedbackResponses: [
+      {subject: "Request for extra classes", message: "Scheduled on Friday", from: "Mr. John Doe"},
+      {subject: "Assignment submission issue", message: "Received late submission", from: "Ms. Jane Smith"}
+    ]
+  };
+
+  // Populate profile
+  document.getElementById("studentName").textContent = studentData.name;
+  document.getElementById("studentReg").textContent = studentData.regno;
+  document.getElementById("studentEmail").textContent = studentData.email;
+
+  // Populate badges
+  const badgeContainer = document.getElementById("badgeContainer");
+  studentData.badges.forEach(b => {
+    const span = document.createElement("span");
+    span.className = `badge ${b}`;
+    span.textContent = b.toUpperCase();
+    badgeContainer.appendChild(span);
+  });
+
+  // Populate assigned faculty
+  const facultyList = document.getElementById("assignedFaculty");
+  studentData.assignedFaculty.forEach(f => {
+    const li = document.createElement("li");
+    li.textContent = f;
+    facultyList.appendChild(li);
+  });
+
+  // Populate attendance
+  const attendanceList = document.getElementById("attendanceList");
+  studentData.attendance.forEach(a => {
+    const li = document.createElement("li");
+    li.textContent = a;
+    attendanceList.appendChild(li);
+  });
+
+  // Populate feedback responses
+  const feedbackList = document.getElementById("feedbackList");
+  function renderFeedback() {
+    feedbackList.innerHTML = "";
+    studentData.feedbackResponses.forEach(fb => {
       const li = document.createElement("li");
-      li.textContent = f;
-      facultyList.appendChild(li);
+      li.innerHTML = `<strong>${fb.subject}</strong> (${fb.from}): ${fb.message}`;
+      feedbackList.appendChild(li);
     });
+  }
+  renderFeedback();
 
-    // Populate attendance
-    const attendanceList = document.getElementById("attendanceList");
-    studentData.attendance.forEach(a => {
-      const li = document.createElement("li");
-      li.textContent = a;
-      attendanceList.appendChild(li);
-    });
+  // Handle feedback form submission
+  const feedbackForm = document.getElementById("feedbackForm");
+  feedbackForm.addEventListener("submit", function(e) {
+    e.preventDefault();
+    const subject = document.getElementById("feedbackSubject").value.trim();
+    const message = document.getElementById("feedbackMessage").value.trim();
+    if(subject && message){
+      studentData.feedbackResponses.push({subject, message, from: "Pending"});
+      renderFeedback();
+      feedbackForm.reset();
+      alert("Feedback submitted successfully!");
+    }
+  });
 
-    // Populate notes
-    const notesList = document.getElementById("notesList");
-    studentData.notes.forEach(n => {
-      const li = document.createElement("li");
-      li.textContent = n;
-      notesList.appendChild(li);
-    });
+  // Logout
+  function logout() {
+    alert("Logging out...");
+    window.location.href = "index.html";
+  }
+</script>
 
-    // Populate tests/assignments
-    const testsList = document.getElementById("testsList");
-    studentData.tests.forEach(t => {
-      const li = document.createElement("li");
-      li.textContent = t;
-      testsList.appendChild(li);
-    });
+<!-- === Moving Background Animation Script === -->
+<script>
+(() => {
+  const canvas = document.getElementById('bg-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d', { alpha: true });
+  let width = canvas.width = window.innerWidth;
+  let height = canvas.height = window.innerHeight;
+  const baseCount = Math.round((width * height) / 60000);
+  let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
+  if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
+  const particles = [];
+  function rand(min, max) { return Math.random() * (max - min) + min; }
 
-    // Populate notices
-    const noticesList = document.getElementById("noticesList");
-    studentData.notices.forEach(n => {
-      const li = document.createElement("li");
-      li.textContent = n;
-      noticesList.appendChild(li);
-    });
-
-    // Tab switching
-    const tabs = document.querySelectorAll(".tab");
-    const tabContents = document.querySelectorAll(".tab-content");
-    tabs.forEach(tab => {
-      tab.addEventListener("click", () => {
-        tabs.forEach(t => t.classList.remove("active"));
-        tab.classList.add("active");
-        const target = tab.dataset.tab;
-        tabContents.forEach(tc => {
-          tc.classList.remove("active");
-          if(tc.id === target) tc.classList.add("active");
-        });
+  function initParticles() {
+    particles.length = 0;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const size = rand(1, 3.2);
+      particles.push({
+        x: rand(0, width),
+        y: rand(0, height),
+        vx: rand(-0.12, 0.12),
+        vy: rand(-0.02, 0.6),
+        size,
+        alpha: rand(0.06, 0.22),
+        hue: rand(200, 240)
       });
-    });
-
-    // Logout
-    function logout() {
-      alert("Logging out...");
-      window.location.href = "index.html";
     }
+  }
 
-    // --- Simple Chatbot Demo ---
-    function sendMessage() {
-      const input = document.getElementById("chatInput");
-      const messages = document.getElementById("chatMessages");
-      if(input.value.trim() === "") return;
-      const userMsg = document.createElement("div");
-      userMsg.style.textAlign = "right";
-      userMsg.textContent = "You: " + input.value;
-      messages.appendChild(userMsg);
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    initParticles();
+  }
 
-      // Dummy bot response
-      const botMsg = document.createElement("div");
-      botMsg.textContent = "Bot: " + "I received: " + input.value;
-      messages.appendChild(botMsg);
+  window.addEventListener('resize', () => {
+    clearTimeout(window._bgResizeTimer);
+    window._bgResizeTimer = setTimeout(resize, 120);
+  });
 
-      messages.scrollTop = messages.scrollHeight;
-      input.value = "";
-    }
-  </script>
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y -= p.vy * 0.3;
+      if (p.x < -50) p.x = width + 50;
+      if (p.x > width + 50) p.x = -50;
+      if (p.y < -50) p.y = height + 50;
+      if (p.y > height + 50) p.y = -50;
 
-  <!-- Moving background animation -->
-  <script>
-  (() => {
-    const canvas = document.getElementById('bg-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: true });
-    let width = canvas.width = window.innerWidth;
-    let height = canvas.height = window.innerHeight;
-    const baseCount = Math.round((width * height) / 60000);
-    let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
-    if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
-    const particles = [];
-    function rand(min, max) { return Math.random() * (max - min) + min; }
+      ctx.beginPath();
+      ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
 
-    function initParticles() {
-      particles.length = 0;
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const size = rand(1, 3.2);
-        particles.push({
-          x: rand(0, width),
-          y: rand(0, height),
-          vx: rand(-0.12, 0.12),
-          vy: rand(-0.02, 0.6),
-          size,
-          alpha: rand(0.06, 0.22),
-          hue: rand(200, 240)
-        });
-      }
-    }
-
-    function resize() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      initParticles();
-    }
-
-    window.addEventListener('resize', () => {
-      clearTimeout(window._bgResizeTimer);
-      window._bgResizeTimer = setTimeout(resize, 120);
-    });
-
-    function draw() {
-      ctx.clearRect(0, 0, width, height);
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y -= p.vy * 0.3;
-        if (p.x < -50) p.x = width + 50;
-        if (p.x > width + 50) p.x = -50;
-        if (p.y < -50) p.y = height + 50;
-        if (p.y > height + 50) p.y = -50;
-
-        ctx.beginPath();
-        ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-
-        for (let j = i + 1; j < particles.length && j < i + 6; j++) {
-          const p2 = particles[j];
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120) {
-            ctx.beginPath();
-            ctx.strokeStyle = `hsla(${(p.hue + p2.hue)/2}, 70%, 60%, ${Math.max(0,0.08 - dist/1500)})`;
-            ctx.lineWidth = 0.6;
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-          }
+      for (let j = i + 1; j < particles.length && j < i + 6; j++) {
+        const p2 = particles[j];
+        const dx = p.x - p2.x;
+        const dy = p.y - p2.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.strokeStyle = `hsla(${(p.hue + p2.hue)/2}, 70%, 60%, ${Math.max(0, 0.08 - dist/1500)})`;
+          ctx.lineWidth = 0.6;
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
         }
       }
-      window.requestAnimationFrame(draw);
     }
+    window.requestAnimationFrame(draw);
+  }
 
-    initParticles();
-    draw();
-  })();
-  </script>
+  initParticles();
+  draw();
+})();
+</script>
 </body>
 </html>
