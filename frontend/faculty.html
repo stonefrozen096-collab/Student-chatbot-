@@ -3,67 +3,414 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Faculty Portal</title>
+  <title>Faculty Dashboard</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/animation.css">
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    form { margin-bottom: 20px; }
-    input, button, textarea { padding: 8px; margin: 5px 0; width: 100%; }
-    button { cursor: pointer; }
+    body {
+      background: #f4f6f9;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      background: linear-gradient(120deg, #0f172a 0%, #0b1320 50%, #061026 100%);
+      opacity: 0.4;
+    }
+
+    .container {
+      position: relative;
+      z-index: 2;
+      max-width: 1000px;
+      margin: 60px auto;
+      padding: 20px;
+    }
+
+    .profile-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      padding: 25px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #8b5cf6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 28px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .profile-info h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #0f172a;
+    }
+
+    .profile-info p {
+      margin: 4px 0;
+      color: #475569;
+      font-size: 14px;
+    }
+
+    .badge-container {
+      margin-top: 10px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 12px;
+      margin: 3px;
+      font-size: 12px;
+      font-weight: 600;
+      animation: pop 0.3s ease forwards;
+      cursor: default;
+    }
+
+    .badge.admin { background-color: #e74c3c; color: #fff; }
+    .badge.moderator { background-color: #8b5cf6; color: #fff; }
+    .badge.tester { background-color: #f59e0b; color: #fff; }
+    .badge.faculty { background-color: #3b82f6; color: #fff; }
+    .badge.student { background-color: #2ecc71; color: #fff; }
+
+    @keyframes pop {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .section-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .section-card h3 {
+      margin-top: 0;
+      color: #2563eb;
+    }
+
+    .student-list, .notes-list, .attendance-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .student-list li, .notes-list li, .attendance-list li {
+      padding: 6px 0;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+      color: #334155;
+    }
+
+    .student-list li:last-child, .notes-list li:last-child, .attendance-list li:last-child { border-bottom: none; }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      outline: none;
+    }
+
+    button.primary-btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #4f46e5, #3b82f6);
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .logout-btn {
+      padding: 8px 15px;
+      border: none;
+      background: #ef4444;
+      color: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      float: right;
+      font-weight: bold;
+    }
+
   </style>
 </head>
 <body>
-  <h1>Faculty Portal</h1>
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
 
-  <!-- Faculty Login -->
-  <form id="facultyLoginForm">
-    <h2>Login</h2>
-    <input type="text" id="facultyUsername" placeholder="Username" required>
-    <input type="password" id="facultyPassword" placeholder="Password" required>
-    <button type="submit">Login</button>
-  </form>
+<div class="container">
+  <!-- Profile Card -->
+  <div class="profile-card">
+    <div class="profile-avatar" id="facultyAvatar">F</div>
+    <div class="profile-info">
+      <h2 id="facultyName">Faculty Name</h2>
+      <p><strong>Email:</strong> <span id="facultyEmail">faculty@example.com</span></p>
+      <div class="badge-container" id="facultyBadgeContainer">
+        <!-- Badges populate here -->
+      </div>
+    </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
 
-  <!-- Add Note for Student -->
-  <form id="addNoteForm">
-    <h2>Add Note for Student</h2>
-    <input type="text" id="noteRegno" placeholder="Student RegNo" required>
-    <textarea id="noteText" placeholder="Note content..." required></textarea>
-    <label><input type="checkbox" id="isPrivate"> Private</label>
-    <button type="submit">Add Note</button>
-  </form>
+  <!-- Assigned Students -->
+  <div class="section-card">
+    <h3>Assigned Students</h3>
+    <ul class="student-list" id="assignedStudents">
+      <!-- Populate assigned students -->
+    </ul>
+  </div>
 
-  <script type="module">
-    const BASE_URL = "https://feathers-26g1.onrender.com";
+  <!-- Attendance -->
+  <div class="section-card">
+    <h3>Attendance</h3>
+    <ul class="attendance-list" id="attendanceList">
+      <!-- Populate attendance data -->
+    </ul>
+    <div class="form-group">
+      <input type="text" id="attendanceStudent" placeholder="Student RegNo">
+      <select id="attendanceStatus">
+        <option value="Present">Present</option>
+        <option value="Absent">Absent</option>
+      </select>
+      <button class="primary-btn" onclick="markAttendance()">Mark Attendance</button>
+    </div>
+  </div>
+  <!-- Notes Section -->
+    <div class="section-card">
+      <h3>Notes</h3>
+      <div>
+        <textarea id="noteContent" placeholder="Write note here..." rows="3" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;"></textarea>
+        <select id="noteType" style="margin-top:8px;padding:6px;border-radius:6px;">
+          <option value="public">Public</option>
+          <option value="private">Private</option>
+        </select>
+        <button class="primary-btn" onclick="addNote()">Add Note</button>
+      </div>
+      <ul id="notesList" style="margin-top:10px;"></ul>
+    </div>
 
-    async function postData(endpoint="", data={}) {
-      const res = await fetch(`${BASE_URL}/api${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-      return res.json();
+    <!-- Assignments Section -->
+    <div class="section-card">
+      <h3>Assignments / Tests</h3>
+      <div>
+        <input type="text" id="assignmentTitle" placeholder="Title" style="width:100%;padding:8px;border-radius:8px;margin-bottom:6px;border:1px solid #ccc;">
+        <textarea id="assignmentDesc" placeholder="Description" rows="3" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ccc;"></textarea>
+        <button class="primary-btn" onclick="addAssignment()">Add</button>
+      </div>
+      <ul id="assignmentsList" style="margin-top:10px;"></ul>
+    </div>
+
+    <!-- Feedback Section -->
+    <div class="section-card">
+      <h3>Feedback</h3>
+      <textarea id="feedbackContent" placeholder="Write feedback..." rows="3" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;"></textarea>
+      <button class="primary-btn" onclick="sendFeedback()">Send Feedback</button>
+      <ul id="feedbackList" style="margin-top:10px;"></ul>
+    </div>
+
+  </div> <!-- End of container -->
+
+  <script>
+    // Example data
+    const facultyData = {
+      name: "Mr. John Doe",
+      email: "john.doe@example.com",
+      badges: ["faculty", "tester"],
+      assignedStudents: ["Hari Prasath", "Alice Smith", "Bob Lee"],
+      notes: [],
+      assignments: [],
+      feedbacks: []
+    };
+
+    // Populate profile and badges
+    document.getElementById("facultyName").textContent = facultyData.name;
+    document.getElementById("facultyEmail").textContent = facultyData.email;
+    const badgeContainer = document.getElementById("badgeContainer");
+    facultyData.badges.forEach(b => {
+      const span = document.createElement("span");
+      span.className = `badge ${b}`;
+      span.textContent = b.toUpperCase();
+      badgeContainer.appendChild(span);
+    });
+
+    // Populate assigned students
+    const studentList = document.getElementById("assignedStudents");
+    facultyData.assignedStudents.forEach(s => {
+      const li = document.createElement("li");
+      li.textContent = s;
+      studentList.appendChild(li);
+    });
+
+    // Notes functions
+    function addNote() {
+      const content = document.getElementById("noteContent").value.trim();
+      const type = document.getElementById("noteType").value;
+      if (!content) return alert("Note cannot be empty!");
+      facultyData.notes.push({ content, type, date: new Date().toLocaleString() });
+      renderNotes();
+      document.getElementById("noteContent").value = '';
     }
 
-    // Faculty Login
-    const facultyLoginForm = document.getElementById("facultyLoginForm");
-    facultyLoginForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      const username = document.getElementById("facultyUsername").value;
-      const password = document.getElementById("facultyPassword").value;
-      const res = await postData("/faculty/login", { username, password });
-      alert(res.msg);
-    });
+    function renderNotes() {
+      const notesList = document.getElementById("notesList");
+      notesList.innerHTML = '';
+      facultyData.notes.forEach(n => {
+        const li = document.createElement("li");
+        li.textContent = `[${n.type.toUpperCase()}] ${n.content} (${n.date})`;
+        notesList.appendChild(li);
+      });
+    }
 
-    // Add Note
-    const addNoteForm = document.getElementById("addNoteForm");
-    addNoteForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      const faculty = document.getElementById("facultyUsername").value;
-      const regno = document.getElementById("noteRegno").value;
-      const note = document.getElementById("noteText").value;
-      const isPrivate = document.getElementById("isPrivate").checked;
-      const res = await postData("/faculty/add-note", { faculty, regno, note, isPrivate });
-      alert(res.msg);
-    });
+    // Assignments functions
+    function addAssignment() {
+      const title = document.getElementById("assignmentTitle").value.trim();
+      const desc = document.getElementById("assignmentDesc").value.trim();
+      if (!title || !desc) return alert("Title and description required!");
+      facultyData.assignments.push({ title, desc, date: new Date().toLocaleString() });
+      renderAssignments();
+      document.getElementById("assignmentTitle").value = '';
+      document.getElementById("assignmentDesc").value = '';
+    }
+
+    function renderAssignments() {
+      const assignmentsList = document.getElementById("assignmentsList");
+      assignmentsList.innerHTML = '';
+      facultyData.assignments.forEach(a => {
+        const li = document.createElement("li");
+        li.textContent = `${a.title} - ${a.desc} (${a.date})`;
+        assignmentsList.appendChild(li);
+      });
+    }
+
+    // Feedback functions
+    function sendFeedback() {
+      const content = document.getElementById("feedbackContent").value.trim();
+      if (!content) return alert("Feedback cannot be empty!");
+      facultyData.feedbacks.push({ content, date: new Date().toLocaleString() });
+      renderFeedbacks();
+      document.getElementById("feedbackContent").value = '';
+    }
+
+    function renderFeedbacks() {
+      const feedbackList = document.getElementById("feedbackList");
+      feedbackList.innerHTML = '';
+      facultyData.feedbacks.forEach(f => {
+        const li = document.createElement("li");
+        li.textContent = `${f.content} (${f.date})`;
+        feedbackList.appendChild(li);
+      });
+    }
+
+    function logout() {
+      alert("Logging out...");
+      window.location.href = "index.html";
+    }
   </script>
+
+  <!-- Moving background animation -->
+  <script>
+    (() => {
+      const canvas = document.getElementById('bg-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d', { alpha: true });
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+      const baseCount = Math.round((width * height) / 60000);
+      let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
+      if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
+      const particles = [];
+      function rand(min, max) { return Math.random() * (max - min) + min; }
+
+      function initParticles() {
+        particles.length = 0;
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          const size = rand(1, 3.2);
+          particles.push({
+            x: rand(0, width),
+            y: rand(0, height),
+            vx: rand(-0.12, 0.12),
+            vy: rand(-0.02, 0.6),
+            size,
+            alpha: rand(0.06, 0.22),
+            hue: rand(200, 240)
+          });
+        }
+      }
+
+      function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        initParticles();
+      }
+
+      window.addEventListener('resize', () => {
+        clearTimeout(window._bgResizeTimer);
+        window._bgResizeTimer = setTimeout(resize, 120);
+      });
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y -= p.vy * 0.3;
+          if (p.x < -50) p.x = width + 50;
+          if (p.x > width + 50) p.x = -50;
+          if (p.y < -50) p.y = height + 50;
+          if (p.y > height + 50) p.y = -50;
+
+          ctx.beginPath();
+          ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+
+          for (let j = i + 1; j < particles.length && j < i + 6; j++) {
+            const p2 = particles[j];
+            const dx = p.x - p2.x;
+            const dy = p.y - p2.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist < 120){
+              ctx.beginPath();
+              ctx.strokeStyle = `hsla(${(p.hue+p2.hue)/2},70%,60%,${Math.max(0,0.08-dist/1500)})`;
+              ctx.lineWidth = 0.6;
+              ctx.moveTo(p.x,p.y);
+              ctx.lineTo(p2.x,p2.y);
+              ctx.stroke();
+            }
+          }
+        }
+        window.requestAnimationFrame(draw);
+      }
+
+      initParticles();
+      draw();
+    })();
+  </script>
+
 </body>
 </html>
