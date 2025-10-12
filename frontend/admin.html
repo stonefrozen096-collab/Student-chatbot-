@@ -230,6 +230,48 @@
         <button type="submit" class="primary-btn">Assign Badge</button>
       </form>
     </div>
+
+    <!-- Delete Management Section -->
+    <div class="section-card">
+      <h3>Delete Options</h3>
+      
+      <!-- Delete User -->
+      <form id="deleteUserForm">
+        <label for="deleteUserSelect">Select User to Delete:</label>
+        <select id="deleteUserSelect">
+          <!-- Populated dynamically -->
+        </select>
+        <button type="submit" class="primary-btn" style="background:#ef4444">Delete User</button>
+      </form>
+      <hr>
+
+      <!-- Delete Badge -->
+      <form id="deleteBadgeForm">
+        <label for="deleteBadgeUser">Select User:</label>
+        <select id="deleteBadgeUser">
+          <!-- Populated dynamically -->
+        </select>
+
+        <label for="deleteBadgeRole">Select Badge to Remove:</label>
+        <select id="deleteBadgeRole">
+          <option value="admin">Admin</option>
+          <option value="moderator">Moderator</option>
+          <option value="tester">Tester</option>
+          <option value="faculty">Faculty</option>
+          <option value="student">Student</option>
+        </select>
+        <button type="submit" class="primary-btn" style="background:#f59e0b">Remove Badge</button>
+      </form>
+      <hr>
+
+      <!-- Delete Batch -->
+      <form id="deleteBatchForm">
+        <label for="batchName">Batch Name / Prefix (e.g., DME123):</label>
+        <input type="text" id="batchName" placeholder="Enter batch prefix to delete">
+        <button type="submit" class="primary-btn" style="background:#9b111e">Delete Batch</button>
+      </form>
+    </div>
+
     <!-- Academic Data Management -->
     <div class="section-card">
       <h3>Academic Data</h3>
@@ -292,167 +334,222 @@
   </div> <!-- end container -->
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    // Sample Data
-    const users = [
-      { role: 'student', username: 'DME123', badges: ['student'] },
-      { role: 'faculty', username: 'johndoe@example.com', badges: ['faculty'] },
-      { role: 'moderator', username: 'mod1@example.com', badges: ['moderator'] },
-    ];
+<script>
+  // --- Sample Data ---
+  const users = [
+    { role: 'student', username: 'DME123', badges: ['student'] },
+    { role: 'faculty', username: 'johndoe@example.com', badges: ['faculty'] },
+    { role: 'moderator', username: 'mod1@example.com', badges: ['moderator'] },
+  ];
 
-    // Populate User List
-    const userList = document.getElementById('userList');
-    function refreshUserList() {
-      userList.innerHTML = '';
-      users.forEach(u => {
-        const div = document.createElement('div');
-        div.textContent = `${u.username} (${u.role.toUpperCase()}) - Badges: ${u.badges.join(', ')}`;
-        userList.appendChild(div);
-      });
-    }
-    refreshUserList();
+  // --- Populate User List ---
+  const userList = document.getElementById('userList');
+  const deleteUserSelect = document.getElementById('deleteUserSelect');
+  const badgeUserSelect = document.getElementById('badgeUser');
+  const deleteBadgeUserSelect = document.getElementById('deleteBadgeUser');
 
-    // Populate Badge User Select
-    const badgeUserSelect = document.getElementById('badgeUser');
+  function refreshUserList() {
+    userList.innerHTML = '';
+    deleteUserSelect.innerHTML = '';
+    badgeUserSelect.innerHTML = '';
+    deleteBadgeUserSelect.innerHTML = '';
     users.forEach(u => {
-      const opt = document.createElement('option');
-      opt.value = u.username;
-      opt.textContent = `${u.username} (${u.role})`;
-      badgeUserSelect.appendChild(opt);
-    });
+      const div = document.createElement('div');
+      div.textContent = `${u.username} (${u.role.toUpperCase()}) - Badges: ${u.badges.join(', ')}`;
+      userList.appendChild(div);
 
-    // Form Handlers
-    document.getElementById('createUserForm').addEventListener('submit', e => {
-      e.preventDefault();
-      const role = document.getElementById('role').value;
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
+      const opt1 = document.createElement('option');
+      opt1.value = u.username;
+      opt1.textContent = `${u.username} (${u.role})`;
+      deleteUserSelect.appendChild(opt1);
+
+      const opt2 = opt1.cloneNode(true);
+      badgeUserSelect.appendChild(opt2);
+
+      const opt3 = opt1.cloneNode(true);
+      deleteBadgeUserSelect.appendChild(opt3);
+    });
+  }
+  refreshUserList();
+
+  // --- Create User ---
+  document.getElementById('createUserForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const role = document.getElementById('role').value;
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    if (!users.find(u => u.username === username)) {
       users.push({ role, username, badges: [role] });
       refreshUserList();
       alert('User created successfully!');
-    });
+    } else {
+      alert('User already exists!');
+    }
+  });
 
-    document.getElementById('badgeForm').addEventListener('submit', e => {
-      e.preventDefault();
-      const selectedUser = document.getElementById('badgeUser').value;
-      const badge = document.getElementById('badgeRole').value;
-      const user = users.find(u => u.username === selectedUser);
-      if (user && !user.badges.includes(badge)) user.badges.push(badge);
+  // --- Assign Badge ---
+  document.getElementById('badgeForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const selectedUser = badgeUserSelect.value;
+    const badge = document.getElementById('badgeRole').value;
+    const user = users.find(u => u.username === selectedUser);
+    if (user && !user.badges.includes(badge)) user.badges.push(badge);
+    refreshUserList();
+    alert('Badge assigned successfully!');
+  });
+
+  // --- Delete User ---
+  document.getElementById('deleteUserForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const username = deleteUserSelect.value;
+    const index = users.findIndex(u => u.username === username);
+    if (index !== -1) {
+      users.splice(index, 1);
       refreshUserList();
-      alert('Badge assigned successfully!');
-    });
-
-    // Logout
-    function logout() {
-      alert("Logging out...");
-      window.location.href = "index.html";
+      alert('User deleted successfully!');
     }
+  });
 
-    // Charts
-    const attendanceChart = new Chart(document.getElementById('attendanceChart'), {
-      type: 'pie',
-      data: {
-        labels: ['Maths', 'Physics', 'Mechanics'],
-        datasets: [{ data: [95, 90, 92], backgroundColor: ['#4f46e5','#3b82f6','#16a34a'] }]
-      }
-    });
-
-    const testChart = new Chart(document.getElementById('testChart'), {
-      type: 'bar',
-      data: {
-        labels: ['Test1', 'Test2', 'Test3'],
-        datasets: [{ label: 'Scores', data: [80, 90, 75], backgroundColor: '#2563eb' }]
-      }
-    });
-
-    const completionChart = new Chart(document.getElementById('completionChart'), {
-      type: 'doughnut',
-      data: {
-        labels: ['Completed', 'Pending'],
-        datasets: [{ data: [12, 3], backgroundColor: ['#10b981','#f59e0b'] }]
-      }
-    });
-
-  </script>
-
-  <!-- Moving Background Animation Script -->
-  <script>
-  (() => {
-    const canvas = document.getElementById('bg-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: true });
-    let width = canvas.width = window.innerWidth;
-    let height = canvas.height = window.innerHeight;
-    const baseCount = Math.round((width * height) / 60000);
-    let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
-    if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
-    const particles = [];
-    function rand(min, max) { return Math.random() * (max - min) + min; }
-
-    function initParticles() {
-      particles.length = 0;
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const size = rand(1, 3.2);
-        particles.push({
-          x: rand(0, width),
-          y: rand(0, height),
-          vx: rand(-0.12, 0.12),
-          vy: rand(-0.02, 0.6),
-          size,
-          alpha: rand(0.06, 0.22),
-          hue: rand(200, 240)
-        });
-      }
+  // --- Delete Badge ---
+  document.getElementById('deleteBadgeForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const username = deleteBadgeUserSelect.value;
+    const badge = document.getElementById('deleteBadgeRole').value;
+    const user = users.find(u => u.username === username);
+    if (user) {
+      user.badges = user.badges.filter(b => b !== badge);
+      refreshUserList();
+      alert('Badge removed successfully!');
     }
+  });
 
-    function resize() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      initParticles();
+  // --- Delete Batch ---
+  document.getElementById('deleteBatchForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const batchPrefix = document.getElementById('batchName').value;
+    const removedUsers = users.filter(u => u.username.startsWith(batchPrefix));
+    if (removedUsers.length) {
+      for (const u of removedUsers) {
+        const idx = users.findIndex(user => user.username === u.username);
+        if (idx !== -1) users.splice(idx,1);
+      }
+      refreshUserList();
+      alert(`Deleted ${removedUsers.length} users from batch "${batchPrefix}"`);
+    } else {
+      alert('No users found for this batch.');
     }
+  });
 
-    window.addEventListener('resize', () => {
-      clearTimeout(window._bgResizeTimer);
-      window._bgResizeTimer = setTimeout(resize, 120);
-    });
+  // --- Logout ---
+  function logout() {
+    alert("Logging out...");
+    window.location.href = "index.html";
+  }
 
-    function draw() {
-      ctx.clearRect(0, 0, width, height);
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y -= p.vy * 0.3;
-        if (p.x < -50) p.x = width + 50;
-        if (p.x > width + 50) p.x = -50;
-        if (p.y < -50) p.y = height + 50;
-        if (p.y > height + 50) p.y = -50;
+  // --- Charts ---
+  const attendanceChart = new Chart(document.getElementById('attendanceChart'), {
+    type: 'pie',
+    data: {
+      labels: ['Maths', 'Physics', 'Mechanics'],
+      datasets: [{ data: [95, 90, 92], backgroundColor: ['#4f46e5','#3b82f6','#16a34a'] }]
+    }
+  });
 
-        ctx.beginPath();
-        ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
+  const testChart = new Chart(document.getElementById('testChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Test1', 'Test2', 'Test3'],
+      datasets: [{ label: 'Scores', data: [80, 90, 75], backgroundColor: '#2563eb' }]
+    }
+  });
 
-        for (let j = i + 1; j < particles.length && j < i + 6; j++) {
-          const p2 = particles[j];
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120) {
-            ctx.beginPath();
-            ctx.strokeStyle = `hsla(${(p.hue + p2.hue)/2}, 70%, 60%, ${Math.max(0, 0.08 - dist/1500)})`;
-            ctx.lineWidth = 0.6;
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-          }
+  const completionChart = new Chart(document.getElementById('completionChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Completed', 'Pending'],
+      datasets: [{ data: [12, 3], backgroundColor: ['#10b981','#f59e0b'] }]
+    }
+  });
+</script>
+
+<!-- Moving Background Animation Script -->
+<script>
+(() => {
+  const canvas = document.getElementById('bg-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d', { alpha: true });
+  let width = canvas.width = window.innerWidth;
+  let height = canvas.height = window.innerHeight;
+  const baseCount = Math.round((width * height) / 60000);
+  let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
+  if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
+  const particles = [];
+  function rand(min, max) { return Math.random() * (max - min) + min; }
+
+  function initParticles() {
+    particles.length = 0;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const size = rand(1, 3.2);
+      particles.push({
+        x: rand(0, width),
+        y: rand(0, height),
+        vx: rand(-0.12, 0.12),
+        vy: rand(-0.02, 0.6),
+        size,
+        alpha: rand(0.06, 0.22),
+        hue: rand(200, 240)
+      });
+    }
+  }
+
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    initParticles();
+  }
+
+  window.addEventListener('resize', () => {
+    clearTimeout(window._bgResizeTimer);
+    window._bgResizeTimer = setTimeout(resize, 120);
+  });
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y -= p.vy * 0.3;
+      if (p.x < -50) p.x = width + 50;
+      if (p.x > width + 50) p.x = -50;
+      if (p.y < -50) p.y = height + 50;
+      if (p.y > height + 50) p.y = -50;
+
+      ctx.beginPath();
+      ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+
+      for (let j = i + 1; j < particles.length && j < i + 6; j++) {
+        const p2 = particles[j];
+        const dx = p.x - p2.x;
+        const dy = p.y - p2.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.strokeStyle = `hsla(${(p.hue + p2.hue)/2}, 70%, 60%, ${Math.max(0, 0.08 - dist/1500)})`;
+          ctx.lineWidth = 0.6;
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
         }
       }
-      window.requestAnimationFrame(draw);
     }
+    window.requestAnimationFrame(draw);
+  }
 
-    initParticles();
-    draw();
-  })();
-  </script>
+  initParticles();
+  draw();
+})();
+</script>
 </body>
 </html>
