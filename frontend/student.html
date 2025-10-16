@@ -1,453 +1,235 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Dashboard</title>
-  <link rel="stylesheet" href="css/common.css">
-  <link rel="stylesheet" href="css/animation.css">
-  <style>
-    body {
-      background: #f4f6f9;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-
-    /* === Moving background canvas === */
-    #bg-canvas {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 0;
-      pointer-events: none;
-      background: linear-gradient(120deg, #0f172a 0%, #0b1320 50%, #061026 100%);
-      opacity: 0.4;
-    }
-
-    .container {
-      position: relative;
-      z-index: 2;
-      max-width: 900px;
-      margin: 60px auto;
-      padding: 20px;
-    }
-
-    .profile-card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      padding: 25px;
-      display: flex;
-      gap: 20px;
-      align-items: center;
-      margin-bottom: 25px;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .profile-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-
-    .profile-avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: #4f46e5;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 28px;
-      font-weight: bold;
-      flex-shrink: 0;
-    }
-
-    .profile-info h2 {
-      margin: 0;
-      font-size: 22px;
-      color: #0f172a;
-    }
-
-    .profile-info p {
-      margin: 4px 0;
-      color: #475569;
-      font-size: 14px;
-    }
-
-    .badge-container {
-      margin-top: 10px;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 5px 12px;
-      border-radius: 12px;
-      margin: 3px;
-      font-size: 12px;
-      font-weight: 600;
-      animation: pop 0.3s ease forwards;
-      cursor: default;
-    }
-
-    .badge.admin { background-color: #e74c3c; color: #fff; }
-    .badge.moderator { background-color: #8b5cf6; color: #fff; }
-    .badge.tester { background-color: #f59e0b; color: #fff; }
-    .badge.faculty { background-color: #3b82f6; color: #fff; }
-    .badge.student { background-color: #2ecc71; color: #fff; }
-
-    @keyframes pop {
-      0% { transform: scale(0.8); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-
-    .section-card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      padding: 20px;
-      margin-bottom: 20px;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .section-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-    }
-
-    .section-card h3 {
-      margin-top: 0;
-      color: #2563eb;
-    }
-
-    .faculty-list, .attendance-list, .notes-list, .assignments-list, .notices-list, .feedback-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .faculty-list li, .attendance-list li, .notes-list li, .assignments-list li, .notices-list li, .feedback-list li {
-      padding: 6px 0;
-      border-bottom: 1px solid #e5e7eb;
-      font-size: 14px;
-      color: #334155;
-    }
-
-    .faculty-list li:last-child, .attendance-list li:last-child, .notes-list li:last-child, .assignments-list li:last-child, .notices-list li:last-child, .feedback-list li:last-child { border-bottom: none; }
-
-    .logout-btn {
-      padding: 8px 15px;
-      border: none;
-      background: #ef4444;
-      color: #fff;
-      border-radius: 8px;
-      cursor: pointer;
-      float: right;
-      font-weight: bold;
-    }
-
-    input, textarea {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      border: 1px solid #d1d5db;
-      outline: none;
-    }
-
-    textarea { resize: vertical; }
-    .primary-btn {
-      padding: 8px 15px;
-      border: none;
-      border-radius: 8px;
-      background: #2563eb;
-      color: #fff;
-      cursor: pointer;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dashboard</title>
+<link rel="stylesheet" href="css/common.css">
+<style>
+  body { font-family: "Segoe UI", sans-serif; background:#f4f6f9; margin:0; padding:0; }
+  .container { max-width:1000px; margin:20px auto; padding:15px; }
+  .section-card { background:#fff; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 4px 12px rgba(0,0,0,0.08);}
+  h3 { color:#2563eb; margin-top:0; }
+  input, textarea { width:100%; margin:5px 0 15px; padding:10px; border-radius:8px; border:1px solid #d1d5db; }
+  button.primary-btn { padding:10px 15px; border:none; border-radius:8px; background:#2563eb; color:#fff; cursor:pointer; }
+  table { width:100%; border-collapse:collapse; margin-top:10px; }
+  th, td { padding:8px; border-bottom:1px solid #e5e7eb; }
+  #chatResponses div { margin:3px 0; }
+</style>
 </head>
 <body>
-  <canvas id="bg-canvas" aria-hidden="true"></canvas>
-
-  <div class="container">
-    <!-- Profile Card -->
-    <div class="profile-card">
-      <div class="profile-avatar" id="studentAvatar">S</div>
-      <div class="profile-info">
-        <h2 id="studentName">Student Name</h2>
-        <p><strong>Reg No:</strong> <span id="studentReg">12345</span></p>
-        <p><strong>Email:</strong> <span id="studentEmail">student@example.com</span></p>
-        <div class="badge-container" id="badgeContainer">
-          <!-- Badges will populate here -->
-        </div>
-      </div>
-      <button class="logout-btn" onclick="logout()">Logout</button>
-    </div>
-
-    <!-- Assigned Faculty -->
-    <div class="section-card">
-      <h3>Assigned Faculty</h3>
-      <ul class="faculty-list" id="assignedFaculty">
-        <!-- Assigned faculty populate dynamically -->
-      </ul>
-    </div>
-
-    <!-- Attendance Summary -->
-    <div class="section-card">
-      <h3>Attendance Summary</h3>
-      <ul class="attendance-list" id="attendanceList">
-        <!-- Attendance data populate dynamically -->
-      </ul>
-    </div>
-
-    <!-- Notes Section -->
-    <div class="section-card">
-      <h3>Notes</h3>
-      <ul class="notes-list" id="notesList">
-        <!-- Notes populate dynamically -->
-      </ul>
-    </div>
-    <!-- Tests / Assignments -->
-    <div class="section-card">
-      <h3>Tests / Assignments</h3>
-      <ul class="assignments-list" id="assignmentsList">
-        <!-- Assignments populate dynamically -->
-      </ul>
-    </div>
-
-    <!-- Notices -->
-    <div class="section-card">
-      <h3>Notices</h3>
-      <ul class="notices-list" id="noticesList">
-        <!-- Notices populate dynamically -->
-      </ul>
-    </div>
-
-    <!-- Feedback -->
-    <div class="section-card">
-      <h3>Submit Feedback</h3>
-      <input type="text" id="feedbackSubject" placeholder="Subject">
-      <textarea id="feedbackContent" rows="3" placeholder="Write your feedback here..."></textarea>
-      <button class="primary-btn" onclick="submitFeedback()">Send Feedback</button>
-      <h4>Feedback Responses</h4>
-      <ul class="feedback-list" id="feedbackResponses">
-        <!-- Responses populate dynamically -->
-      </ul>
-    </div>
-
-    <!-- Chatbot -->
-    <div class="section-card">
-      <h3>Chatbot Assistant</h3>
-      <div id="chatbotContainer">
-        <div id="chatbotMessages" style="max-height:200px; overflow-y:auto; border:1px solid #d1d5db; padding:8px; border-radius:6px; margin-bottom:8px;"></div>
-        <input type="text" id="chatbotInput" placeholder="Ask me anything...">
-        <button class="primary-btn" onclick="sendChat()">Send</button>
-      </div>
-    </div>
-
+<div class="container">
+  <!-- Student Info -->
+  <div class="section-card">
+    <h3>Student Info</h3>
+    <p><strong>Name:</strong> <span id="studentName">Hari Prasath</span></p>
+    <p><strong>Reg No:</strong> <span id="studentReg">DME123</span></p>
+    <p><strong>Email:</strong> <span id="studentEmail">hari@example.com</span></p>
+    <p><strong>Role:</strong> STUDENT/TESTER</p>
+    <button class="primary-btn" onclick="logout()">Logout</button>
   </div>
 
-  <script>
-    // Sample data
-    const studentData = {
-      name: "Hari Prasath",
-      regno: "DME123",
-      email: "hari@example.com",
-      badges: ["student", "tester"],
-      assignedFaculty: ["Mr. John Doe", "Ms. Jane Smith"],
-      attendance: ["Maths - 95%", "Physics - 90%", "Mechanics - 92%"],
-      notes: ["Chapter 5 summary by Mr. John Doe", "Lab instructions by Ms. Jane Smith"],
-      assignments: ["Math Assignment 3", "Physics Lab Report"],
-      notices: ["Extra classes on Friday", "Submission deadline extended"],
-      feedbackResponses: ["Request for extra classes (Mr. John Doe): Scheduled on Friday",
-                          "Assignment submission issue (Ms. Jane Smith): Received late submission"]
-    };
+  <!-- Assigned Faculty -->
+  <div class="section-card">
+    <h3>Assigned Faculty</h3>
+    <ul id="assignedFaculty">
+      <li>Mr. John Doe</li>
+      <li>Ms. Jane Smith</li>
+    </ul>
+  </div>
 
-    // Populate profile
-    document.getElementById("studentName").textContent = studentData.name;
-    document.getElementById("studentReg").textContent = studentData.regno;
-    document.getElementById("studentEmail").textContent = studentData.email;
+  <!-- Attendance Summary -->
+  <div class="section-card">
+    <h3>Attendance Summary</h3>
+    <div id="attendanceSummary"></div>
+    <canvas id="attendanceChart" width="400" height="200"></canvas>
+  </div>
 
-    // Populate badges
-    const badgeContainer = document.getElementById("badgeContainer");
-    studentData.badges.forEach(b => {
-      const span = document.createElement("span");
-      span.className = `badge ${b}`;
-      span.textContent = b.toUpperCase();
-      badgeContainer.appendChild(span);
-    });
+  <!-- Notes -->
+  <div class="section-card">
+    <h3>Notes</h3>
+    <div id="notesList"></div>
+  </div>
 
-    // Populate assigned faculty
-    const facultyList = document.getElementById("assignedFaculty");
-    studentData.assignedFaculty.forEach(f => {
-      const li = document.createElement("li");
-      li.textContent = f;
-      facultyList.appendChild(li);
-    });
+  <!-- Tests / Assignments -->
+  <div class="section-card">
+    <h3>Tests / Assignments</h3>
+    <div id="testList"></div>
+    <canvas id="testChart" width="400" height="200"></canvas>
+  </div>
 
-    // Populate attendance
-    const attendanceList = document.getElementById("attendanceList");
-    studentData.attendance.forEach(a => {
-      const li = document.createElement("li");
-      li.textContent = a;
-      attendanceList.appendChild(li);
-    });
+  <!-- Notices -->
+  <div class="section-card">
+    <h3>Notices</h3>
+    <div id="noticesList"></div>
+  </div>
 
-    // Populate notes
-    const notesList = document.getElementById("notesList");
-    studentData.notes.forEach(n => {
-      const li = document.createElement("li");
-      li.textContent = n;
-      notesList.appendChild(li);
-    });
+  <!-- Feedback -->
+  <div class="section-card">
+    <h3>Submit Feedback</h3>
+    <label for="feedbackSubject">Subject</label>
+    <input type="text" id="feedbackSubject">
+    <textarea id="feedbackText" rows="3" placeholder="Write your feedback here..."></textarea>
+    <button class="primary-btn" onclick="submitFeedback()">Send Feedback</button>
+    <div id="feedbackResponses"></div>
+  </div>
 
-    // Populate assignments
-    const assignmentsList = document.getElementById("assignmentsList");
-    studentData.assignments.forEach(a => {
-      const li = document.createElement("li");
-      li.textContent = a;
-      assignmentsList.appendChild(li);
-    });
+  <!-- Chatbot -->
+  <div class="section-card">
+    <h3>Chatbot Assistant</h3>
+    <textarea id="chatInput" placeholder="Ask me anything..."></textarea>
+    <button class="primary-btn" onclick="sendChat()">Send</button>
+    <div id="chatResponses"></div>
+  </div>
+</div>
 
-    // Populate notices
-    const noticesList = document.getElementById("noticesList");
-    studentData.notices.forEach(n => {
-      const li = document.createElement("li");
-      li.textContent = n;
-      noticesList.appendChild(li);
-    });
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+/* Sample real-time data simulation */
+let studentData = {
+  attendance: [
+    {subject:'Maths', percent:95},
+    {subject:'Physics', percent:90},
+    {subject:'Mechanics', percent:92}
+  ],
+  tests: [
+    {subject:'Maths', score:85},
+    {subject:'Physics', score:88},
+    {subject:'Mechanics', score:90}
+  ],
+  notes:[
+    "Chapter 5 summary by Mr. John Doe",
+    "Lab instructions by Ms. Jane Smith"
+  ],
+  notices:[
+    "Extra classes on Friday",
+    "Submission deadline extended"
+  ],
+  feedback:[{subject:'Extra classes', response:'Scheduled on Friday'}]
+};
 
-    // Populate feedback responses
-    const feedbackList = document.getElementById("feedbackResponses");
-    studentData.feedbackResponses.forEach(f => {
-      const li = document.createElement("li");
-      li.textContent = f;
-      feedbackList.appendChild(li);
-    });
+/* Render Attendance */
+const attendanceSummary = document.getElementById('attendanceSummary');
+const attendanceChart = new Chart(document.getElementById('attendanceChart'), {
+  type:'pie',
+  data:{labels:[], datasets:[{data:[], backgroundColor:[]}]}
+});
+function renderAttendance(){
+  attendanceSummary.innerHTML='';
+  studentData.attendance.forEach(a=>{
+    const div=document.createElement('div');
+    div.textContent=`${a.subject} - ${a.percent}%`;
+    attendanceSummary.appendChild(div);
+  });
+  attendanceChart.data.labels = studentData.attendance.map(a=>a.subject);
+  attendanceChart.data.datasets[0].data = studentData.attendance.map(a=>a.percent);
+  attendanceChart.data.datasets[0].backgroundColor = studentData.attendance.map((_,i)=>`hsl(${i*60%360},70%,50%)`);
+  attendanceChart.update();
+}
 
-    // Submit feedback
-    function submitFeedback() {
-      const subject = document.getElementById("feedbackSubject").value.trim();
-      const content = document.getElementById("feedbackContent").value.trim();
-      if(!subject || !content){
-        alert("Please enter subject and feedback");
-        return;
-      }
-      const feedbackStr = `${subject}: ${content}`;
-      const li = document.createElement("li");
-      li.textContent = feedbackStr;
-      feedbackList.appendChild(li);
-      document.getElementById("feedbackSubject").value = "";
-      document.getElementById("feedbackContent").value = "";
-      alert("Feedback submitted!");
-    }
+/* Render Tests */
+const testList = document.getElementById('testList');
+const testChart = new Chart(document.getElementById('testChart'), {
+  type:'bar',
+  data:{labels:[], datasets:[{label:'Scores', data:[], backgroundColor:'#2563eb'}]}
+});
+function renderTests(){
+  testList.innerHTML='';
+  studentData.tests.forEach(t=>{
+    const div=document.createElement('div');
+    div.textContent=`${t.subject} - ${t.score} marks`;
+    testList.appendChild(div);
+  });
+  testChart.data.labels = studentData.tests.map(t=>t.subject);
+  testChart.data.datasets[0].data = studentData.tests.map(t=>t.score);
+  testChart.update();
+}
 
-    // Logout
-    function logout() {
-      window.location.href = "index.html";
-    }
+/* Render Notes */
+const notesList = document.getElementById('notesList');
+function renderNotes(){
+  notesList.innerHTML='';
+  studentData.notes.forEach(n=>{
+    const div=document.createElement('div');
+    div.textContent=n;
+    notesList.appendChild(div);
+  });
+}
 
-    // --- Simple chatbot simulation ---
-    const chatbotMessages = document.getElementById("chatbotMessages");
-    function sendChat() {
-      const input = document.getElementById("chatbotInput");
-      const msg = input.value.trim();
-      if(!msg) return;
-      const userMsg = document.createElement("div");
-      userMsg.textContent = "You: " + msg;
-      chatbotMessages.appendChild(userMsg);
+/* Render Notices */
+const noticesList = document.getElementById('noticesList');
+function renderNotices(){
+  noticesList.innerHTML='';
+  studentData.notices.forEach(n=>{
+    const div=document.createElement('div');
+    div.textContent=n;
+    noticesList.appendChild(div);
+  });
+}
 
-      // Simulate bot reply
-      const botMsg = document.createElement("div");
-      botMsg.textContent = "Bot: I have received your query '" + msg + "'";
-      botMsg.style.color = "green";
-      chatbotMessages.appendChild(botMsg);
+/* Render Feedback */
+const feedbackResponses = document.getElementById('feedbackResponses');
+function renderFeedback(){
+  feedbackResponses.innerHTML='';
+  studentData.feedback.forEach(f=>{
+    const div=document.createElement('div');
+    div.textContent=`${f.subject}: ${f.response}`;
+    feedbackResponses.appendChild(div);
+  });
+}
 
-      input.value = "";
-      chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
-    }
-  </script>
+/* Feedback submission */
+function submitFeedback(){
+  const subj = document.getElementById('feedbackSubject').value;
+  const text = document.getElementById('feedbackText').value;
+  if(subj && text){
+    studentData.feedback.push({subject:subj, response:text});
+    renderFeedback();
+    document.getElementById('feedbackSubject').value='';
+    document.getElementById('feedbackText').value='';
+  }
+}
 
-  <!-- Moving background animation -->
-  <script>
-  (() => {
-    const canvas = document.getElementById('bg-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: true });
-    let width = canvas.width = window.innerWidth;
-    let height = canvas.height = window.innerHeight;
-    const baseCount = Math.round((width * height) / 60000);
-    let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
-    if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
-    const particles = [];
-    function rand(min, max) { return Math.random() * (max - min) + min; }
+/* Chatbot triggers */
+const chatbotTriggers = [
+  {trigger:'hello', response:'Hello 👋, how can I help you?'},
+  {trigger:'attendance', response:'You can check your attendance summary above.'},
+  {trigger:'test', response:'Your test scores are displayed in the Tests / Assignments section.'}
+];
 
-    function initParticles() {
-      particles.length = 0;
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const size = rand(1, 3.2);
-        particles.push({
-          x: rand(0, width),
-          y: rand(0, height),
-          vx: rand(-0.12, 0.12),
-          vy: rand(-0.02, 0.6),
-          size,
-          alpha: rand(0.06, 0.22),
-          hue: rand(200, 240)
-        });
-      }
-    }
+function sendChat(){
+  const input=document.getElementById('chatInput').value.trim().toLowerCase();
+  if(!input) return;
+  const chatResponses=document.getElementById('chatResponses');
+  const userDiv=document.createElement('div');
+  userDiv.textContent='You: '+input;
+  userDiv.style.fontWeight='bold';
+  chatResponses.appendChild(userDiv);
+  const triggerObj=chatbotTriggers.find(t=>input.includes(t.trigger.toLowerCase()));
+  const botDiv=document.createElement('div');
+  botDiv.textContent='Bot: '+(triggerObj?triggerObj.response:'I didn\'t understand that. 🤔');
+  botDiv.style.color='#2563eb';
+  chatResponses.appendChild(botDiv);
+  document.getElementById('chatInput').value='';
+  chatResponses.scrollTop=chatResponses.scrollHeight;
+}
 
-    function resize() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      initParticles();
-    }
+/* Logout */
+function logout(){ alert('Logging out...'); window.location.href='index.html'; }
 
-    window.addEventListener('resize', () => {
-      clearTimeout(window._bgResizeTimer);
-      window._bgResizeTimer = setTimeout(resize, 120);
-    });
+/* Initial render */
+renderAttendance();
+renderTests();
+renderNotes();
+renderNotices();
+renderFeedback();
 
-    function draw() {
-      ctx.clearRect(0, 0, width, height);
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y -= p.vy * 0.3;
-        if (p.x < -50) p.x = width + 50;
-        if (p.x > width + 50) p.x = -50;
-        if (p.y < -50) p.y = height + 50;
-        if (p.y > height + 50) p.y = -50;
-
-        ctx.beginPath();
-        ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-
-        for (let j = i + 1; j < particles.length && j < i + 6; j++) {
-          const p2 = particles[j];
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120) {
-            ctx.beginPath();
-            ctx.strokeStyle = `hsla(${(p.hue + p2.hue) / 2}, 70%, 60%, ${Math.max(0, 0.08 - dist/1500)})`;
-            ctx.lineWidth = 0.6;
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-          }
-        }
-      }
-      window.requestAnimationFrame(draw);
-    }
-
-    initParticles();
-    draw();
-  })();
-  </script>
+/* Simulate real-time updates (Demo only) */
+setInterval(()=>{
+  // Example: Admin updated Math attendance
+  studentData.attendance[0].percent = Math.min(studentData.attendance[0].percent +1,100);
+  renderAttendance();
+},10000); // every 10s
+</script>
 </body>
 </html>
