@@ -192,24 +192,29 @@ function logout(){ alert("Logging out..."); window.location.href="index.html";}
 
 // Test / MCQ
 function addQuestion() {
-  const container = document.getElementById("questionsContainer");
-  const qDiv = document.createElement("div");
-  qDiv.className = "question-card";
+  const qText = document.getElementById("questionText").value.trim();
+  if (!qText) return alert("Question text cannot be empty!");
+  
+  const questionCard = document.createElement("div");
+  questionCard.className = "question-card";
+  questionCard.style.marginBottom = "8px";
+  questionCard.style.padding = "6px";
+  questionCard.style.border = "1px solid #ccc";
+  questionCard.style.borderRadius = "6px";
+  questionCard.style.position = "relative";
 
-  qDiv.innerHTML = `
-    <input type="text" placeholder="Question" class="question-text">
-    <input type="text" placeholder="Option A" class="option">
-    <input type="text" placeholder="Option B" class="option">
-    <input type="text" placeholder="Option C" class="option">
-    <input type="text" placeholder="Option D" class="option">
-    <select class="correct-option">
-      <option value="A">Correct: A</option>
-      <option value="B">Correct: B</option>
-      <option value="C">Correct: C</option>
-      <option value="D">Correct: D</option>
-    </select>
+  questionCard.innerHTML = `
+    <strong>Q:</strong> ${qText}
+    <button class="remove-btn" style="position:absolute; right:6px; top:6px; background:#ef4444; color:#fff; border:none; border-radius:4px; padding:2px 6px; cursor:pointer;">Remove</button>
   `;
-  container.appendChild(qDiv);
+
+  // Add remove functionality
+  questionCard.querySelector(".remove-btn").onclick = () => {
+    questionCard.remove();
+  };
+
+  document.getElementById("questionsList").appendChild(questionCard);
+  document.getElementById("questionText").value = '';
 }
 function submitTest(){
   const title=document.getElementById("testTitle").value.trim();
