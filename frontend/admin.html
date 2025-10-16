@@ -3,144 +3,122 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin Dashboard — Student Assistant</title>
-
-  <!-- Chart.js CDN -->
+  <title>Student Assistant Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <style>
     :root{
-      --bg:#0b1220; --card:#0f1724; --accent:#4f46e5; --accent-2:#3b82f6; --muted:#9aa7b2; --glass: rgba(255,255,255,0.03);
+      --bg:#0b1220; --card:#0f1724; --accent:#4f46e5; --accent-2:#3b82f6;
+      --muted:#9aa7b2; --glass: rgba(255,255,255,0.03);
     }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:Inter,Segoe UI,system-ui,Arial; background:linear-gradient(180deg,#071029 0%, #071229 60%); color:#e6eef6}
-    /* container */
+    [data-theme="light"]{
+      --bg:#f9f9f9; --card:#fff; --accent:#4f46e5; --accent-2:#3b82f6;
+      --muted:#555; --glass: rgba(0,0,0,0.03); color:#111;
+    }
+    *{box-sizing:border-box;}
+    html,body{height:100%;margin:0;font-family:Inter,Segoe UI,system-ui,Arial;
+      background:var(--bg); color:#e6eef6;}
     .wrap{max-width:1180px;margin:28px auto;padding:18px;position:relative;z-index:2}
     h1{margin:0 0 12px;font-weight:600;color:var(--accent)}
     .row{display:flex;gap:18px;flex-wrap:wrap}
     .col{flex:1;min-width:280px}
-    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 8px 30px rgba(3,7,18,0.6);border:1px solid rgba(255,255,255,0.02)}
-    .muted{color:var(--muted);font-size:13px}
+    .card{background:var(--card);border-radius:12px;padding:18px;
+      box-shadow:0 8px 30px rgba(3,7,18,0.6);border:1px solid rgba(255,255,255,0.02)}
     label{display:block;margin-top:10px;font-size:13px;color:#cfe6ff}
-    input[type=text], input[type=password], input[type=number], textarea, select{
-      width:100%;padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:#eaf4ff;
-      margin-top:6px;
-    }
-    textarea{resize:vertical;min-height:72px}
+    input, textarea, select{width:100%;padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:#eaf4ff;margin-top:6px;}
+    textarea{resize:vertical;min-height:72px;}
     .btn{display:inline-block;padding:9px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
     .btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white}
     .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:#dff0ff}
-    .top-actions{display:flex;gap:8px;align-items:center}
-    .profile-row{display:flex;gap:14px;align-items:center}
-    .avatar{width:64px;height:64px;border-radius:12px;background:linear-gradient(180deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:22px}
-    .small{font-size:13px;color:var(--muted)}
-    .list{margin-top:12px;max-height:240px;overflow:auto;padding-right:6px}
-    table{width:100%;border-collapse:collapse;color:#eaf4ff}
-    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left;font-size:13px}
-    th{background:rgba(255,255,255,0.02);font-weight:600}
-    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-    .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px}
-    .badge-admin{background:#ef4444;color:white}
-    .badge-moderator{background:#8b5cf6;color:white}
-    .badge-faculty{background:#3b82f6;color:white}
-    .badge-tester{background:#f59e0b;color:#111}
-    .badge-student{background:#10b981;color:white}
-    /* small helpers */
-    .space{height:10px}
-    .muted-block{padding:8px;background:rgba(255,255,255,0.01);border-radius:8px;color:var(--muted)}
-    /* responsive canvas area */
-    canvas {max-width:100%;height:auto}
-    /* footer logs */
-    .logs{max-height:180px;overflow:auto;font-size:13px;padding:8px;background:rgba(255,255,255,0.01);border-radius:8px;margin-top:8px}
-    /* input-inline */
-    .inline{display:flex;gap:8px;align-items:center}
-    .inline > * {flex:1}
-    /* danger */
     .btn-danger{background:#ef4444;color:white}
-    /* small icon */
     .tiny{font-size:12px;padding:6px 8px}
-    /* canvas background container */
-    #bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.5}
-    /* scroll */
-    ::-webkit-scrollbar {height:8px;width:8px}
-    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:6px}
+    .small{font-size:13px;color:var(--muted)}
+    .space{height:10px}
+    .inline{display:flex;gap:8px;align-items:center}
+    .list{margin-top:12px;max-height:240px;overflow:auto;padding-right:6px}
+    canvas{max-width:100%;height:auto}
+    .summary-card{padding:12px;border-radius:12px;background:var(--card);text-align:center}
+    .summary-card h4{margin:0;color:var(--accent)}
   </style>
 </head>
-<body>
-  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+<body data-theme="dark">
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
 
-  <div class="wrap">
-    <div class="row" style="align-items:center;justify-content:space-between">
-      <div>
-        <h1>Admin Dashboard — Student Assistant</h1>
-        <div class="muted">Manage users, badges, attendance, tests, analytics and logs</div>
-      </div>
-      <div class="top-actions">
-        <div class="profile-row card" style="padding:10px 14px">
-          <div class="avatar" id="adminAvatar">A</div>
-          <div>
-            <div id="adminNameDisplay" style="font-weight:700">Admin</div>
-            <div class="small" id="adminEmailDisplay">admin@example.com</div>
-          </div>
+<div class="wrap">
+  <!-- HEADER -->
+  <div class="row" style="align-items:center;justify-content:space-between">
+    <div>
+      <h1>Admin Dashboard — Student Assistant</h1>
+      <div class="small">Manage users, badges, attendance, tests, analytics and logs</div>
+    </div>
+    <div class="inline">
+      <button class="btn btn-ghost tiny" onclick="toggleTheme()">Toggle Theme</button>
+    </div>
+  </div>
+  <div class="space"></div>
+
+  <!-- SUMMARY CARDS -->
+  <div class="row">
+    <div class="col summary-card">
+      <h4>Average Attendance</h4>
+      <div id="avgAttendance">0%</div>
+    </div>
+    <div class="col summary-card">
+      <h4>Average Marks</h4>
+      <div id="avgMarks">0</div>
+    </div>
+    <div class="col summary-card">
+      <h4>Top Student</h4>
+      <div id="topStudent">N/A</div>
+    </div>
+  </div>
+
+  <div class="space"></div>
+
+  <!-- ROW 1: Users -->
+  <div class="row">
+    <div class="col card">
+      <h3>User Management</h3>
+      <input type="text" class="search-input" placeholder="Search users..." oninput="renderUsers()">
+      <form id="createUserForm">
+        <label>Role</label>
+        <select id="newUserRole">
+          <option value="admin">Admin</option>
+          <option value="moderator">Moderator</option>
+          <option value="tester">Tester</option>
+          <option value="faculty">Faculty</option>
+          <option value="student">Student</option>
+        </select>
+        <label>Username / Email</label>
+        <input type="text" id="newUserName" placeholder="example@domain.com or REG123" required>
+        <label>Password (optional)</label>
+        <input type="password" id="newUserPassword" placeholder="password (optional)">
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-primary" type="submit">Create user</button>
+          <button class="btn btn-ghost" type="button" onclick="exportData()">Export JSON</button>
+          <button class="btn btn-ghost" type="button" onclick="importDataPrompt()">Import JSON</button>
         </div>
+      </form>
+      <div class="space"></div>
+      <div class="small">Existing users</div>
+      <div class="list">
+        <table id="usersTable">
+          <thead><tr><th>User</th><th>Role</th><th>Badges</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="space"></div>
+      <label>Delete user</label>
+      <div class="inline">
+        <select id="deleteUserSelect"></select>
+        <button class="btn btn-danger tiny" onclick="deleteUser()">Delete</button>
       </div>
     </div>
-
-    <div class="space"></div>
-
-    <!-- ROW 1: Users | Badges | Batches -->
-    <div class="row">
-      <div class="col card">
-        <h3>User Management</h3>
-        <form id="createUserForm">
-          <label>Role</label>
-          <select id="newUserRole">
-            <option value="admin">Admin</option>
-            <option value="moderator">Moderator</option>
-            <option value="tester">Tester</option>
-            <option value="faculty">Faculty</option>
-            <option value="student">Student</option>
-          </select>
-
-          <label>Username / Email / RegNo</label>
-          <input type="text" id="newUserName" placeholder="example@domain.com or REG123" required>
-
-          <label>Password (optional)</label>
-          <input type="password" id="newUserPassword" placeholder="password (optional)">
-
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn btn-primary" type="submit">Create user</button>
-            <button class="btn btn-ghost" type="button" onclick="exportData()">Export JSON</button>
-            <button class="btn btn-ghost" type="button" onclick="importDataPrompt()">Import JSON</button>
-          </div>
-        </form>
-
-        <div class="space"></div>
-
-        <div class="muted small">Existing users</div>
-        <div class="list">
-          <table id="usersTable">
-            <thead><tr><th>User</th><th>Role</th><th>Badges</th><th>Actions</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-
-        <div class="space"></div>
-
-        <label>Delete user</label>
-        <div class="inline">
-          <select id="deleteUserSelect"></select>
-          <button class="btn btn-danger tiny" onclick="deleteUser()">Delete</button>
-        </div>
-      </div>
-
-      <div class="col card">
-        <h3>Badge Management</h3>
-
-        <label>Choose user</label>
+    <!-- BADGES & BATCHES -->
+    <div class="col card">
+      <h3>Badge & Batch Management</h3>
+      <label>Assign badge</label>
+      <div class="inline">
         <select id="badgeUserSelect"></select>
-
-        <label>Badge to assign</label>
         <select id="badgeRoleSelect">
           <option value="admin">Admin</option>
           <option value="moderator">Moderator</option>
@@ -148,670 +126,374 @@
           <option value="faculty">Faculty</option>
           <option value="student">Student</option>
         </select>
+        <button class="btn btn-primary tiny" onclick="assignBadge()">Assign</button>
+      </div>
 
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-primary" onclick="assignBadge()">Assign</button>
-          <button class="btn btn-ghost" onclick="removeBadge()">Remove</button>
-        </div>
+      <label>Remove badge</label>
+      <div class="inline">
+        <select id="deleteBadgeUser"></select>
+        <select id="badgeRoleSelectRemove">
+          <option value="admin">Admin</option>
+          <option value="moderator">Moderator</option>
+          <option value="tester">Tester</option>
+          <option value="faculty">Faculty</option>
+          <option value="student">Student</option>
+        </select>
+        <button class="btn btn-danger tiny" onclick="removeBadge()">Remove</button>
+      </div>
 
-        <div class="space"></div>
-        <div class="muted small">Badges appear in the user list and profile</div>
-
-        <div class="space"></div>
-        <h3>Batch Management</h3>
-        <label>Select batch to remove (1–20)</label>
+      <div class="space"></div>
+      <label>Batches</label>
+      <div class="inline">
         <select id="batchSelect"></select>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="btn btn-danger" onclick="deleteBatch()">Delete batch</button>
-        </div>
+        <button class="btn btn-danger tiny" onclick="deleteBatch()">Delete Batch</button>
       </div>
+    </div>
+  </div>
 
-      <div class="col card">
-        <h3>Admin Profile</h3>
-        <div style="display:flex;gap:12px;align-items:center">
-          <div><strong id="adminNameSmall">Admin</strong><div class="small" id="adminEmailSmall">admin@example.com</div></div>
+  <div class="space"></div>
+
+  <!-- ROW 2: Academic | Attendance | Tests -->
+  <div class="row">
+    <!-- Academic -->
+    <div class="col card">
+      <h3>Academic items</h3>
+      <input type="text" class="search-input" placeholder="Search academic..." oninput="renderAcademic()">
+      <form id="acadForm">
+        <label>Type</label>
+        <select id="acadType">
+          <option value="note">Note</option>
+          <option value="assignment">Assignment</option>
+          <option value="notice">Notice</option>
+        </select>
+        <label>Title/Subject</label>
+        <input id="acadTitle" type="text" placeholder="Title or subject">
+        <label>Content</label>
+        <textarea id="acadContent" placeholder="Content..."></textarea>
+        <label>Assign to student (optional)</label>
+        <select id="acadStudentSelect"><option value="">All students</option></select>
+        <div class="inline" style="margin-top:10px; gap:8px">
+          <button class="btn btn-primary" type="submit">Add item</button>
+          <button class="btn btn-ghost" type="button" onclick="renderAcademic()">Refresh</button>
         </div>
-        <div class="space"></div>
-        <button class="btn btn-primary" onclick="openEditProfile()">Edit profile</button>
-        <button class="btn btn-ghost" onclick="clearAllData()">Clear all data</button>
+      </form>
+      <div class="space"></div>
+      <div class="small">Academic list</div>
+      <div id="academicList" class="list"></div>
+    </div>
 
-        <div class="space"></div>
-        <h3>Logs</h3>
-        <div class="logs" id="logsContainer"></div>
+    <!-- Attendance -->
+    <div class="col card">
+      <h3>Attendance</h3>
+      <input type="text" class="search-input" placeholder="Search attendance..." oninput="renderAttendance()">
+      <form id="attendanceForm">
+        <label>Subject name</label>
+        <input id="attendanceSubject" type="text" placeholder="e.g. Mathematics" required>
+        <label>Percentage</label>
+        <input id="attendancePercent" type="number" min="0" max="100" placeholder="80" required>
+        <div class="inline" style="margin-top:10px; gap:8px">
+          <button class="btn btn-primary" type="submit">Add / Update</button>
+          <button class="btn btn-ghost" type="button" onclick="renderAttendance()">Refresh</button>
+        </div>
+      </form>
+      <div class="space"></div>
+      <div class="small">Attendance list</div>
+      <div id="attendanceList" class="list"></div>
+      <div class="space"></div>
+      <label>Delete subject</label>
+      <div class="inline">
+        <select id="deleteSubjectSelect"></select>
+        <button class="btn btn-danger tiny" onclick="deleteSubject()">Delete</button>
       </div>
     </div>
 
-    <div class="space"></div>
-    <!-- ROW 2: Academic | Attendance | Tests -->
-    <div class="row">
-      <div class="col card">
-        <h3>Academic items (Notes / Assignments / Notices)</h3>
-        <form id="acadForm">
-          <label>Type</label>
-          <select id="acadType">
-            <option value="note">Note</option>
-            <option value="assignment">Assignment</option>
-            <option value="notice">Notice</option>
-          </select>
-          <label>Title/Subject</label>
-          <input id="acadTitle" type="text" placeholder="Title or subject">
-          <label>Content</label>
-          <textarea id="acadContent" placeholder="Content..."></textarea>
-
-          <label>Assign to student (optional)</label>
-          <select id="acadStudentSelect"><option value="">All students</option></select>
-
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn btn-primary" type="submit">Add item</button>
-            <button class="btn btn-ghost" type="button" onclick="renderAcademic()">Refresh</button>
-          </div>
-        </form>
-
-        <div class="space"></div>
-        <div class="muted small">Academic list</div>
-        <div id="academicList" class="list"></div>
-      </div>
-
-      <div class="col card">
-        <h3>Attendance (subjects & %)</h3>
-        <form id="attendanceForm">
-          <label>Subject name</label>
-          <input id="attendanceSubject" type="text" placeholder="e.g. Mathematics" required>
-
-          <label>Percentage</label>
-          <input id="attendancePercent" type="number" min="0" max="100" placeholder="80" required>
-
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn btn-primary" type="submit">Add / Update</button>
-            <button class="btn btn-ghost" type="button" onclick="renderAttendance()">Refresh</button>
-          </div>
-        </form>
-
-        <div class="space"></div>
-        <div class="muted small">Attendance list</div>
-        <div id="attendanceList" class="list"></div>
-
-        <div class="space"></div>
-        <label>Delete subject</label>
-        <div class="inline">
-          <select id="deleteSubjectSelect"></select>
-          <button class="btn btn-danger tiny" onclick="deleteSubject()">Delete</button>
+    <!-- Tests -->
+    <div class="col card">
+      <h3>Test Scores</h3>
+      <input type="text" class="search-input" placeholder="Search tests..." oninput="renderTests()">
+      <form id="testForm">
+        <label>Subject</label>
+        <input id="testSubject" type="text" placeholder="e.g. Physics" required>
+        <label>Marks</label>
+        <input id="testMarks" type="number" min="0" max="100" placeholder="75" required>
+        <div class="inline" style="margin-top:10px; gap:8px">
+          <button class="btn btn-primary" type="submit">Add / Update test</button>
+          <button class="btn btn-ghost" type="button" onclick="renderTests()">Refresh</button>
         </div>
-      </div>
-
-      <div class="col card">
-        <h3>Test Scores</h3>
-        <form id="testForm">
-          <label>Subject</label>
-          <input id="testSubject" type="text" placeholder="e.g. Physics" required>
-          <label>Marks</label>
-          <input id="testMarks" type="number" min="0" max="100" placeholder="75" required>
-
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn btn-primary" type="submit">Add / Update test</button>
-            <button class="btn btn-ghost" type="button" onclick="renderTests()">Refresh</button>
-          </div>
-        </form>
-
-        <div class="space"></div>
-        <div class="muted small">Test list</div>
-        <div id="testList" class="list"></div>
-
-        <div class="space"></div>
-        <label>Delete test</label>
-        <div class="inline">
-          <select id="deleteTestSelect"></select>
-          <button class="btn btn-danger tiny" onclick="deleteTest()">Delete</button>
-        </div>
+      </form>
+      <div class="space"></div>
+      <div class="small">Test list</div>
+      <div id="testList" class="list"></div>
+      <div class="space"></div>
+      <label>Delete test</label>
+      <div class="inline">
+        <select id="deleteTestSelect"></select>
+        <button class="btn btn-danger tiny" onclick="deleteTest()">Delete</button>
       </div>
     </div>
+  </div>
 
-    <div class="space"></div>
+  <div class="space"></div>
 
-    <!-- ROW 3: Charts -->
-    <div class="row">
-      <div class="col card">
-        <h3>Attendance Chart</h3>
-        <canvas id="attendanceChart"></canvas>
-        <div class="space"></div>
-        <div class="muted small">Edit a subject's % directly: choose subject -> change value -> click Update</div>
-        <div class="inline" style="margin-top:8px">
-          <select id="chartEditSubject"></select>
-          <input id="chartEditValue" type="number" min="0" max="100" placeholder="%" />
-          <button class="btn btn-primary" onclick="applyChartEdit()">Update</button>
-        </div>
-      </div>
-
-      <div class="col card">
-        <h3>Test Chart</h3>
-        <canvas id="testChart"></canvas>
-        <div class="space"></div>
-        <div class="muted small">Edit test marks: choose test -> change marks -> Update</div>
-        <div class="inline" style="margin-top:8px">
-          <select id="chartEditTest"></select>
-          <input id="chartEditTestValue" type="number" min="0" max="100" placeholder="marks" />
-          <button class="btn btn-primary" onclick="applyTestEdit()">Update</button>
-        </div>
-      </div>
-
-      <div class="col card">
-        <h3>Feedback</h3>
-        <div id="feedbackList" class="list muted-block">No feedback yet</div>
-        <div class="space"></div>
-        <h3>Action Logs</h3>
-        <div id="actionLogs" class="logs"></div>
+  <!-- ROW 3: Charts + Feedback + Logs -->
+  <div class="row">
+    <div class="col card">
+      <h3>Attendance Chart</h3>
+      <canvas id="attendanceChart"></canvas>
+      <div class="inline" style="margin-top:8px; gap:8px">
+        <select id="chartEditSubject"></select>
+        <input id="chartEditValue" type="number" min="0" max="100" placeholder="%"/>
+        <button class="btn btn-primary tiny" onclick="applyChartEdit()">Update</button>
       </div>
     </div>
+    <div class="col card">
+      <h3>Test Chart</h3>
+      <canvas id="testChart"></canvas>
+      <div class="inline" style="margin-top:8px; gap:8px">
+        <select id="chartEditTest"></select>
+        <input id="chartEditTestValue" type="number" min="0" max="100" placeholder="marks"/>
+        <button class="btn btn-primary tiny" onclick="applyTestEdit()">Update</button>
+      </div>
+    </div>
+    <div class="col card">
+      <h3>Feedback & Trigger Logs</h3>
+      <div id="feedbackList" class="list muted-block">No feedback yet</div>
+      <div class="space"></div>
+      <h3>Action Logs</h3>
+      <div id="actionLogs" class="list"></div>
+    </div>
+  </div>
 
-  </div> <!-- wrap end -->
+  <div class="space"></div>
 
-  <!-- Edit profile modal (simple prompt style) + small helpers -->
+  <!-- STUDENT LOGIN PROMPT -->
+  <div class="col card">
+    <h3>Student Dashboard</h3>
+    <div class="inline">
+      <input type="text" id="studentLogin" placeholder="Enter student username">
+      <button class="btn btn-primary tiny" onclick="studentLogin()">Login</button>
+      <button class="btn btn-ghost tiny" onclick="studentLogout()">Logout</button>
+    </div>
+  </div>
   <script>
-  /* ---------- Persistence helpers ---------- */
-  const STORAGE_KEY = 'student_assistant_data_v1';
+/* ---------- Persistence ---------- */
+const STORAGE_KEY = 'student_assistant_data_v2';
+let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
 
-  function loadStorage() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return null;
-      return JSON.parse(raw);
-    } catch(e){ console.error('loadStorage',e); return null; }
-  }
-  function saveStorage(state) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }
+// Default state
+const defaultState = {
+  admin: { name:'Admin', email:'admin@example.com' },
+  users: [],
+  batches: Array.from({length:20}, (_,i)=>i+1),
+  academic: [],
+  attendance: [],
+  tests: [],
+  feedback: [],
+  logs: [],
+  triggerWords: ['urgent','immediately','fail','help','issue'] // example triggers
+};
 
-  /* ---------- Default initial state ---------- */
-  const defaultState = {
-    admin: { name: 'Admin', email: 'admin@example.com' },
-    users: [], // { username, role, badges: [] , password?: hashed? (plain for now) }
-    batches: Array.from({length:20}, (_,i)=>i+1),
-    academic: [], // {id,title,type,content,student}
-    attendance: [], // {subject,percent}
-    tests: [], // {subject,marks}
-    feedback: [], // strings or objects
-    logs: []
-  };
+// Ensure state keys
+state = Object.assign({}, defaultState, state);
 
-  // load or init
-  let state = loadStorage() || defaultState;
-  // ensure missing keys if upgrade
-  state = Object.assign({}, defaultState, state);
-
-  /* ---------- Utilities ---------- */
-  function addLog(msg) {
-    const t = new Date().toISOString();
-    state.logs.unshift(`${t} — ${msg}`);
-    if(state.logs.length>500) state.logs.length=500;
-    persistAndRender();
-  }
-  function persistAndRender() {
-    saveStorage(state);
-    renderAll();
-  }
-
-  /* ---------- Render functions ---------- */
-  function renderAll(){
-    renderAdminProfile();
-    renderUsers();
-    renderBatchSelect();
-    renderBadgeUserSelects();
-    renderAcademic();
-    renderAttendance();
-    renderTests();
-    renderCharts();
-    renderFeedback();
-    renderLogs();
-  }
-
-  /* ---------- Admin profile ---------- */
-  function renderAdminProfile(){
-    const a = state.admin;
-    document.getElementById('adminNameDisplay').textContent = a.name;
-    document.getElementById('adminEmailDisplay').textContent = a.email;
-    document.getElementById('adminNameSmall').textContent = a.name;
-    document.getElementById('adminEmailSmall').textContent = a.email;
-    document.getElementById('adminAvatar').textContent = a.name ? a.name[0].toUpperCase() : 'A';
-  }
-
-  function openEditProfile(){
-    const newName = prompt('Enter admin name', state.admin.name);
-    if(newName!==null && newName.trim()!==''){
-      state.admin.name = newName.trim();
-      addLog(`Admin changed name to ${state.admin.name}`);
+/* ---------- Helpers ---------- */
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function addLog(msg){ 
+  const t = new Date().toISOString();
+  state.logs.unshift(`${t} — ${msg}`);
+  if(state.logs.length>500) state.logs.length=500;
+  saveState(); renderAll();
+}
+function triggerCheck(text, source){
+  const triggers = state.triggerWords || [];
+  triggers.forEach(word=>{
+    if(text.toLowerCase().includes(word.toLowerCase())){
+      addLog(`Trigger word "${word}" detected in ${source}`);
     }
-    const newEmail = prompt('Enter admin email', state.admin.email);
-    if(newEmail!==null && newEmail.trim()!==''){
-      state.admin.email = newEmail.trim();
-      addLog(`Admin changed email to ${state.admin.email}`);
-    }
-    persistAndRender();
-  }
-
-  /* ---------- Users ---------- */
-  function renderUsers(){
-    const tbody = document.querySelector('#usersTable tbody');
-    tbody.innerHTML = '';
-    (state.users || []).forEach(u=>{
-      const tr = document.createElement('tr');
-      const badgesHTML = (u.badges || []).map(b=>`<span class="badge badge-${b}">${b.toUpperCase()}</span>`).join(' ');
-      tr.innerHTML = `<td>${u.username}</td><td>${u.role}</td><td>${badgesHTML}</td>
-        <td>
-          <button class="btn tiny btn-ghost" onclick="showEditUser('${u.username.replace(/'/g,"\\'")}')">Edit</button>
-          <button class="btn tiny btn-danger" onclick="deleteUserByName('${u.username.replace(/'/g,"\\'")}')">Delete</button>
-        </td>`;
-      tbody.appendChild(tr);
-    });
-
-    const dsel = document.getElementById('deleteUserSelect');
-    const badgeSel = document.getElementById('badgeUserSelect');
-    const deleteBadgeUser = document.getElementById('deleteBadgeUser');
-    [dsel,badgeSel,deleteBadgeUser].forEach(sel=>sel.innerHTML = '');
-    (state.users||[]).forEach(u=>{
-      const opt = `<option value="${u.username}">${u.username} (${u.role})</option>`;
-      dsel.insertAdjacentHTML('beforeend',opt);
-      badgeSel.insertAdjacentHTML('beforeend',opt);
-      deleteBadgeUser.insertAdjacentHTML('beforeend',opt);
-    });
-
-    // update acad student select
-    const acadStudent = document.getElementById('acadStudentSelect');
-    acadStudent.innerHTML = '<option value="">All students</option>';
-    state.users.filter(x=>x.role==='student').forEach(s=>{
-      acadStudent.insertAdjacentHTML('beforeend',`<option value="${s.username}">${s.username}</option>`);
-    });
-  }
-
-  function showEditUser(username){
-    const user = state.users.find(u=>u.username===username);
-    if(!user) return alert('User not found');
-    const newRole = prompt('Enter role for ' + username, user.role);
-    if(newRole) {
-      user.role = newRole;
-      addLog(`Edited user ${username} role -> ${newRole}`);
-      persistAndRender();
-    }
-  }
-
-  function deleteUserByName(username){
-    if(!confirm(`Delete user ${username}? This cannot be undone.`)) return;
-    state.users = state.users.filter(u=>u.username!==username);
-    addLog(`Deleted user ${username}`);
-    persistAndRender();
-  }
-
-  /* ---------- Create new user handler ---------- */
-  document.getElementById('createUserForm').addEventListener('submit', e=>{
-    e.preventDefault();
-    const username = document.getElementById('newUserName').value.trim();
-    const role = document.getElementById('newUserRole').value;
-    const password = document.getElementById('newUserPassword').value || '';
-    if(!username) return alert('Enter username');
-    if(state.users.find(u=>u.username===username)) return alert('User exists');
-    state.users.unshift({ username, role, badges: [role], password });
-    addLog(`Created user ${username} (${role})`);
-    document.getElementById('createUserForm').reset();
-    persistAndRender();
   });
+}
 
-  function deleteUser(){
-    const sel = document.getElementById('deleteUserSelect');
-    const v = sel.value;
-    if(!v) return alert('select user');
-    deleteUserByName(v);
-  }
+/* ---------- Theme ---------- */
+function toggleTheme(){
+  const html = document.documentElement;
+  html.classList.toggle('dark');
+  addLog('Theme toggled');
+}
 
-  /* ---------- Batches ---------- */
-  function renderBatchSelect(){
-    const sel = document.getElementById('batchSelect');
-    sel.innerHTML = '';
-    (state.batches || []).forEach(b=>{
-      sel.insertAdjacentHTML('beforeend',`<option value="${b}">Batch ${b}</option>`);
-    });
-  }
-  function deleteBatch(){
-    const sel = document.getElementById('batchSelect');
-    const val = parseInt(sel.value);
-    if(!val) return;
-    if(!confirm(`Delete batch ${val}?`)) return;
-    state.batches = state.batches.filter(b=>b!==val);
-    addLog(`Deleted batch ${val}`);
-    persistAndRender();
-  }
-
-  /* ---------- Badge assign/remove ---------- */
-  function renderBadgeUserSelects(){
-    const sel = document.getElementById('badgeUserSelect');
-    sel.innerHTML = '';
-    (state.users || []).forEach(u=>{
-      sel.insertAdjacentHTML('beforeend',`<option value="${u.username}">${u.username} (${u.role})</option>`);
-    });
-  }
-  function assignBadge(){
-    const usern = document.getElementById('badgeUserSelect').value;
-    const badge = document.getElementById('badgeRoleSelect').value;
-    const user = state.users.find(u=>u.username===usern);
-    if(!user) return alert('no user');
-    if(!user.badges) user.badges=[];
-    if(!user.badges.includes(badge)){
-      user.badges.push(badge);
-      addLog(`Assigned badge ${badge} to ${usern}`);
-      persistAndRender();
-    } else alert('user already has badge');
-  }
-  function removeBadge(){
-    const usern = document.getElementById('deleteBadgeUser').value;
-    const badge = document.getElementById('badgeRoleSelect').value;
-    const user = state.users.find(u=>u.username===usern);
-    if(!user) return alert('no user');
-    user.badges = (user.badges||[]).filter(b=>b!==badge);
-    addLog(`Removed badge ${badge} from ${usern}`);
-    persistAndRender();
-  }
-
-  /* ---------- Academic ---------- */
-  document.getElementById('acadForm').addEventListener('submit', e=>{
-    e.preventDefault();
-    const type = document.getElementById('acadType').value;
-    const title = document.getElementById('acadTitle').value.trim();
-    const content = document.getElementById('acadContent').value.trim();
-    const student = document.getElementById('acadStudentSelect').value || '';
-    if(!title || !content) return alert('title/content required');
-    const id = 'acad_' + Date.now();
-    state.academic.unshift({ id, type, title, content, student });
-    addLog(`Added academic ${type}: ${title}`);
-    persistAndRender();
-    document.getElementById('acadForm').reset();
+/* ---------- Analytics cards ---------- */
+function renderAnalytics(){
+  const avgAtt = state.attendance.length ? (state.attendance.reduce((a,b)=>a+b.percent,0)/state.attendance.length).toFixed(2) : 0;
+  const avgTest = state.tests.length ? (state.tests.reduce((a,b)=>a+b.marks,0)/state.tests.length).toFixed(2) : 0;
+  let topStudent = '-';
+  const studentScores = state.users.filter(u=>u.role==='student').map(s=>{
+    const studentTests = state.tests.filter(t=>t.student===s.username);
+    const avg = studentTests.length ? studentTests.reduce((a,b)=>a+b.marks,0)/studentTests.length : 0;
+    return { username: s.username, avg };
   });
+  if(studentScores.length) topStudent = studentScores.reduce((a,b)=>a.avg>b.avg?a:b).username;
+  document.getElementById('analyticsCards').innerHTML = `
+    <div class="analytics-card">Avg Attendance: ${avgAtt}%</div>
+    <div class="analytics-card">Avg Test Marks: ${avgTest}</div>
+    <div class="analytics-card">Top Student: ${topStudent}</div>
+  `;
+}
 
-  function renderAcademic(){
-    const c = document.getElementById('academicList');
-    c.innerHTML = '';
-    (state.academic||[]).forEach(a=>{
-      const div = document.createElement('div');
-      div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
-      div.innerHTML = `<strong>[${a.type.toUpperCase()}]</strong> ${a.title} 
-        <div class="small">${a.student ? 'For: '+a.student : 'For: All'}</div>
-        <div style="margin-top:6px">${a.content}</div>
-        <div style="margin-top:6px">
-          <button class="btn tiny btn-ghost" onclick="editAcademic('${a.id}')">Edit</button>
-          <button class="btn tiny btn-danger" onclick="deleteAcademic('${a.id}')">Delete</button>
-        </div>`;
-      c.appendChild(div);
-    });
-  }
-  function editAcademic(id){
-    const item = state.academic.find(x=>x.id===id);
-    if(!item) return;
-    const newTitle = prompt('Title', item.title);
-    const newContent = prompt('Content', item.content);
-    if(newTitle!==null) item.title = newTitle;
-    if(newContent!==null) item.content = newContent;
-    addLog(`Edited academic ${id}`);
-    persistAndRender();
-  }
-  function deleteAcademic(id){
-    if(!confirm('Delete this academic item?')) return;
-    state.academic = state.academic.filter(x=>x.id!==id);
-    addLog(`Deleted academic ${id}`);
-    persistAndRender();
-  }
-
-  /* ---------- Attendance ---------- */
-  document.getElementById('attendanceForm').addEventListener('submit', e=>{
-    e.preventDefault();
-    const subj = document.getElementById('attendanceSubject').value.trim();
-    const percent = parseFloat(document.getElementById('attendancePercent').value);
-    if(!subj || isNaN(percent)) return alert('enter valid subject & percent');
-    const found = state.attendance.find(a=>a.subject.toLowerCase()===subj.toLowerCase());
-    if(found){ found.percent = percent; addLog(`Updated attendance ${subj} -> ${percent}%`); }
-    else { state.attendance.unshift({ subject: subj, percent }); addLog(`Added attendance ${subj} -> ${percent}%`); }
-    persistAndRender();
-    document.getElementById('attendanceForm').reset();
-  });
-
-  function renderAttendance(){
-    const c = document.getElementById('attendanceList');
-    c.innerHTML = '';
-    (state.attendance||[]).forEach(a=>{
-      const div = document.createElement('div');
-      div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
-      div.innerHTML = `<strong>${a.subject}</strong> — ${a.percent}% 
-        <div style="margin-top:6px">
-          <button class="btn tiny btn-ghost" onclick="promptEditAttendance('${a.subject}')">Edit</button>
-          <button class="btn tiny btn-danger" onclick="deleteSubjectByName('${a.subject}')">Delete</button>
-        </div>`;
-      c.appendChild(div);
-    });
-    const sel = document.getElementById('deleteSubjectSelect');
-    sel.innerHTML = (state.attendance||[]).map(a=>`<option value="${a.subject}">${a.subject}</option>`).join('') || '<option value="">No subjects</option>';
-    // chart edit select
-    document.getElementById('chartEditSubject').innerHTML = (state.attendance||[]).map(a=>`<option value="${a.subject}">${a.subject}</option>`).join('');
-  }
-  function deleteSubject(){
-    const sel = document.getElementById('deleteSubjectSelect').value;
-    if(!sel) return alert('choose subject');
-    deleteSubjectByName(sel);
-  }
-  function deleteSubjectByName(name){
-    if(!confirm(`Delete subject ${name}?`)) return;
-    state.attendance = state.attendance.filter(a=>a.subject!==name);
-    addLog(`Deleted subject ${name} from attendance`);
-    persistAndRender();
-  }
-  function promptEditAttendance(subject){
-    const item = state.attendance.find(a=>a.subject===subject);
-    if(!item) return;
-    const v = prompt(`Enter new % for ${subject}`, item.percent);
-    if(v===null) return;
-    const nv = parseFloat(v);
-    if(isNaN(nv)) return alert('invalid number');
-    item.percent = nv;
-    addLog(`Edited attendance ${subject} -> ${nv}%`);
-    persistAndRender();
-  }
-
-  /* ---------- Tests ---------- */
-  document.getElementById('testForm').addEventListener('submit', e=>{
-    e.preventDefault();
-    const subj = document.getElementById('testSubject').value.trim();
-    const marks = parseFloat(document.getElementById('testMarks').value);
-    if(!subj || isNaN(marks)) return alert('enter valid test & marks');
-    const found = state.tests.find(t=>t.subject.toLowerCase()===subj.toLowerCase());
-    if(found){ found.marks = marks; addLog(`Updated test ${subj} -> ${marks}`); }
-    else { state.tests.unshift({ subject: subj, marks }); addLog(`Added test ${subj} -> ${marks}`); }
-    persistAndRender();
-    document.getElementById('testForm').reset();
-  });
-
-  function renderTests(){
-    const c = document.getElementById('testList');
-    c.innerHTML = '';
-    (state.tests||[]).forEach(t=>{
-      const div = document.createElement('div');
-      div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
-      div.innerHTML = `<strong>${t.subject}</strong> — ${t.marks} 
-        <div style="margin-top:6px">
-          <button class="btn tiny btn-ghost" onclick="promptEditTest('${t.subject}')">Edit</button>
-          <button class="btn tiny btn-danger" onclick="deleteTestByName('${t.subject}')">Delete</button>
-        </div>`;
-      c.appendChild(div);
-    });
-    document.getElementById('deleteTestSelect').innerHTML = (state.tests||[]).map(t=>`<option value="${t.subject}">${t.subject}</option>`).join('') || '<option value="">No tests</option>';
-    document.getElementById('chartEditTest').innerHTML = (state.tests||[]).map(t=>`<option value="${t.subject}">${t.subject}</option>`).join('');
-  }
-
-  function deleteTest(){
-    const sel = document.getElementById('deleteTestSelect').value;
-    if(!sel) return alert('choose test');
-    deleteTestByName(sel);
-  }
-  function deleteTestByName(name){
-    if(!confirm(`Delete test ${name}?`)) return;
-    state.tests = state.tests.filter(t=>t.subject!==name);
-    addLog(`Deleted test ${name}`);
-    persistAndRender();
-  }
-  function promptEditTest(subject){
-    const item = state.tests.find(t=>t.subject===subject);
-    if(!item) return;
-    const v = prompt(`Enter new marks for ${subject}`, item.marks);
-    if(v===null) return;
-    const nv = parseFloat(v);
-    if(isNaN(nv)) return alert('invalid number');
-    item.marks = nv;
-    addLog(`Edited test ${subject} -> ${nv}`);
-    persistAndRender();
-  }
-
-  /* ---------- Charts ---------- */
-  let attendanceChart=null, testChart=null;
-  function renderCharts(){
-    // create or update
-    const attCtx = document.getElementById('attendanceChart').getContext('2d');
-    const testCtx = document.getElementById('testChart').getContext('2d');
-
-    const attLabels = (state.attendance||[]).map(a=>a.subject);
-    const attData = (state.attendance||[]).map(a=>a.percent);
-
-    const testLabels = (state.tests||[]).map(t=>t.subject);
-    const testData = (state.tests||[]).map(t=>t.marks);
-
-    if(attendanceChart) {
-      attendanceChart.data.labels = attLabels;
-      attendanceChart.data.datasets[0].data = attData;
-      attendanceChart.update();
-    } else {
-      attendanceChart = new Chart(attCtx, {
-        type:'bar',
-        data:{ labels:attLabels, datasets:[{label:'Attendance %',data:attData, backgroundColor:'#4f46e5'}]},
-        options:{responsive:true,plugins:{legend:{display:false}}}
-      });
-    }
-
-    if(testChart) {
-      testChart.data.labels = testLabels;
-      testChart.data.datasets[0].data = testData;
-      testChart.update();
-    } else {
-      testChart = new Chart(testCtx, {
-        type:'bar',
-        data:{ labels:testLabels, datasets:[{label:'Test marks',data:testData, backgroundColor:'#3b82f6'}]},
-        options:{responsive:true,plugins:{legend:{display:false}}}
-      });
-    }
-
-    // populate chart edit selects
-    document.getElementById('chartEditSubject').innerHTML = (state.attendance||[]).map(a=>`<option value="${a.subject}">${a.subject}</option>`).join('');
-    document.getElementById('chartEditTest').innerHTML = (state.tests||[]).map(t=>`<option value="${t.subject}">${t.subject}</option>`).join('');
-  }
-
-  function updateCharts(){
-    renderCharts();
-  }
-
-  function applyChartEdit(){
-    const subj = document.getElementById('chartEditSubject').value;
-    const val = parseFloat(document.getElementById('chartEditValue').value);
-    if(!subj || isNaN(val)) return alert('choose subject and value');
-    const item = state.attendance.find(a=>a.subject===subj);
-    if(item){ item.percent = val; addLog(`Chart edit: ${subj} -> ${val}%`); persistAndRender(); }
-  }
-  function applyTestEdit(){
-    const subj = document.getElementById('chartEditTest').value;
-    const val = parseFloat(document.getElementById('chartEditTestValue').value);
-    if(!subj || isNaN(val)) return alert('choose test and marks');
-    const item = state.tests.find(t=>t.subject===subj);
-    if(item){ item.marks = val; addLog(`Test edit: ${subj} -> ${val}`); persistAndRender(); }
-  }
-
-  /* ---------- Feedback & logs ---------- */
-  function renderFeedback(){
-    const c = document.getElementById('feedbackList');
-    if(!state.feedback || state.feedback.length===0){ c.innerHTML = '<div class="small muted">No feedback yet</div>'; return; }
-    c.innerHTML = state.feedback.map(f=>`<div style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)">${f}</div>`).join('');
-  }
-  function renderLogs(){
-    const c = document.getElementById('logsContainer');
-    c.innerHTML = state.logs.slice(0,50).map(l=>`<div style="padding:6px;border-bottom:1px solid rgba(255,255,255,0.02);font-size:12px">${l}</div>`).join('');
-    document.getElementById('actionLogs').innerHTML = state.logs.map(l=>`<div style="padding:6px">${l}</div>`).join('');
-  }
-
-  /* ---------- Export / Import ---------- */
-  function exportData(){
-    const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href=url; a.download='student_assistant_data.json'; a.click();
-    URL.revokeObjectURL(url);
-  }
-  function importDataPrompt(){
-    const input = document.createElement('input'); input.type='file'; input.accept='application/json';
-    input.onchange = e=>{
-      const f = e.target.files[0];
-      if(!f) return;
-      const reader = new FileReader();
-      reader.onload = evt=>{
-        try {
-          const data = JSON.parse(evt.target.result);
-          if(confirm('Replace current data with imported data?')) {
-            state = Object.assign({}, defaultState, data);
-            addLog('Imported data via file');
-            persistAndRender();
-          }
-        } catch(err){ alert('Invalid JSON'); }
-      };
-      reader.readAsText(f);
-    };
-    input.click();
-  }
-
-  /* ---------- Clear all data (danger) ---------- */
-  function clearAllData(){
-    if(!confirm('Clear all saved data (this will reset everything)?')) return;
-    state = JSON.parse(JSON.stringify(defaultState));
-    addLog('Cleared all data');
-    persistAndRender();
-  }
-
-  /* ---------- Background animation (subtle particles) ---------- */
-  (function background() {
-    const canvas = document.getElementById('bg-canvas');
-    const ctx = canvas.getContext('2d');
-    let W, H, particles = [];
-    function resize(){
-      W = canvas.width = innerWidth;
-      H = canvas.height = innerHeight;
-      particles = Array.from({length: Math.max(24, Math.floor(W*H/140000))}, ()=>{
-        return {x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.5+0.5, vx:(Math.random()-0.5)*0.2, vy:- (Math.random()*0.3+0.02), hue:200 + Math.random()*40, a:0.06+Math.random()*0.2};
-      });
-    }
-    function step(){
-      ctx.clearRect(0,0,W,H);
-      particles.forEach(p=>{
-        p.x += p.vx; p.y += p.vy;
-        if(p.x < -50) p.x = W+50; if(p.x > W+50) p.x = -50;
-        if(p.y < -50) p.y = H+50; if(p.y > H+50) p.y = -50;
-        ctx.beginPath();
-        ctx.fillStyle = `hsla(${p.hue},70%,60%,${p.a})`;
-        ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-      });
-      requestAnimationFrame(step);
-    }
-    addEventListener('resize', resize);
-    resize(); step();
-  })();
-
-  /* ---------- Init ---------- */
-  // If no admin name/email set, keep defaults
-  if(!state.admin) state.admin = defaultState.admin;
-  if(!state.users) state.users = [];
-  if(!state.batches) state.batches = defaultState.batches;
-  // initial render
+/* ---------- Student login ---------- */
+let loggedStudent = null;
+function studentLogin(){
+  const val = document.getElementById('studentLogin').value.trim();
+  if(!val) return alert('Enter username');
+  const u = state.users.find(x=>x.username===val && x.role==='student');
+  if(!u) return alert('Student not found');
+  loggedStudent = u.username;
+  addLog(`Student ${loggedStudent} logged in`);
   renderAll();
-  // expose some funcs for console (debug)
-  window._sa_state = state;
-  window.persistAndRender = persistAndRender;
+}
+function studentLogout(){
+  loggedStudent = null;
+  document.getElementById('studentLogin').value='';
+  addLog('Student logged out');
+  renderAll();
+}
+
+/* ---------- Render functions ---------- */
+function renderAll(){
+  renderUsers();
+  renderBatchSelect();
+  renderBadgeUserSelects();
+  renderAcademic();
+  renderAttendance();
+  renderTests();
+  renderCharts();
+  renderFeedback();
+  renderLogs();
+  renderAnalytics();
+}
+
+/* ---------- Users ---------- */
+function renderUsers(){
+  const tbody = document.querySelector('#usersTable tbody');
+  tbody.innerHTML='';
+  let users = state.users;
+  if(loggedStudent) users = users.filter(u=>u.username===loggedStudent);
+  const search = document.querySelector('#usersSearch')?.value?.toLowerCase() || '';
+  users.filter(u=>u.username.toLowerCase().includes(search) || u.role.toLowerCase().includes(search)).forEach(u=>{
+    const tr = document.createElement('tr');
+    const badgesHTML = (u.badges||[]).map(b=>`<span class="badge badge-${b}">${b.toUpperCase()}</span>`).join(' ');
+    tr.innerHTML = `<td>${u.username}</td><td>${u.role}</td><td>${badgesHTML}</td>
+      <td>${!loggedStudent?`<button class="btn tiny btn-ghost" onclick="showEditUser('${u.username.replace(/'/g,"\\'")}')">Edit</button>
+      <button class="btn tiny btn-danger" onclick="deleteUserByName('${u.username.replace(/'/g,"\\'")}')">Delete</button>`:''}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ---------- Academic ---------- */
+function renderAcademic(){
+  const c = document.getElementById('academicList');
+  c.innerHTML='';
+  let items = state.academic;
+  if(loggedStudent) items = items.filter(a=>!a.student || a.student===loggedStudent);
+  const search = document.querySelector('#acadSearch')?.value?.toLowerCase() || '';
+  items.filter(a=>a.title.toLowerCase().includes(search) || a.content.toLowerCase().includes(search)).forEach(a=>{
+    const div = document.createElement('div');
+    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+    div.innerHTML = `<strong>[${a.type.toUpperCase()}]</strong> ${a.title} 
+      <div class="small">${a.student ? 'For: '+a.student : 'For: All'}</div>
+      <div style="margin-top:6px">${a.content}</div>
+      <div style="margin-top:6px">
+        ${!loggedStudent?`<button class="btn tiny btn-ghost" onclick="editAcademic('${a.id}')">Edit</button>
+        <button class="btn tiny btn-danger" onclick="deleteAcademic('${a.id}')">Delete</button>`:''}
+      </div>`;
+    c.appendChild(div);
+  });
+}
+
+/* ---------- Attendance ---------- */
+function renderAttendance(){
+  const c = document.getElementById('attendanceList');
+  c.innerHTML='';
+  let items = state.attendance;
+  const search = document.querySelector('#attSearch')?.value?.toLowerCase() || '';
+  items.filter(a=>a.subject.toLowerCase().includes(search)).forEach(a=>{
+    const div = document.createElement('div');
+    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+    div.innerHTML = `<strong>${a.subject}</strong> — ${a.percent}% 
+      <div style="margin-top:6px">
+        ${!loggedStudent?`<button class="btn tiny btn-ghost" onclick="promptEditAttendance('${a.subject}')">Edit</button>
+        <button class="btn tiny btn-danger" onclick="deleteSubjectByName('${a.subject}')">Delete</button>`:''}
+      </div>`;
+    c.appendChild(div);
+  });
+}
+
+/* ---------- Tests ---------- */
+function renderTests(){
+  const c = document.getElementById('testList');
+  c.innerHTML='';
+  let items = state.tests;
+  if(loggedStudent) items = items.filter(t=>t.student===loggedStudent);
+  const search = document.querySelector('#testSearch')?.value?.toLowerCase() || '';
+  items.filter(t=>t.subject.toLowerCase().includes(search)).forEach(t=>{
+    const div = document.createElement('div');
+    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+    div.innerHTML = `<strong>${t.subject}</strong> — ${t.marks} 
+      <div style="margin-top:6px">
+        ${!loggedStudent?`<button class="btn tiny btn-ghost" onclick="promptEditTest('${t.subject}')">Edit</button>
+        <button class="btn tiny btn-danger" onclick="deleteTestByName('${t.subject}')">Delete</button>`:''}
+      </div>`;
+    c.appendChild(div);
+  });
+}
+
+/* ---------- Charts ---------- */
+let attendanceChart=null, testChart=null;
+function renderCharts(){
+  const attCtx = document.getElementById('attendanceChart').getContext('2d');
+  const testCtx = document.getElementById('testChart').getContext('2d');
+
+  const attLabels = (state.attendance||[]).map(a=>a.subject);
+  const attData = (state.attendance||[]).map(a=>a.percent);
+  const testLabels = (state.tests||[]).map(t=>t.subject);
+  const testData = (state.tests||[]).map(t=>t.marks);
+
+  if(attendanceChart){
+    attendanceChart.data.labels = attLabels;
+    attendanceChart.data.datasets[0].data = attData;
+    attendanceChart.update();
+  } else {
+    attendanceChart = new Chart(attCtx,{
+      type:'bar',
+      data:{ labels:attLabels, datasets:[{label:'Attendance %', data:attData, backgroundColor:'#4f46e5'}]},
+      options:{responsive:true,plugins:{legend:{display:false}}}
+    });
+  }
+
+  if(testChart){
+    testChart.data.labels = testLabels;
+    testChart.data.datasets[0].data = testData;
+    testChart.update();
+  } else {
+    testChart = new Chart(testCtx,{
+      type:'bar',
+      data:{ labels:testLabels, datasets:[{label:'Test marks', data:testData, backgroundColor:'#3b82f6'}]},
+      options:{responsive:true,plugins:{legend:{display:false}}}
+    });
+  }
+}
+
+/* ---------- Feedback ---------- */
+function renderFeedback(){
+  const c = document.getElementById('feedbackList');
+  if(!state.feedback.length){ c.innerHTML='<div class="small muted">No feedback yet</div>'; return; }
+  c.innerHTML = state.feedback.map(f=>`<div style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)">${f}</div>`).join('');
+}
+
+/* ---------- Logs ---------- */
+function renderLogs(){
+  document.getElementById('actionLogs').innerHTML = state.logs.map(l=>`<div style="padding:6px">${l}</div>`).join('');
+}
+
+/* ---------- Init ---------- */
+renderAll();
+window._sa_state = state;
   </script>
-</body>
-</html>
-    
