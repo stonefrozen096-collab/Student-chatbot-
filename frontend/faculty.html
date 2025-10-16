@@ -1,43 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Faculty Dashboard</title>
-<style>
-/* --- Keep previous CSS --- */
-body { background:#f4f6f9; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; margin:0; padding:0; }
-#bg-canvas { position: fixed; inset: 0; width:100vw; height:100vh; z-index:0; pointer-events:none; background:linear-gradient(120deg, #0f172a 0%, #0b1320 50%, #061026 100%); opacity:0.4; }
-.container { position:relative; z-index:2; max-width:1000px; margin:60px auto; padding:20px; }
-.profile-card { background:#fff; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); padding:25px; display:flex; gap:20px; align-items:center; margin-bottom:25px; }
-.profile-avatar { width:80px; height:80px; border-radius:50%; background:#8b5cf6; display:flex; align-items:center; justify-content:center; color:#fff; font-size:28px; font-weight:bold; flex-shrink:0; }
-.profile-info h2 { margin:0; font-size:22px; color:#0f172a; }
-.profile-info p { margin:4px 0; color:#475569; font-size:14px; }
-.badge-container { margin-top:10px; }
-.badge { display:inline-block; padding:5px 12px; border-radius:12px; margin:3px; font-size:12px; font-weight:600; cursor:default; }
-.badge.admin { background-color:#e74c3c;color:#fff; }
-.badge.moderator { background-color:#8b5cf6;color:#fff; }
-.badge.tester { background-color:#f59e0b;color:#fff; }
-.badge.faculty { background-color:#3b82f6;color:#fff; }
-.badge.student { background-color:#2ecc71;color:#fff; }
-.section-card { background:#fff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.08); padding:20px; margin-bottom:20px; }
-.section-card h3 { margin-top:0; color:#2563eb; }
-ul { list-style:none; padding:0; margin:0; }
-li { padding:6px 0; border-bottom:1px solid #e5e7eb; font-size:14px; color:#334155; }
-li:last-child { border-bottom:none; }
-.form-group { margin-bottom:15px; }
-input, textarea, select { width:100%; padding:8px; border-radius:8px; border:1px solid #cbd5e1; outline:none; }
-button.primary-btn { padding:8px 15px; border:none; border-radius:8px; background:linear-gradient(90deg, #4f46e5, #3b82f6); color:#fff; font-weight:bold; cursor:pointer; margin-top:10px; }
-.logout-btn { padding:8px 15px; border:none; background:#ef4444; color:#fff; border-radius:8px; cursor:pointer; float:right; font-weight:bold; }
-.attendance-list li { display:flex; align-items:center; gap:10px; }
-.attendance-list input[type="radio"] { accent-color:#3b82f6; }
-.question-card { border:1px solid #cbd5e1; padding:8px; margin-top:6px; border-radius:6px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Dashboard</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/animation.css">
+  <style>
+    body {
+      background: #f4f6f9;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      background: linear-gradient(120deg, #0f172a 0%, #0b1320 50%, #061026 100%);
+      opacity: 0.4;
+    }
+    .container {
+      position: relative;
+      z-index: 2;
+      max-width: 1000px;
+      margin: 60px auto;
+      padding: 20px;
+    }
+    .profile-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      padding: 25px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #8b5cf6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 28px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .profile-info h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #0f172a;
+    }
+    .profile-info p {
+      margin: 4px 0;
+      color: #475569;
+      font-size: 14px;
+    }
+    .badge-container {
+      margin-top: 10px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 12px;
+      margin: 3px;
+      font-size: 12px;
+      font-weight: 600;
+      animation: pop 0.3s ease forwards;
+      cursor: default;
+    }
+    .badge.admin { background-color: #e74c3c; color: #fff; }
+    .badge.moderator { background-color: #8b5cf6; color: #fff; }
+    .badge.tester { background-color: #f59e0b; color: #fff; }
+    .badge.faculty { background-color: #3b82f6; color: #fff; }
+    .badge.student { background-color: #2ecc71; color: #fff; }
+    @keyframes pop {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .section-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .section-card h3 {
+      margin-top: 0;
+      color: #2563eb;
+    }
+    .student-list, .notes-list, .attendance-list, .assignments-list, .feedback-list, .questions-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .student-list li, .notes-list li, .attendance-list li, .assignments-list li, .feedback-list li, .questions-list li {
+      padding: 6px 0;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+      color: #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .student-list li:last-child, .notes-list li:last-child, .attendance-list li:last-child, 
+    .assignments-list li:last-child, .feedback-list li:last-child, .questions-list li:last-child { border-bottom: none; }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      outline: none;
+    }
+    button.primary-btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #4f46e5, #3b82f6);
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button.remove-btn {
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 2px 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .logout-btn {
+      padding: 8px 15px;
+      border: none;
+      background: #ef4444;
+      color: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      float: right;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-<canvas id="bg-canvas"></canvas>
-<div class="container">
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
 
+<div class="container">
   <!-- Profile Card -->
   <div class="profile-card">
     <div class="profile-avatar" id="facultyAvatar">F</div>
@@ -55,208 +174,268 @@ button.primary-btn { padding:8px 15px; border:none; border-radius:8px; backgroun
     <ul class="student-list" id="assignedStudents"></ul>
   </div>
 
-  <!-- Attendance MCQ -->
+  <!-- Attendance -->
   <div class="section-card">
     <h3>Attendance</h3>
-    <form id="attendanceForm">
-      <ul class="attendance-list" id="attendanceList"></ul>
-      <button type="submit" class="primary-btn">Submit Attendance</button>
-    </form>
+    <ul class="attendance-list" id="attendanceList"></ul>
+    <button class="primary-btn" onclick="submitAttendance()">Submit Attendance</button>
   </div>
 
-  <!-- Notes -->
+  <!-- Notes Section -->
   <div class="section-card">
     <h3>Notes</h3>
-    <textarea id="noteContent" placeholder="Write note here..." rows="3"></textarea>
-    <select id="noteType">
-      <option value="public">Public</option>
-      <option value="private">Private</option>
-    </select>
-    <button class="primary-btn" onclick="addNote()">Add Note</button>
+    <div class="form-group">
+      <textarea id="noteContent" placeholder="Write note here..." rows="3"></textarea>
+      <select id="noteType" style="margin-top:8px;padding:6px;border-radius:6px;">
+        <option value="public">Public</option>
+        <option value="private">Private</option>
+      </select>
+      <button class="primary-btn" onclick="addNote()">Add Note</button>
+    </div>
     <ul id="notesList"></ul>
   </div>
 
-  <!-- Assignments -->
+  <!-- Assignments / Tests Section -->
   <div class="section-card">
     <h3>Assignments / Tests</h3>
-    <input type="text" id="assignmentTitle" placeholder="Title">
-    <textarea id="assignmentDesc" placeholder="Description" rows="3"></textarea>
-    <button class="primary-btn" onclick="addAssignment()">Add Assignment</button>
-
-    <!-- Test / MCQ Section -->
-    <h4 style="margin-top:20px;">Create Test / MCQ</h4>
-    <input type="text" id="testTitle" placeholder="Test Title">
-    <textarea id="testDesc" placeholder="Test Description"></textarea>
-    <div id="questionsContainer"></div>
-    <button class="primary-btn" onclick="addQuestion()">Add Question</button>
-    <button class="primary-btn" onclick="submitTest()">Submit Test</button>
-
+    <div class="form-group">
+      <input type="text" id="assignmentTitle" placeholder="Title" />
+      <textarea id="assignmentDesc" placeholder="Description" rows="3"></textarea>
+      <button class="primary-btn" onclick="addAssignment()">Add</button>
+    </div>
     <ul id="assignmentsList"></ul>
-    <ul id="testsList"></ul>
   </div>
 
-  <!-- Feedback -->
+  <!-- Test / Quiz Section -->
+  <div class="section-card">
+    <h3>Test / Quiz Questions</h3>
+    <div class="form-group">
+      <input type="text" id="questionText" placeholder="Enter question..." />
+      <button class="primary-btn" onclick="addQuestion()">Add Question</button>
+    </div>
+    <ul class="questions-list" id="questionsList"></ul>
+  </div>
+
+  <!-- Feedback Section -->
   <div class="section-card">
     <h3>Feedback</h3>
-    <textarea id="feedbackContent" rows="3" placeholder="Write feedback..."></textarea>
+    <textarea id="feedbackContent" placeholder="Write feedback..." rows="3"></textarea>
     <button class="primary-btn" onclick="sendFeedback()">Send Feedback</button>
     <ul id="feedbackList"></ul>
   </div>
-
 </div>
 
 <script>
-const facultyData={
-  name:"Mr. John Doe",
-  email:"john.doe@example.com",
-  badges:["faculty","tester"],
-  assignedStudents:["Hari Prasath","Alice Smith","Bob Lee"],
-  notes:[], assignments:[], feedbacks:[], tests:[]
-};
-
-// Profile
-document.getElementById("facultyName").textContent=facultyData.name;
-document.getElementById("facultyEmail").textContent=facultyData.email;
-const badgeContainer=document.getElementById("facultyBadgeContainer");
-facultyData.badges.forEach(b=>{const span=document.createElement("span"); span.className=`badge ${b}`; span.textContent=b.toUpperCase(); badgeContainer.appendChild(span);});
-
-// Assigned students
-const studentList=document.getElementById("assignedStudents");
-facultyData.assignedStudents.forEach(s=>{const li=document.createElement("li"); li.textContent=s; studentList.appendChild(li);});
-
-// Attendance
-function renderAttendance(students){
-  const attendanceList=document.getElementById("attendanceList"); attendanceList.innerHTML='';
-  students.forEach(student=>{
-    const li=document.createElement("li");
-    li.innerHTML=`<span style="flex:1">${student}</span>
-    <label><input type="radio" name="attendance-${student}" value="Present"> ✅</label>
-    <label><input type="radio" name="attendance-${student}" value="Absent"> ❌</label>`;
-    attendanceList.appendChild(li);
-  });
-}
-renderAttendance(facultyData.assignedStudents);
-document.getElementById("attendanceForm").addEventListener("submit",function(e){
-  e.preventDefault();
-  const attendanceRecords=[];
-  facultyData.assignedStudents.forEach(student=>{
-    const radios=document.getElementsByName(`attendance-${student}`);
-    let status=null; radios.forEach(r=>{if(r.checked) status=r.value;});
-    if(status) attendanceRecords.push({regno:student,date:new Date().toISOString().split('T')[0],status});
-  });
-  if(attendanceRecords.length===0) return alert("Please mark attendance!");
-  console.log("Attendance:",attendanceRecords);
-  alert("Attendance submitted!");
-});
-
-// Notes
-function addNote(){
-  const content=document.getElementById("noteContent").value.trim();
-  const type=document.getElementById("noteType").value;
-  if(!content) return alert("Note cannot be empty!");
-  facultyData.notes.push({content,type,date:new Date().toLocaleString()});
-  renderNotes(); document.getElementById("noteContent").value='';
-}
-function renderNotes(){
-  const notesList=document.getElementById("notesList"); notesList.innerHTML='';
-  facultyData.notes.forEach(n=>{const li=document.createElement("li"); li.textContent=`[${n.type.toUpperCase()}] ${n.content} (${n.date})`; notesList.appendChild(li);});
-}
-
-// Assignments
-function addAssignment(){
-  const title=document.getElementById("assignmentTitle").value.trim();
-  const desc=document.getElementById("assignmentDesc").value.trim();
-  if(!title||!desc) return alert("Title & Description required!");
-  facultyData.assignments.push({title,desc,date:new Date().toLocaleString()});
-  renderAssignments(); document.getElementById("assignmentTitle").value=''; document.getElementById("assignmentDesc").value='';
-}
-function renderAssignments(){
-  const assignmentsList=document.getElementById("assignmentsList"); assignmentsList.innerHTML='';
-  facultyData.assignments.forEach(a=>{const li=document.createElement("li"); li.textContent=`${a.title} - ${a.desc} (${a.date})`; assignmentsList.appendChild(li);});
-}
-
-// Feedback
-function sendFeedback(){
-  const content=document.getElementById("feedbackContent").value.trim();
-  if(!content) return alert("Feedback cannot be empty!");
-  facultyData.feedbacks.push({content,date:new Date().toLocaleString()});
-  renderFeedbacks(); document.getElementById("feedbackContent").value='';
-}
-function renderFeedbacks(){
-  const feedbackList=document.getElementById("feedbackList"); feedbackList.innerHTML='';
-  facultyData.feedbacks.forEach(f=>{const li=document.createElement("li"); li.textContent=`${f.content} (${f.date})`; feedbackList.appendChild(li);});
-}
-
-// Logout
-function logout(){ alert("Logging out..."); window.location.href="index.html";}
-
-// Test / MCQ
-function addQuestion() {
-  const qText = document.getElementById("questionText").value.trim();
-  if (!qText) return alert("Question text cannot be empty!");
-  
-  const questionCard = document.createElement("div");
-  questionCard.className = "question-card";
-  questionCard.style.marginBottom = "8px";
-  questionCard.style.padding = "6px";
-  questionCard.style.border = "1px solid #ccc";
-  questionCard.style.borderRadius = "6px";
-  questionCard.style.position = "relative";
-
-  questionCard.innerHTML = `
-    <strong>Q:</strong> ${qText}
-    <button class="remove-btn" style="position:absolute; right:6px; top:6px; background:#ef4444; color:#fff; border:none; border-radius:4px; padding:2px 6px; cursor:pointer;">Remove</button>
-  `;
-
-  // Add remove functionality
-  questionCard.querySelector(".remove-btn").onclick = () => {
-    questionCard.remove();
+  // Example faculty data
+  const facultyData = {
+    name: "Mr. John Doe",
+    email: "john.doe@example.com",
+    badges: ["faculty", "tester"],
+    assignedStudents: ["Hari Prasath", "Alice Smith", "Bob Lee"],
+    notes: [],
+    assignments: [],
+    feedbacks: [],
+    questions: []
   };
 
-  document.getElementById("questionsList").appendChild(questionCard);
-  document.getElementById("questionText").value = '';
-}
-function submitTest(){
-  const title=document.getElementById("testTitle").value.trim();
-  const desc=document.getElementById("testDesc").value.trim();
-  if(!title||!desc) return alert("Test title & description required!");
-  const questions=[];
-  document.querySelectorAll("#questionsContainer .question-card").forEach(qc=>{
-    const question=qc.querySelector(".question-text").value.trim();
-    const options=[...qc.querySelectorAll(".option")].map(i=>i.value.trim());
-    const correct=qc.querySelector(".correct-option").value;
-    if(question && options.every(o=>o)) questions.push({question,options,correct});
+  // Profile & badges
+  document.getElementById("facultyName").textContent = facultyData.name;
+  document.getElementById("facultyEmail").textContent = facultyData.email;
+  const badgeContainer = document.getElementById("facultyBadgeContainer");
+  facultyData.badges.forEach(b => {
+    const span = document.createElement("span");
+    span.className = `badge ${b}`;
+    span.textContent = b.toUpperCase();
+    badgeContainer.appendChild(span);
   });
-  if(questions.length===0) return alert("Add at least one complete question!");
-  facultyData.tests.push({title,desc,questions,date:new Date().toLocaleString()});
-  renderTests();
-  document.getElementById("testTitle").value=''; document.getElementById("testDesc").value=''; document.getElementById("questionsContainer").innerHTML='';
-}
-function renderTests(){
-  const testsList=document.getElementById("testsList"); testsList.innerHTML='';
-  facultyData.tests.forEach(t=>{
-    const li=document.createElement("li");
-    li.textContent=`${t.title} (${t.date}) - ${t.questions.length} questions`;
-    testsList.appendChild(li);
+
+  // Assigned students
+  const studentList = document.getElementById("assignedStudents");
+  facultyData.assignedStudents.forEach(s => {
+    const li = document.createElement("li");
+    const label = document.createElement("label");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.dataset.student = s;
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(` ${s}`));
+    li.appendChild(label);
+    studentList.appendChild(li);
   });
-}
+
+  // Attendance submission
+  function submitAttendance() {
+    const checkboxes = document.querySelectorAll("#assignedStudents input[type=checkbox]");
+    checkboxes.forEach(cb => {
+      const student = cb.dataset.student;
+      const status = cb.checked ? "Present" : "Absent";
+      console.log(`Marked ${student}: ${status}`);
+      // here you can call API to save attendance
+    });
+    alert("Attendance submitted!");
+  }
+
+  // Notes
+  function addNote() {
+    const content = document.getElementById("noteContent").value.trim();
+    const type = document.getElementById("noteType").value;
+    if (!content) return alert("Note cannot be empty!");
+    facultyData.notes.push({ content, type, date: new Date().toLocaleString() });
+    renderNotes();
+    document.getElementById("noteContent").value = '';
+  }
+  function renderNotes() {
+    const notesList = document.getElementById("notesList");
+    notesList.innerHTML = '';
+    facultyData.notes.forEach(n => {
+      const li = document.createElement("li");
+      li.textContent = `[${n.type.toUpperCase()}] ${n.content} (${n.date})`;
+      notesList.appendChild(li);
+    });
+  }
+
+  // Assignments
+  function addAssignment() {
+    const title = document.getElementById("assignmentTitle").value.trim();
+    const desc = document.getElementById("assignmentDesc").value.trim();
+    if (!title || !desc) return alert("Title and description required!");
+    facultyData.assignments.push({ title, desc, date: new Date().toLocaleString() });
+    renderAssignments();
+    document.getElementById("assignmentTitle").value = '';
+    document.getElementById("assignmentDesc").value = '';
+  }
+  function renderAssignments() {
+    const list = document.getElementById("assignmentsList");
+    list.innerHTML = '';
+    facultyData.assignments.forEach(a => {
+      const li = document.createElement("li");
+      li.textContent = `${a.title} - ${a.desc} (${a.date})`;
+      list.appendChild(li);
+    });
+  }
+
+  // Feedback
+  function sendFeedback() {
+    const content = document.getElementById("feedbackContent").value.trim();
+    if (!content) return alert("Feedback cannot be empty!");
+    facultyData.feedbacks.push({ content, date: new Date().toLocaleString() });
+    renderFeedbacks();
+    document.getElementById("feedbackContent").value = '';
+  }
+  function renderFeedbacks() {
+    const list = document.getElementById("feedbackList");
+    list.innerHTML = '';
+    facultyData.feedbacks.forEach(f => {
+      const li = document.createElement("li");
+      li.textContent = `${f.content} (${f.date})`;
+      list.appendChild(li);
+    });
+  }
+
+  // Test / Quiz questions
+  function addQuestion() {
+    const qText = document.getElementById("questionText").value.trim();
+    if (!qText) return alert("Question cannot be empty!");
+    facultyData.questions.push(qText);
+    renderQuestions();
+    document.getElementById("questionText").value = '';
+  }
+  function renderQuestions() {
+    const list = document.getElementById("questionsList");
+    list.innerHTML = '';
+    facultyData.questions.forEach((q, idx) => {
+      const li = document.createElement("li");
+      li.textContent = q;
+      const removeBtn = document.createElement("button");
+      removeBtn.textContent = "Remove";
+      removeBtn.className = "remove-btn";
+      removeBtn.onclick = () => {
+        facultyData.questions.splice(idx, 1);
+        renderQuestions();
+      };
+      li.appendChild(removeBtn);
+      list.appendChild(li);
+    });
+  }
+
+  function logout() {
+    alert("Logging out...");
+    window.location.href = "index.html";
+  }
 </script>
 
+<!-- Background animation -->
 <script>
 (() => {
-  const canvas=document.getElementById('bg-canvas'); if(!canvas) return;
-  const ctx=canvas.getContext('2d',{alpha:true});
-  let width=canvas.width=window.innerWidth; let height=canvas.height=window.innerHeight;
-  const baseCount=Math.round((width*height)/60000);
-  let PARTICLE_COUNT=Math.min(120,Math.max(25,baseCount*40));
-  if(width<800) PARTICLE_COUNT=Math.min(PARTICLE_COUNT,45);
-  const particles=[];
-  function rand(min,max){return Math.random()*(max-min)+min;}
-  function initParticles(){particles.length=0; for(let i=0;i<PARTICLE_COUNT;i++){const size=rand(1,3.2); particles.push({x:rand(0,width),y:rand(0,height),vx:rand(-0.12,0.12),vy:rand(-0.02,0.6),size,alpha:rand(0.06,0.22),hue:rand(200,240)});}}
-  function resize(){width=canvas.width=window.innerWidth;height=canvas.height=window.innerHeight; initParticles();}
-  window.addEventListener('resize',()=>{clearTimeout(window._bgResizeTimer); window._bgResizeTimer=setTimeout(resize,120);});
-  function draw(){ctx.clearRect(0,0,width,height); for(let i=0;i<particles.length;i++){const p=particles[i];p.x+=p.vx;p.y-=p.vy*0.3;if(p.x<-50)p.x=width+50;if(p.x>width+50)p.x=-50;if(p.y<-50)p.y=height+50;if(p.y>height+50)p.y=-50;ctx.beginPath();ctx.fillStyle=`hsla(${p.hue}, 80%, 60%, ${p.alpha})`;ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();for(let j=i+1;j<particles.length&&j<i+6;j++){const p2=particles[j];const dx=p.x-p2.x;const dy=p.y-p2.y;const dist=Math.sqrt(dx*dx+dy*dy);if(dist<120){ctx.beginPath();ctx.strokeStyle=`hsla(${(p.hue+p2.hue)/2},70%,60%,${Math.max(0,0.08-dist/1500)})`;ctx.lineWidth=0.6;ctx.moveTo(p.x,p.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();}}} window.requestAnimationFrame(draw);}
-  initParticles(); draw();
+  const canvas = document.getElementById('bg-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d', { alpha: true });
+  let width = canvas.width = window.innerWidth;
+  let height = canvas.height = window.innerHeight;
+  const baseCount = Math.round((width * height) / 60000);
+  let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
+  if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
+  const particles = [];
+  function rand(min, max) { return Math.random() * (max - min) + min; }
+  function initParticles() {
+    particles.length = 0;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const size = rand(1, 3.2);
+      particles.push({
+        x: rand(0, width),
+        y: rand(0, height),
+        vx: rand(-0.12, 0.12),
+        vy: rand(-0.02, 0.6),
+        size,
+        alpha: rand(0.06, 0.22),
+        hue: rand(200, 240)
+      });
+    }
+  }
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    initParticles();
+  }
+  window.addEventListener('resize', () => {
+    clearTimeout(window._bgResizeTimer);
+    window._bgResizeTimer = setTimeout(resize, 120);
+  });
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y -= p.vy * 0.3;
+      if (p.x < -50) p.x = width + 50;
+      if (p.x > width + 50) p.x = -50;
+      if (p.y < -50) p.y = height + 50;
+      if (p.y > height + 50) p.y = -50;
+
+      ctx.beginPath();
+      ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+
+      for (let j = i + 1; j < particles.length && j < i + 6; j++) {
+        const p2 = particles[j];
+        const dx = p.x - p2.x;
+        const dy = p.y - p2.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < 120){
+          ctx.beginPath();
+          ctx.strokeStyle = `hsla(${(p.hue+p2.hue)/2},70%,60%,${Math.max(0,0.08-dist/1500)})`;
+          ctx.lineWidth = 0.6;
+          ctx.moveTo(p.x,p.y);
+          ctx.lineTo(p2.x,p2.y);
+          ctx.stroke();
+        }
+      }
+    }
+    window.requestAnimationFrame(draw);
+  }
+  initParticles();
+  draw();
 })();
 </script>
 
