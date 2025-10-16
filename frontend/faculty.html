@@ -1,48 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Faculty Dashboard</title>
-<link rel="stylesheet" href="css/common.css">
-<link rel="stylesheet" href="css/animation.css">
-<style>
-  body { background: #f4f6f9; font-family: "Segoe UI", sans-serif; margin:0; padding:0; }
-  #bg-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index:0; pointer-events:none; background: linear-gradient(120deg,#0f172a 0%,#0b1320 50%,#061026 100%); opacity:0.4; }
-  .container { position:relative; z-index:2; max-width:1000px; margin:60px auto; padding:20px; }
-  .profile-card { background:#fff; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); padding:25px; display:flex; gap:20px; align-items:center; margin-bottom:25px; }
-  .profile-avatar { width:80px; height:80px; border-radius:50%; background:#8b5cf6; display:flex; align-items:center; justify-content:center; color:#fff; font-size:28px; font-weight:bold; flex-shrink:0; }
-  .profile-info h2 { margin:0; font-size:22px; color:#0f172a; }
-  .profile-info p { margin:4px 0; color:#475569; font-size:14px; }
-  .badge-container { margin-top:10px; }
-  .badge { display:inline-block; padding:5px 12px; border-radius:12px; margin:3px; font-size:12px; font-weight:600; animation:pop 0.3s ease forwards; cursor:default; }
-  .badge.admin { background-color:#e74c3c; color:#fff; }
-  .badge.moderator { background-color:#8b5cf6; color:#fff; }
-  .badge.tester { background-color:#f59e0b; color:#fff; }
-  .badge.faculty { background-color:#3b82f6; color:#fff; }
-  .badge.student { background-color:#2ecc71; color:#fff; }
-  @keyframes pop { 0% { transform:scale(0.8); opacity:0; } 100% { transform:scale(1); opacity:1; } }
-  .section-card { background:#fff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.08); padding:20px; margin-bottom:20px; }
-  .section-card h3 { margin-top:0; color:#2563eb; }
-  .student-list, .notes-list, .attendance-list, .assignment-list, .feedback-list { list-style:none; padding:0; margin:0; }
-  .student-list li, .notes-list li, .attendance-list li, .assignment-list li, .feedback-list li { padding:6px 0; border-bottom:1px solid #e5e7eb; font-size:14px; color:#334155; }
-  .student-list li:last-child, .notes-list li:last-child, .attendance-list li:last-child, .assignment-list li:last-child, .feedback-list li:last-child { border-bottom:none; }
-  .form-group { margin-bottom:15px; }
-  input, textarea, select { width:100%; padding:8px; border-radius:8px; border:1px solid #cbd5e1; outline:none; }
-  button.primary-btn { padding:8px 15px; border:none; border-radius:8px; background:linear-gradient(90deg,#4f46e5,#3b82f6); color:#fff; font-weight:bold; cursor:pointer; margin-top:10px; }
-  .logout-btn { padding:8px 15px; border:none; background:#ef4444; color:#fff; border-radius:8px; cursor:pointer; float:right; font-weight:bold; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Dashboard</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/animation.css">
+  <style>
+    body {
+      background: #f4f6f9;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      background: linear-gradient(120deg, #0f172a 0%, #0b1320 50%, #061026 100%);
+      opacity: 0.4;
+    }
+
+    .container {
+      position: relative;
+      z-index: 2;
+      max-width: 1000px;
+      margin: 60px auto;
+      padding: 20px;
+    }
+
+    .profile-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      padding: 25px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #8b5cf6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 28px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .profile-info h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #0f172a;
+    }
+
+    .profile-info p {
+      margin: 4px 0;
+      color: #475569;
+      font-size: 14px;
+    }
+
+    .badge-container {
+      margin-top: 10px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 12px;
+      margin: 3px;
+      font-size: 12px;
+      font-weight: 600;
+      animation: pop 0.3s ease forwards;
+      cursor: default;
+    }
+
+    .badge.admin { background-color: #e74c3c; color: #fff; }
+    .badge.moderator { background-color: #8b5cf6; color: #fff; }
+    .badge.tester { background-color: #f59e0b; color: #fff; }
+    .badge.faculty { background-color: #3b82f6; color: #fff; }
+    .badge.student { background-color: #2ecc71; color: #fff; }
+
+    @keyframes pop {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .section-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .section-card h3 {
+      margin-top: 0;
+      color: #2563eb;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    table, th, td {
+      border: 1px solid #cbd5e1;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    input[type="text"], textarea, select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      outline: none;
+    }
+
+    button.primary-btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #4f46e5, #3b82f6);
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .logout-btn {
+      padding: 8px 15px;
+      border: none;
+      background: #ef4444;
+      color: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      float: right;
+      font-weight: bold;
+    }
+
+    .import-btn, .export-btn {
+      margin: 5px 5px 10px 0;
+      background: #10b981;
+    }
+
+  </style>
 </head>
 <body>
 <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
 <div class="container">
+
   <!-- Profile Card -->
   <div class="profile-card">
     <div class="profile-avatar" id="facultyAvatar">F</div>
     <div class="profile-info">
       <h2 id="facultyName">Faculty Name</h2>
       <p><strong>Email:</strong> <span id="facultyEmail">faculty@example.com</span></p>
-      <div class="badge-container" id="facultyBadgeContainer"></div>
+      <div class="badge-container" id="facultyBadgeContainer">
+        <!-- Badges populate here -->
+      </div>
     </div>
     <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
@@ -52,42 +185,32 @@
     <h3>Assigned Students</h3>
     <ul class="student-list" id="assignedStudents"></ul>
   </div>
+
   <!-- Attendance Section -->
   <div class="section-card">
-  <h3>Attendance</h3>
-  <table id="attendanceTable" style="width:100%; border-collapse: collapse;">
-    <thead>
-      <tr>
-        <th>Student</th>
-        <th>Present</th>
-        <th>Absent</th>
-        <th>Late</th>
-        <th>On Duty</th>
-      </tr>
-    </thead>
-    <tbody id="attendanceTableBody">
-      <!-- JS will populate rows here -->
-    </tbody>
-  </table>
-  <div style="margin-top:10px;">
-    <button class="primary-btn" onclick="exportAttendance()">Export Attendance</button>
-    <input type="file" id="importAttendanceFile" style="margin-left:10px;">
-    <button class="primary-btn" onclick="importAttendance()">Import Attendance</button>
-  </div>
-  </div>
-     <!-- Dynamically populated -->
+    <h3>Attendance</h3>
+    <button class="primary-btn import-btn" onclick="importAttendance()">Import CSV</button>
+    <button class="primary-btn export-btn" onclick="exportAttendance()">Export CSV</button>
+    <table id="attendanceTable">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Present</th>
+          <th>Absent</th>
+          <th>Late</th>
+          <th>On Duty</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Populated via JS -->
       </tbody>
     </table>
-    <button class="primary-btn" onclick="exportAttendance()">Export CSV</button>
-    <input type="file" id="importAttendanceFile" style="margin-top:8px;" />
-    <button class="primary-btn" onclick="importAttendance()">Import CSV</button>
   </div>
-
   <!-- Notes Section -->
   <div class="section-card">
     <h3>Notes</h3>
     <div>
-      <textarea id="noteContent" placeholder="Write note here..." rows="3" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;"></textarea>
+      <textarea id="noteContent" placeholder="Write note here..." rows="3"></textarea>
       <select id="noteType" style="margin-top:8px;padding:6px;border-radius:6px;">
         <option value="public">Public</option>
         <option value="private">Private</option>
@@ -101,21 +224,19 @@
   <div class="section-card">
     <h3>Assignments / Tests</h3>
     <div>
-      <input type="text" id="assignmentTitle" placeholder="Title" style="width:100%;padding:8px;border-radius:8px;margin-bottom:6px;border:1px solid #ccc;">
-      <textarea id="assignmentDesc" placeholder="Description" rows="3" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ccc;"></textarea>
-      <button class="primary-btn" onclick="addAssignment()">Add</button>
+      <input type="text" id="assignmentTitle" placeholder="Title">
+      <textarea id="assignmentDesc" placeholder="Description" rows="3"></textarea>
+      <button class="primary-btn" onclick="addAssignment()">Add Assignment</button>
     </div>
-    <ul id="assignmentsList" style="margin-top:10px;"></ul>
 
-    <!-- MCQ Creation for Test -->
-    <h4 style="margin-top:15px;">Add MCQ Question</h4>
+    <h4 style="margin-top:15px;">Add MCQ Test</h4>
     <div>
-      <input type="text" id="mcqQuestion" placeholder="Question" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ccc;margin-bottom:6px;">
-      <input type="text" class="mcqOption" placeholder="Option 1">
-      <input type="text" class="mcqOption" placeholder="Option 2">
-      <input type="text" class="mcqOption" placeholder="Option 3">
-      <input type="text" class="mcqOption" placeholder="Option 4">
-      <select id="correctOption" style="margin-top:8px;padding:6px;border-radius:6px;">
+      <input type="text" id="mcqQuestion" placeholder="Question">
+      <input type="text" id="option1" placeholder="Option 1">
+      <input type="text" id="option2" placeholder="Option 2">
+      <input type="text" id="option3" placeholder="Option 3">
+      <input type="text" id="option4" placeholder="Option 4">
+      <select id="correctOption">
         <option value="1">Option 1</option>
         <option value="2">Option 2</option>
         <option value="3">Option 3</option>
@@ -123,31 +244,34 @@
       </select>
       <button class="primary-btn" onclick="addMCQ()">Add MCQ</button>
     </div>
-    <ul id="mcqList" style="margin-top:10px;"></ul>
+    <ul id="assignmentsList" style="margin-top:10px;"></ul>
   </div>
+
   <!-- Feedback Section -->
   <div class="section-card">
     <h3>Feedback</h3>
-    <textarea id="feedbackContent" placeholder="Write feedback..." rows="3" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;"></textarea>
+    <textarea id="feedbackContent" placeholder="Write feedback..." rows="3"></textarea>
     <button class="primary-btn" onclick="sendFeedback()">Send Feedback</button>
     <ul id="feedbackList" style="margin-top:10px;"></ul>
   </div>
-</div> <!-- End container -->
+
+</div> <!-- End of container -->
 
 <script>
+  // Example Faculty Data
   const facultyData = {
     name: "Mr. John Doe",
     email: "john.doe@example.com",
     badges: ["faculty", "tester"],
     assignedStudents: ["Hari Prasath", "Alice Smith", "Bob Lee"],
+    attendance: {},
     notes: [],
     assignments: [],
-    mcqs: [],
     feedbacks: [],
-    attendance: []
+    mcqs: []
   };
 
-  // Populate profile
+  // Populate profile and badges
   document.getElementById("facultyName").textContent = facultyData.name;
   document.getElementById("facultyEmail").textContent = facultyData.email;
   const badgeContainer = document.getElementById("facultyBadgeContainer");
@@ -158,7 +282,7 @@
     badgeContainer.appendChild(span);
   });
 
-  // Assigned students list
+  // Populate assigned students
   const studentList = document.getElementById("assignedStudents");
   facultyData.assignedStudents.forEach(s => {
     const li = document.createElement("li");
@@ -166,67 +290,11 @@
     studentList.appendChild(li);
   });
 
-  // ---------------- Attendance / MCQ ----------------
-  function renderAttendanceTable() {
-    const tbody = document.getElementById("attendanceTableBody");
-    tbody.innerHTML = '';
-    facultyData.assignedStudents.forEach(student => {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${student}</td>
-        <td><input type="checkbox" data-student="${student}" data-option="1"></td>
-        <td><input type="checkbox" data-student="${student}" data-option="2"></td>
-        <td><input type="checkbox" data-student="${student}" data-option="3"></td>
-        <td><input type="checkbox" data-student="${student}" data-option="4"></td>
-        <td><input type="radio" name="correct_${student}" value="1">
-            <input type="radio" name="correct_${student}" value="2">
-            <input type="radio" name="correct_${student}" value="3">
-            <input type="radio" name="correct_${student}" value="4">
-        </td>
-      `;
-      tbody.appendChild(row);
-    });
-  }
-
-  function exportAttendance() {
-    let csv = "Student,Option1,Option2,Option3,Option4,Correct\n";
-    facultyData.assignedStudents.forEach(student => {
-      const checkboxes = document.querySelectorAll(`input[type="checkbox"][data-student="${student}"]`);
-      const values = Array.from(checkboxes).map(cb => cb.checked ? "✅" : "");
-      const radios = document.querySelectorAll(`input[type="radio"][name="correct_${student}"]`);
-      const correct = Array.from(radios).find(r => r.checked)?.value || "";
-      csv += `${student},${values.join(",")},${correct}\n`;
-    });
-    const blob = new Blob([csv], {type: 'text/csv'});
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'attendance.csv';
-    link.click();
-  }
-
-  function importAttendance() {
-    const file = document.getElementById("importAttendanceFile").files[0];
-    if (!file) return alert("Select a CSV file first");
-    const reader = new FileReader();
-    reader.onload = e => {
-      const lines = e.target.result.split("\n").slice(1);
-      lines.forEach(line => {
-        if (!line) return;
-        const [student, ...rest] = line.split(",");
-        facultyData.assignedStudents.includes(student.trim()) || facultyData.assignedStudents.push(student.trim());
-      });
-      renderAttendanceTable();
-    };
-    reader.readAsText(file);
-  }
-
-  renderAttendanceTable();
-
-  // ---------------- Notes ----------------
+  // ------------------- Notes -------------------
   function addNote() {
     const content = document.getElementById("noteContent").value.trim();
     const type = document.getElementById("noteType").value;
-    if (!content) return alert("Note cannot be empty!");
+    if(!content) return alert("Note cannot be empty!");
     facultyData.notes.push({ content, type, date: new Date().toLocaleString() });
     renderNotes();
     document.getElementById("noteContent").value = '';
@@ -235,18 +303,23 @@
   function renderNotes() {
     const notesList = document.getElementById("notesList");
     notesList.innerHTML = '';
-    facultyData.notes.forEach(n => {
+    facultyData.notes.forEach((n, index) => {
       const li = document.createElement("li");
       li.textContent = `[${n.type.toUpperCase()}] ${n.content} (${n.date})`;
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "Delete";
+      delBtn.style.marginLeft = "10px";
+      delBtn.onclick = () => { facultyData.notes.splice(index,1); renderNotes(); };
+      li.appendChild(delBtn);
       notesList.appendChild(li);
     });
   }
 
-  // ---------------- Assignments ----------------
+  // ------------------- Assignments -------------------
   function addAssignment() {
     const title = document.getElementById("assignmentTitle").value.trim();
     const desc = document.getElementById("assignmentDesc").value.trim();
-    if (!title || !desc) return alert("Title and description required!");
+    if(!title || !desc) return alert("Title and description required!");
     facultyData.assignments.push({ title, desc, date: new Date().toLocaleString() });
     renderAssignments();
     document.getElementById("assignmentTitle").value = '';
@@ -256,142 +329,170 @@
   function renderAssignments() {
     const assignmentsList = document.getElementById("assignmentsList");
     assignmentsList.innerHTML = '';
-    facultyData.assignments.forEach(a => {
+    facultyData.assignments.forEach((a,index) => {
       const li = document.createElement("li");
       li.textContent = `${a.title} - ${a.desc} (${a.date})`;
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "Delete";
+      delBtn.style.marginLeft = "10px";
+      delBtn.onclick = () => { facultyData.assignments.splice(index,1); renderAssignments(); };
+      li.appendChild(delBtn);
+      assignmentsList.appendChild(li);
+    });
+    // render MCQs
+    facultyData.mcqs.forEach((q,index)=>{
+      const li = document.createElement("li");
+      li.innerHTML = `<strong>Q:</strong> ${q.question} <br>
+        1.${q.options[0]} 2.${q.options[1]} 3.${q.options[2]} 4.${q.options[3]} <br>
+        <strong>Answer:</strong> Option ${q.correct}`;
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "Delete";
+      delBtn.style.marginLeft = "10px";
+      delBtn.onclick = () => { facultyData.mcqs.splice(index,1); renderAssignments(); };
+      li.appendChild(delBtn);
       assignmentsList.appendChild(li);
     });
   }
 
-  // ---------------- MCQ ----------------
   function addMCQ() {
     const question = document.getElementById("mcqQuestion").value.trim();
-    const options = Array.from(document.getElementsByClassName("mcqOption")).map(o => o.value.trim());
+    const options = [
+      document.getElementById("option1").value.trim(),
+      document.getElementById("option2").value.trim(),
+      document.getElementById("option3").value.trim(),
+      document.getElementById("option4").value.trim()
+    ];
     const correct = document.getElementById("correctOption").value;
-    if (!question || options.some(o => !o)) return alert("Question and all options required!");
-    facultyData.mcqs.push({ question, options, correct, date: new Date().toLocaleString() });
-    renderMCQs();
-    document.getElementById("mcqQuestion").value = '';
-    document.querySelectorAll(".mcqOption").forEach(o => o.value='');
+    if(!question || options.some(o=>!o)) return alert("All fields are required!");
+    facultyData.mcqs.push({ question, options, correct });
+    renderAssignments();
+    document.getElementById("mcqQuestion").value='';
+    options.forEach((_,i)=>document.getElementById(`option${i+1}`).value='');
   }
 
-  function renderMCQs() {
-    const mcqList = document.getElementById("mcqList");
-    mcqList.innerHTML = '';
-    facultyData.mcqs.forEach((q, idx) => {
-      const li = document.createElement("li");
-      li.innerHTML = `${q.question} - Options: ${q.options.join(", ")} - Correct: Option ${q.correct} <button onclick="deleteMCQ(${idx})">Delete</button>`;
-      mcqList.appendChild(li);
-    });
-  }
-
-  function deleteMCQ(idx) {
-    facultyData.mcqs.splice(idx,1);
-    renderMCQs();
-  }
-
-  // ---------------- Feedback ----------------
+  // ------------------- Feedback -------------------
   function sendFeedback() {
     const content = document.getElementById("feedbackContent").value.trim();
-    if (!content) return alert("Feedback cannot be empty!");
+    if(!content) return alert("Feedback cannot be empty!");
     facultyData.feedbacks.push({ content, date: new Date().toLocaleString() });
     renderFeedbacks();
-    document.getElementById("feedbackContent").value = '';
+    document.getElementById("feedbackContent").value='';
   }
 
   function renderFeedbacks() {
     const feedbackList = document.getElementById("feedbackList");
-    feedbackList.innerHTML = '';
-    facultyData.feedbacks.forEach(f => {
+    feedbackList.innerHTML='';
+    facultyData.feedbacks.forEach(f=>{
       const li = document.createElement("li");
       li.textContent = `${f.content} (${f.date})`;
       feedbackList.appendChild(li);
     });
   }
 
-  // ---------------- Logout ----------------
-  function logout() {
-    alert("Logging out...");
-    window.location.href = "index.html";
+</script>
+  <!-- Attendance Section -->
+<div class="section-card">
+  <h3>Attendance</h3>
+  <table border="1" style="width:100%;border-collapse:collapse;text-align:center;">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Present</th>
+        <th>Absent</th>
+        <th>Late</th>
+        <th>On Duty</th>
+      </tr>
+    </thead>
+    <tbody id="attendanceTableBody">
+      <!-- Rows populated dynamically -->
+    </tbody>
+  </table>
+
+  <div style="margin-top:10px;">
+    <button class="primary-btn" onclick="exportAttendance()">Export CSV</button>
+    <input type="file" id="importFile" accept=".csv">
+    <button class="primary-btn" onclick="importAttendance()">Import CSV</button>
+  </div>
+</div>
+
+<script>
+  // Initialize attendance table
+  function renderAttendance() {
+    const tbody = document.getElementById("attendanceTableBody");
+    tbody.innerHTML = '';
+    facultyData.assignedStudents.forEach(student => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${student}</td>
+        <td><input type="radio" name="${student}" value="Present"></td>
+        <td><input type="radio" name="${student}" value="Absent"></td>
+        <td><input type="radio" name="${student}" value="Late"></td>
+        <td><input type="radio" name="${student}" value="On Duty"></td>
+      `;
+      tbody.appendChild(row);
+    });
   }
 
-  // ---------------- Moving Background ----------------
-  (() => {
-    const canvas = document.getElementById('bg-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: true });
-    let width = canvas.width = window.innerWidth;
-    let height = canvas.height = window.innerHeight;
-    const baseCount = Math.round((width * height) / 60000);
-    let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
-    if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
-    const particles = [];
-    function rand(min, max) { return Math.random() * (max - min) + min; }
-
-    function initParticles() {
-      particles.length = 0;
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const size = rand(1, 3.2);
-        particles.push({
-          x: rand(0, width),
-          y: rand(0, height),
-          vx: rand(-0.12, 0.12),
-          vy: rand(-0.02, 0.6),
-          size,
-          alpha: rand(0.06, 0.22),
-          hue: rand(200, 240)
-        });
-      }
-    }
-
-    function resize() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      initParticles();
-    }
-
-    window.addEventListener('resize', () => {
-      clearTimeout(window._bgResizeTimer);
-      window._bgResizeTimer = setTimeout(resize, 120);
+  // Save attendance selections
+  function saveAttendance() {
+    facultyData.assignedStudents.forEach(student => {
+      const radios = document.getElementsByName(student);
+      radios.forEach(r => {
+        if (r.checked) facultyData.attendance[student] = r.value;
+      });
     });
+    alert("✅ Attendance saved!");
+    console.log(facultyData.attendance);
+  }
 
-    function draw() {
-      ctx.clearRect(0, 0, width, height);
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y -= p.vy * 0.3;
-        if (p.x < -50) p.x = width + 50;
-        if (p.x > width + 50) p.x = -50;
-        if (p.y < -50) p.y = height + 50;
-        if (p.y > height + 50) p.y = -50;
-
-        ctx.beginPath();
-        ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-
-        for (let j = i + 1; j < particles.length && j < i + 6; j++) {
-          const p2 = particles[j];
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx*dx + dy*dy);
-          if(dist < 120){
-            ctx.beginPath();
-            ctx.strokeStyle = `hsla(${(p.hue+p2.hue)/2},70%,60%,${Math.max(0,0.08-dist/1500)})`;
-            ctx.lineWidth = 0.6;
-            ctx.moveTo(p.x,p.y);
-            ctx.lineTo(p2.x,p2.y);
-            ctx.stroke();
-          }
-        }
-      }
-      window.requestAnimationFrame(draw);
+  // Export attendance as CSV
+  function exportAttendance() {
+    let csv = "Student,Status\n";
+    for(const student in facultyData.attendance){
+      csv += `${student},${facultyData.attendance[student] || ''}\n`;
     }
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "attendance.csv";
+    link.click();
+  }
 
-    initParticles();
-    draw();
-  })();
+  // Import attendance CSV
+  function importAttendance() {
+    const file = document.getElementById("importFile").files[0];
+    if(!file) return alert("Select a CSV file first");
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const lines = e.target.result.split('\n').slice(1);
+      lines.forEach(line=>{
+        const [student,status] = line.split(',');
+        if(student && status) facultyData.attendance[student.trim()] = status.trim();
+      });
+      alert("✅ Attendance imported!");
+      renderAttendance();
+      applyImportedAttendance();
+    };
+    reader.readAsText(file);
+  }
+
+  // Apply imported selections to radio buttons
+  function applyImportedAttendance() {
+    for(const student in facultyData.attendance){
+      const status = facultyData.attendance[student];
+      const radios = document.getElementsByName(student);
+      radios.forEach(r => { if(r.value === status) r.checked = true; });
+    }
+  }
+
+  // Initial render
+  renderAttendance();
 </script>
-</body>
-</html>
+
+<!-- Logout Button -->
+<script>
+function logout() {
+  alert("Logging out...");
+  window.location.href = "index.html";
+}
+</script>
