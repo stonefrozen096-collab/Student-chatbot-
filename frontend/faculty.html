@@ -54,19 +54,28 @@
   </div>
   <!-- Attendance Section -->
   <div class="section-card">
-    <h3>Attendance / MCQ</h3>
-    <table border="1" width="100%" cellpadding="5" style="border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th>Student</th>
-          <th>present</th>
-          <th>absent</th>
-          <th>late</th>
-          <th>on duty</th>
-        </tr>
-      </thead>
-      <tbody id="attendanceTableBody">
-        <!-- Dynamically populated -->
+  <h3>Attendance</h3>
+  <table id="attendanceTable" style="width:100%; border-collapse: collapse;">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Present</th>
+        <th>Absent</th>
+        <th>Late</th>
+        <th>On Duty</th>
+      </tr>
+    </thead>
+    <tbody id="attendanceTableBody">
+      <!-- JS will populate rows here -->
+    </tbody>
+  </table>
+  <div style="margin-top:10px;">
+    <button class="primary-btn" onclick="exportAttendance()">Export Attendance</button>
+    <input type="file" id="importAttendanceFile" style="margin-left:10px;">
+    <button class="primary-btn" onclick="importAttendance()">Import Attendance</button>
+  </div>
+  </div>
+     <!-- Dynamically populated -->
       </tbody>
     </table>
     <button class="primary-btn" onclick="exportAttendance()">Export CSV</button>
