@@ -6,230 +6,261 @@
 <title>Student Dashboard</title>
 <link rel="stylesheet" href="css/common.css">
 <style>
-  body { font-family: "Segoe UI", sans-serif; background:#f4f6f9; margin:0; padding:0; }
-  .container { max-width:1000px; margin:20px auto; padding:15px; }
-  .section-card { background:#fff; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 4px 12px rgba(0,0,0,0.08);}
-  h3 { color:#2563eb; margin-top:0; }
-  input, textarea { width:100%; margin:5px 0 15px; padding:10px; border-radius:8px; border:1px solid #d1d5db; }
-  button.primary-btn { padding:10px 15px; border:none; border-radius:8px; background:#2563eb; color:#fff; cursor:pointer; }
-  table { width:100%; border-collapse:collapse; margin-top:10px; }
-  th, td { padding:8px; border-bottom:1px solid #e5e7eb; }
-  #chatResponses div { margin:3px 0; }
+  body { font-family:"Segoe UI",sans-serif; background:#f4f6f9; margin:0; padding:0; }
+  .container { max-width: 1000px; margin: 30px auto; padding:20px; background:#fff; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+  h2,h3,h4 { margin:5px 0; color:#0f172a; }
+  .section { margin-bottom:25px; }
+  .profile-info p { margin:2px 0; color:#475569; }
+  .list-item { padding:5px 0; border-bottom:1px solid #e5e7eb; }
+  input,textarea,select,button { width:100%; padding:10px; margin:5px 0; border-radius:8px; border:1px solid #d1d5db; outline:none; }
+  button.primary-btn { background:#4f46e5;color:#fff;font-weight:bold;border:none;cursor:pointer;transition:0.3s; }
+  button.primary-btn:hover { transform:scale(1.03); }
+  canvas { max-width:100%; margin-top:10px; }
+  #chatbot { border:1px solid #d1d5db; border-radius:8px; padding:10px; max-height:300px; overflow-y:auto; background:#f9fafb; margin-top:10px; }
+  .chat-msg { margin:5px 0; }
+  .chat-msg.user { color:#2563eb; }
+  .chat-msg.bot { color:#10b981; }
 </style>
 </head>
 <body>
 <div class="container">
-  <!-- Student Info -->
-  <div class="section-card">
-    <h3>Student Info</h3>
-    <p><strong>Name:</strong> <span id="studentName">Hari Prasath</span></p>
-    <p><strong>Reg No:</strong> <span id="studentReg">DME123</span></p>
-    <p><strong>Email:</strong> <span id="studentEmail">hari@example.com</span></p>
-    <p><strong>Role:</strong> STUDENT/TESTER</p>
+  <!-- Profile -->
+  <div class="section profile-info">
+    <h2 id="studentName">Hari Prasath</h2>
+    <p><strong>Reg No:</strong> DME123</p>
+    <p><strong>Email:</strong> hari@example.com</p>
+    <p><strong>Roles:</strong> STUDENT/TESTER</p>
     <button class="primary-btn" onclick="logout()">Logout</button>
   </div>
 
   <!-- Assigned Faculty -->
-  <div class="section-card">
+  <div class="section">
     <h3>Assigned Faculty</h3>
-    <ul id="assignedFaculty">
-      <li>Mr. John Doe</li>
-      <li>Ms. Jane Smith</li>
-    </ul>
+    <div class="list-item">Mr. John Doe</div>
+    <div class="list-item">Ms. Jane Smith</div>
   </div>
 
   <!-- Attendance Summary -->
-  <div class="section-card">
+  <div class="section">
     <h3>Attendance Summary</h3>
-    <div id="attendanceSummary"></div>
-    <canvas id="attendanceChart" width="400" height="200"></canvas>
+    <div id="attendanceList"></div>
   </div>
 
   <!-- Notes -->
-  <div class="section-card">
+  <div class="section">
     <h3>Notes</h3>
     <div id="notesList"></div>
   </div>
 
   <!-- Tests / Assignments -->
-  <div class="section-card">
+  <div class="section">
     <h3>Tests / Assignments</h3>
     <div id="testList"></div>
-    <canvas id="testChart" width="400" height="200"></canvas>
   </div>
 
   <!-- Notices -->
-  <div class="section-card">
+  <div class="section">
     <h3>Notices</h3>
-    <div id="noticesList"></div>
+    <div id="noticeList"></div>
   </div>
 
   <!-- Feedback -->
-  <div class="section-card">
+  <div class="section">
     <h3>Submit Feedback</h3>
     <label for="feedbackSubject">Subject</label>
-    <input type="text" id="feedbackSubject">
-    <textarea id="feedbackText" rows="3" placeholder="Write your feedback here..."></textarea>
+    <input type="text" id="feedbackSubject" placeholder="Enter subject">
+    <textarea id="feedbackText" rows="2" placeholder="Write your feedback here..."></textarea>
     <button class="primary-btn" onclick="submitFeedback()">Send Feedback</button>
+    <h4>Feedback Responses</h4>
     <div id="feedbackResponses"></div>
   </div>
 
+  <!-- Charts -->
+  <div class="section">
+    <h3>Performance Charts</h3>
+    <canvas id="testChart"></canvas>
+    <canvas id="attendanceChart"></canvas>
+    <canvas id="completionChart"></canvas>
+  </div>
+
   <!-- Chatbot -->
-  <div class="section-card">
+  <div class="section">
     <h3>Chatbot Assistant</h3>
-    <textarea id="chatInput" placeholder="Ask me anything..."></textarea>
-    <button class="primary-btn" onclick="sendChat()">Send</button>
-    <div id="chatResponses"></div>
+    <div id="chatbot"></div>
+    <input type="text" id="chatbotInput" placeholder="Ask me anything...">
+    <button class="primary-btn" id="chatbotSendBtn">Send</button>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-/* Sample real-time data simulation */
-let studentData = {
-  attendance: [
+  // Sample Data
+  const attendanceData = [
     {subject:'Maths', percent:95},
     {subject:'Physics', percent:90},
     {subject:'Mechanics', percent:92}
-  ],
-  tests: [
-    {subject:'Maths', score:85},
-    {subject:'Physics', score:88},
-    {subject:'Mechanics', score:90}
-  ],
-  notes:[
-    "Chapter 5 summary by Mr. John Doe",
-    "Lab instructions by Ms. Jane Smith"
-  ],
-  notices:[
-    "Extra classes on Friday",
-    "Submission deadline extended"
-  ],
-  feedback:[{subject:'Extra classes', response:'Scheduled on Friday'}]
-};
+  ];
+  const notesData = [
+    {title:'Chapter 5 summary', faculty:'Mr. John Doe'},
+    {title:'Lab instructions', faculty:'Ms. Jane Smith'}
+  ];
+  const testData = [
+    {title:'Math Assignment 3'},
+    {title:'Physics Lab Report'}
+  ];
+  const noticeData = [
+    'Extra classes on Friday',
+    'Submission deadline extended'
+  ];
+  const feedbackData = [];
+  const feedbackResponses = [
+    'Request for extra classes (Mr. John Doe): Scheduled on Friday',
+    'Assignment submission issue (Ms. Jane Smith): Received late submission'
+  ];
 
-/* Render Attendance */
-const attendanceSummary = document.getElementById('attendanceSummary');
-const attendanceChart = new Chart(document.getElementById('attendanceChart'), {
-  type:'pie',
-  data:{labels:[], datasets:[{data:[], backgroundColor:[]}]}
-});
-function renderAttendance(){
-  attendanceSummary.innerHTML='';
-  studentData.attendance.forEach(a=>{
-    const div=document.createElement('div');
-    div.textContent=`${a.subject} - ${a.percent}%`;
-    attendanceSummary.appendChild(div);
-  });
-  attendanceChart.data.labels = studentData.attendance.map(a=>a.subject);
-  attendanceChart.data.datasets[0].data = studentData.attendance.map(a=>a.percent);
-  attendanceChart.data.datasets[0].backgroundColor = studentData.attendance.map((_,i)=>`hsl(${i*60%360},70%,50%)`);
-  attendanceChart.update();
-}
+  const triggers = [
+    {word:'hello', reply:'hello 👋 how can I help you?'},
+    {word:'hi', reply:'Hi there! How can I assist you?'}
+  ];
 
-/* Render Tests */
-const testList = document.getElementById('testList');
-const testChart = new Chart(document.getElementById('testChart'), {
-  type:'bar',
-  data:{labels:[], datasets:[{label:'Scores', data:[], backgroundColor:'#2563eb'}]}
-});
-function renderTests(){
-  testList.innerHTML='';
-  studentData.tests.forEach(t=>{
-    const div=document.createElement('div');
-    div.textContent=`${t.subject} - ${t.score} marks`;
-    testList.appendChild(div);
-  });
-  testChart.data.labels = studentData.tests.map(t=>t.subject);
-  testChart.data.datasets[0].data = studentData.tests.map(t=>t.score);
-  testChart.update();
-}
-
-/* Render Notes */
-const notesList = document.getElementById('notesList');
-function renderNotes(){
-  notesList.innerHTML='';
-  studentData.notes.forEach(n=>{
-    const div=document.createElement('div');
-    div.textContent=n;
-    notesList.appendChild(div);
-  });
-}
-
-/* Render Notices */
-const noticesList = document.getElementById('noticesList');
-function renderNotices(){
-  noticesList.innerHTML='';
-  studentData.notices.forEach(n=>{
-    const div=document.createElement('div');
-    div.textContent=n;
-    noticesList.appendChild(div);
-  });
-}
-
-/* Render Feedback */
-const feedbackResponses = document.getElementById('feedbackResponses');
-function renderFeedback(){
-  feedbackResponses.innerHTML='';
-  studentData.feedback.forEach(f=>{
-    const div=document.createElement('div');
-    div.textContent=`${f.subject}: ${f.response}`;
-    feedbackResponses.appendChild(div);
-  });
-}
-
-/* Feedback submission */
-function submitFeedback(){
-  const subj = document.getElementById('feedbackSubject').value;
-  const text = document.getElementById('feedbackText').value;
-  if(subj && text){
-    studentData.feedback.push({subject:subj, response:text});
-    renderFeedback();
-    document.getElementById('feedbackSubject').value='';
-    document.getElementById('feedbackText').value='';
+  // Render Functions
+  function renderAttendance() {
+    const container = document.getElementById('attendanceList');
+    container.innerHTML = '';
+    attendanceData.forEach(a => {
+      const div = document.createElement('div');
+      div.className='list-item';
+      div.textContent = `${a.subject} - ${a.percent}%`;
+      container.appendChild(div);
+    });
   }
-}
 
-/* Chatbot triggers */
-const chatbotTriggers = [
-  {trigger:'hello', response:'Hello 👋, how can I help you?'},
-  {trigger:'attendance', response:'You can check your attendance summary above.'},
-  {trigger:'test', response:'Your test scores are displayed in the Tests / Assignments section.'}
-];
+  function renderNotes() {
+    const container = document.getElementById('notesList');
+    container.innerHTML = '';
+    notesData.forEach(n=>{
+      const div=document.createElement('div');
+      div.className='list-item';
+      div.textContent=`${n.title} by ${n.faculty}`;
+      container.appendChild(div);
+    });
+  }
 
-function sendChat(){
-  const input=document.getElementById('chatInput').value.trim().toLowerCase();
-  if(!input) return;
-  const chatResponses=document.getElementById('chatResponses');
-  const userDiv=document.createElement('div');
-  userDiv.textContent='You: '+input;
-  userDiv.style.fontWeight='bold';
-  chatResponses.appendChild(userDiv);
-  const triggerObj=chatbotTriggers.find(t=>input.includes(t.trigger.toLowerCase()));
-  const botDiv=document.createElement('div');
-  botDiv.textContent='Bot: '+(triggerObj?triggerObj.response:'I didn\'t understand that. 🤔');
-  botDiv.style.color='#2563eb';
-  chatResponses.appendChild(botDiv);
-  document.getElementById('chatInput').value='';
-  chatResponses.scrollTop=chatResponses.scrollHeight;
-}
+  function renderTests() {
+    const container=document.getElementById('testList');
+    container.innerHTML='';
+    testData.forEach(t=>{
+      const div=document.createElement('div');
+      div.className='list-item';
+      div.textContent=t.title;
+      container.appendChild(div);
+    });
+  }
 
-/* Logout */
-function logout(){ alert('Logging out...'); window.location.href='index.html'; }
+  function renderNotices() {
+    const container=document.getElementById('noticeList');
+    container.innerHTML='';
+    noticeData.forEach(n=>{
+      const div=document.createElement('div');
+      div.className='list-item';
+      div.textContent=n;
+      container.appendChild(div);
+    });
+  }
 
-/* Initial render */
-renderAttendance();
-renderTests();
-renderNotes();
-renderNotices();
-renderFeedback();
+  function renderFeedback() {
+    const container=document.getElementById('feedbackResponses');
+    container.innerHTML='';
+    feedbackResponses.forEach(f=>{
+      const div=document.createElement('div');
+      div.className='list-item';
+      div.textContent=f;
+      container.appendChild(div);
+    });
+  }
 
-/* Simulate real-time updates (Demo only) */
-setInterval(()=>{
-  // Example: Admin updated Math attendance
-  studentData.attendance[0].percent = Math.min(studentData.attendance[0].percent +1,100);
+  function submitFeedback() {
+    const subject=document.getElementById('feedbackSubject').value;
+    const text=document.getElementById('feedbackText').value;
+    if(subject && text) {
+      feedbackData.push({subject,text});
+      alert('Feedback submitted!');
+      document.getElementById('feedbackSubject').value='';
+      document.getElementById('feedbackText').value='';
+      renderFeedback();
+    }
+  }
+
+  // Charts
+  const testChart=new Chart(document.getElementById('testChart'),{
+    type:'bar',
+    data:{
+      labels:testData.map(t=>t.title),
+      datasets:[{label:'Scores', data:[80,90], backgroundColor:'#2563eb'}]
+    }
+  });
+
+  const attendanceChart=new Chart(document.getElementById('attendanceChart'),{
+    type:'pie',
+    data:{
+      labels:attendanceData.map(a=>a.subject),
+      datasets:[{data:attendanceData.map(a=>a.percent), backgroundColor:['#4f46e5','#3b82f6','#16a34a']}]
+    }
+  });
+
+  const completionChart=new Chart(document.getElementById('completionChart'),{
+    type:'doughnut',
+    data:{
+      labels:['Completed','Pending'],
+      datasets:[{data:[12,3], backgroundColor:['#10b981','#f59e0b']}]
+    }
+  });
+
+  // Chatbot
+  const chatbotContainer = document.getElementById('chatbot');
+  const chatbotInput = document.getElementById('chatbotInput');
+  const chatbotSendBtn = document.getElementById('chatbotSendBtn');
+
+  function addChatMessage(msg, sender) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + sender;
+    div.textContent = msg;
+    chatbotContainer.appendChild(div);
+    chatbotContainer.scrollTop = chatbotContainer.scrollHeight;
+  }
+
+  chatbotSendBtn.addEventListener('click', () => {
+    const userMsg = chatbotInput.value.trim();
+    if(!userMsg) return;
+    addChatMessage('You: ' + userMsg, 'user');
+    chatbotInput.value = '';
+
+    // Check triggers
+    const trigger = triggers.find(t => userMsg.toLowerCase().includes(t.word.toLowerCase()));
+    if(trigger) {
+      addChatMessage('Bot: ' + trigger.reply, 'bot');
+    } else {
+      addChatMessage('Bot: I have received your query.', 'bot');
+    }
+  });
+
+  chatbotInput.addEventListener('keypress', e => {
+    if(e.key==='Enter') chatbotSendBtn.click();
+  });
+
+  function logout() {
+    alert('Logging out...');
+    window.location.href='index.html';
+  }
+
+  // Initialize
   renderAttendance();
-},10000); // every 10s
+  renderNotes();
+  renderTests();
+  renderNotices();
+  renderFeedback();
 </script>
 </body>
 </html>
+
+  
