@@ -42,6 +42,7 @@
     .role-tabs {
       display: flex;
       justify-content: center;
+      flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 20px;
     }
@@ -72,12 +73,13 @@
       border-radius: 8px;
       border: none;
       outline: none;
-      background: rgba(255,255,255,0.1);
-      color: #fff;
+      background: rgba(0,0,0,0.25);
+      color: #e0e0e0;
+      font-size: 14px;
     }
 
     input::placeholder {
-      color: rgba(255,255,255,0.6);
+      color: #ccc;
     }
 
     .primary-btn {
@@ -105,7 +107,7 @@
     #loginMsg {
       margin-top: 15px;
       font-weight: bold;
-      min-height: 20px;
+      min-height: 24px;
     }
 
     @keyframes fadeInUp {
@@ -121,7 +123,7 @@
 
     @media (max-width: 480px) {
       #bg-canvas { display: none; }
-      .login-container { margin: 8vh 20px; }
+      .login-container { margin: 8vh 20px; padding: 20px; }
     }
   </style>
 </head>
@@ -147,7 +149,7 @@
     <!-- Login Form -->
     <form id="loginForm">
       <input type="text" id="username" placeholder="Username / Register No" required>
-      <input type="password" id="password" placeholder="Password (if Admin/Faculty)" >
+      <input type="password" id="password" placeholder="Password (if Admin/Faculty)">
       <button type="submit" class="primary-btn">Login</button>
       <p class="forgot-password"><a href="forgot-password.html">Forgot Password?</a></p>
       <p id="loginMsg" class="feedback-msg"></p>
@@ -162,28 +164,35 @@
     const loginMsg = document.getElementById('loginMsg');
     const passwordInput = document.getElementById('password');
 
+    function updatePasswordVisibility() {
+      if(selectedRole === 'student') {
+        passwordInput.style.display = 'none';
+        passwordInput.value = '';
+      } else {
+        passwordInput.style.display = 'block';
+        passwordInput.type = 'password';
+      }
+    }
+
     roleButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         roleButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedRole = btn.dataset.role;
         loginMsg.textContent = "";
-
-        // Hide/show password and clear on role change
-        if (selectedRole === 'student') {
-          passwordInput.style.display = 'none';
-        } else {
-          passwordInput.style.display = 'block';
-        }
-        passwordInput.value = ''; // auto clear when switching role
+        updatePasswordVisibility();
       });
     });
 
+    updatePasswordVisibility(); // Initial setup
+
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const username = document.getElementById('username').value;
-      const password = passwordInput.value;
+      const username = document.getElementById('username').value.trim();
+      const password = passwordInput.value.trim();
       loginMsg.textContent = "";
+
+      if(!username) return alert("Please enter username or register no.");
 
       let endpoint = '/login';
       let bodyData = { regno: username };
@@ -208,19 +217,22 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(bodyData)
         });
+
         const data = await res.json();
+
         if(res.ok){
-          loginMsg.style.color = 'lime';
-          loginMsg.textContent = data.msg;
+          loginMsg.style.color = '#90ee90';
+          loginMsg.textContent = data.msg || "Login successful!";
           setTimeout(() => {
             window.location.href = `${selectedRole}.html`;
           }, 1000);
         } else {
-          loginMsg.style.color = 'red';
-          loginMsg.textContent = data.msg;
+          loginMsg.style.color = '#ff5555';
+          loginMsg.textContent = data.msg || "Invalid credentials!";
         }
+
       } catch(err) {
-        loginMsg.style.color = 'red';
+        loginMsg.style.color = '#ff5555';
         loginMsg.textContent = "Server error. Try again later.";
       }
     });
