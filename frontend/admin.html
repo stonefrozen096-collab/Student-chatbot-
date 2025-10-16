@@ -1,256 +1,801 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Student Assistant Admin</title>
-<link rel="stylesheet" href="styles.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-  :root {
-    --bg: #1f2937;
-    --card: #374151;
-    --accent: #4f46e5;
-    --text: #f9fafb;
-    --muted: #9ca3af;
-  }
-  body { background: var(--bg); color: var(--text); font-family: sans-serif; margin:0; padding:0;}
-  .row { display:flex; flex-wrap:wrap; gap:12px; }
-  .col { flex:1; min-width:280px; }
-  .card { background: var(--card); padding:16px; border-radius:8px; }
-  .btn { padding:6px 12px; cursor:pointer; border:none; border-radius:4px; }
-  .btn-primary { background: var(--accent); color:#fff; }
-  .btn-ghost { background:transparent; color:#fff; border:1px solid #fff; }
-  .btn-danger { background:red; color:#fff; }
-  .tiny { padding:3px 6px; font-size:12px; }
-  input, select, textarea { width:100%; padding:6px; margin-top:4px; margin-bottom:8px; border-radius:4px; border:none; }
-  .list { max-height:300px; overflow-y:auto; }
-  .muted { color: var(--muted); }
-  .space { height:12px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Assistant - Admin</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #1e1e2f;
+      --card: #2b2b3f;
+      --accent: #4f46e5;
+      --text: #ffffff;
+      --muted: #aaaaaa;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+    }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .col { flex: 1; min-width: 280px; }
+    .card { background: var(--card); padding: 12px; border-radius: 8px; }
+    .btn { padding: 6px 12px; border: none; cursor: pointer; border-radius: 4px; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--accent); }
+    .btn-danger { background: #f43f5e; color: #fff; }
+    .tiny { font-size: 12px; padding: 2px 6px; }
+    .space { height:12px;}
+    .muted { color: var(--muted);}
+    input, select, textarea { width: 100%; padding:6px; margin-top:4px; margin-bottom:8px; border-radius:4px; border:1px solid #555; background: var(--card); color: var(--text);}
+  </style>
 </head>
 <body>
+  <canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;"></canvas>
+
+  <div class="row" style="align-items:center; justify-content:space-between; margin:12px">
+    <div>
+      <h2>Student Assistant Admin Dashboard</h2>
+    </div>
+    <div>
+      <button class="btn btn-ghost" onclick="toggleTheme()">Toggle Dark/Light Theme</button>
+      <button class="btn btn-primary" onclick="clearAllData()">Clear All Data</button>
+      <button class="btn btn-primary" onclick="exportData()">Export Data</button>
+      <button class="btn btn-primary" onclick="importDataPrompt()">Import Data</button>
+    </div>
+  </div>
+
+  <!-- ROW 1: Admin Profile & Users -->
+  <div class="row">
+    <div class="col card">
+      <h3>Admin Profile</h3>
+      <p>Name: <span id="adminNameDisplay"></span></p>
+      <p>Email: <span id="adminEmailDisplay"></span></p>
+      <button class="btn btn-primary tiny" onclick="openEditProfile()">Edit Profile</button>
+    </div>
+
+    <div class="col card">
+      <h3>Create User</h3>
+      <form id="createUserForm">
+        <label>Username</label>
+        <input type="text" id="newUserName" required>
+        <label>Role</label>
+        <select id="newUserRole">
+          <option value="student">Student</option>
+          <option value="teacher">Teacher</option>
+          <option value="admin">Admin</option>
+        </select>
+        <label>Password</label>
+        <input type="text" id="newUserPassword" placeholder="Optional">
+        <button class="btn btn-primary" type="submit">Create</button>
+      </form>
+    </div>
+
+    <div class="col card">
+      <h3>Existing Users</h3>
+      <input type="text" id="searchUsers" placeholder="Search users..." oninput="renderUsers()">
+      <table id="usersTable" style="width:100%; border-collapse:collapse; margin-top:8px">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Badges</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div class="space"></div>
+      <label>Delete user:</label>
+      <select id="deleteUserSelect"></select>
+      <button class="btn btn-danger tiny" onclick="deleteUser()">Delete</button>
+    </div>
+  </div>
+
+  <div class="space"></div>
+
+  <!-- Batch Management -->
+  <div class="row">
+    <div class="col card">
+      <h3>Batches</h3>
+      <select id="batchSelect"></select>
+      <button class="btn btn-danger tiny" onclick="deleteBatch()">Delete Batch</button>
+    </div>
+  </div>
+  <!-- ROW 2: Academic | Attendance | Tests -->
+  <div class="row">
+    <div class="col card">
+      <h3>Academic Items (Notes / Assignments / Notices)</h3>
+      <form id="acadForm">
+        <label>Type</label>
+        <select id="acadType">
+          <option value="note">Note</option>
+          <option value="assignment">Assignment</option>
+          <option value="notice">Notice</option>
+        </select>
+        <label>Title/Subject</label>
+        <input id="acadTitle" type="text" placeholder="Title or subject">
+        <label>Content</label>
+        <textarea id="acadContent" placeholder="Content..."></textarea>
+        <label>Assign to student (optional)</label>
+        <select id="acadStudentSelect"><option value="">All students</option></select>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-primary" type="submit">Add item</button>
+          <button class="btn btn-ghost" type="button" onclick="renderAcademic()">Refresh</button>
+        </div>
+      </form>
+
+      <div class="space"></div>
+      <div class="muted small">Academic list</div>
+      <div id="academicList" class="list"></div>
+    </div>
+
+    <div class="col card">
+      <h3>Attendance (subjects & %)</h3>
+      <form id="attendanceForm">
+        <label>Subject name</label>
+        <input id="attendanceSubject" type="text" placeholder="e.g. Mathematics" required>
+        <label>Percentage</label>
+        <input id="attendancePercent" type="number" min="0" max="100" placeholder="80" required>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-primary" type="submit">Add / Update</button>
+          <button class="btn btn-ghost" type="button" onclick="renderAttendance()">Refresh</button>
+        </div>
+      </form>
+
+      <div class="space"></div>
+      <div class="muted small">Attendance list</div>
+      <div id="attendanceList" class="list"></div>
+
+      <div class="space"></div>
+      <label>Delete subject</label>
+      <div class="inline">
+        <select id="deleteSubjectSelect"></select>
+        <button class="btn btn-danger tiny" onclick="deleteSubject()">Delete</button>
+      </div>
+    </div>
+
+    <div class="col card">
+      <h3>Test Scores</h3>
+      <form id="testForm">
+        <label>Subject</label>
+        <input id="testSubject" type="text" placeholder="e.g. Physics" required>
+        <label>Marks</label>
+        <input id="testMarks" type="number" min="0" max="100" placeholder="75" required>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-primary" type="submit">Add / Update test</button>
+          <button class="btn btn-ghost" type="button" onclick="renderTests()">Refresh</button>
+        </div>
+      </form>
+
+      <div class="space"></div>
+      <div class="muted small">Test list</div>
+      <div id="testList" class="list"></div>
+
+      <div class="space"></div>
+      <label>Delete test</label>
+      <div class="inline">
+        <select id="deleteTestSelect"></select>
+        <button class="btn btn-danger tiny" onclick="deleteTest()">Delete</button>
+      </div>
+    </div>
+  </div>
+  <!-- ROW 3: Charts & Feedback -->
+  <div class="row">
+    <div class="col card">
+      <h3>Attendance Chart</h3>
+      <canvas id="attendanceChart"></canvas>
+      <div class="space"></div>
+      <div class="muted small">Edit a subject's % directly: choose subject -> change value -> click Update</div>
+      <div class="inline" style="margin-top:8px">
+        <select id="chartEditSubject"></select>
+        <input id="chartEditValue" type="number" min="0" max="100" placeholder="%"/>
+        <button class="btn btn-primary" onclick="applyChartEdit()">Update</button>
+      </div>
+    </div>
+
+    <div class="col card">
+      <h3>Test Chart</h3>
+      <canvas id="testChart"></canvas>
+      <div class="space"></div>
+      <div class="muted small">Edit test marks: choose test -> change marks -> Update</div>
+      <div class="inline" style="margin-top:8px">
+        <select id="chartEditTest"></select>
+        <input id="chartEditTestValue" type="number" min="0" max="100" placeholder="marks"/>
+        <button class="btn btn-primary" onclick="applyTestEdit()">Update</button>
+      </div>
+    </div>
+
+    <div class="col card">
+      <h3>Trigger Words / Phrases</h3>
+      <form id="triggerForm">
+        <label>Trigger word</label>
+        <input id="triggerWord" type="text" placeholder="e.g. urgent">
+        <label>Trigger phrase</label>
+        <input id="triggerPhrase" type="text" placeholder="e.g. needs attention">
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-primary" type="submit">Add Trigger</button>
+          <button class="btn btn-ghost" type="button" onclick="renderTriggers()">Refresh</button>
+        </div>
+      </form>
+      <div class="space"></div>
+      <div id="triggerList" class="list muted-block">No triggers set</div>
+    </div>
+  </div>
+
+  <div class="space"></div>
+
+  <div class="row">
+    <div class="col card">
+      <h3>Feedback</h3>
+      <div id="feedbackList" class="list muted-block">No feedback yet</div>
+    </div>
+
+    <div class="col card">
+      <h3>Action Logs</h3>
+      <div id="actionLogs" class="logs"></div>
+    </div>
+  </div>
+
+  <!-- JS for Charts, Triggers, Feedback, Logs -->
+  <script>
+    let attendanceChart=null, testChart=null;
+    let triggers = [];
+
+    /* ---------- Charts ---------- */
+    function renderCharts(){
+      const attCtx = document.getElementById('attendanceChart').getContext('2d');
+      const testCtx = document.getElementById('testChart').getContext('2d');
+
+      const attLabels = (state.attendance||[]).map(a=>a.subject);
+      const attData = (state.attendance||[]).map(a=>a.percent);
+
+      const testLabels = (state.tests||[]).map(t=>t.subject);
+      const testData = (state.tests||[]).map(t=>t.marks);
+
+      if(attendanceChart){
+        attendanceChart.data.labels = attLabels;
+        attendanceChart.data.datasets[0].data = attData;
+        attendanceChart.update();
+      } else {
+        attendanceChart = new Chart(attCtx, {
+          type:'bar',
+          data:{ labels:attLabels, datasets:[{label:'Attendance %',data:attData, backgroundColor:'#4f46e5'}]},
+          options:{responsive:true,plugins:{legend:{display:false}}}
+        });
+      }
+
+      if(testChart){
+        testChart.data.labels = testLabels;
+        testChart.data.datasets[0].data = testData;
+        testChart.update();
+      } else {
+        testChart = new Chart(testCtx, {
+          type:'bar',
+          data:{ labels:testLabels, datasets:[{label:'Test marks',data:testData, backgroundColor:'#3b82f6'}]},
+          options:{responsive:true,plugins:{legend:{display:false}}}
+        });
+      }
+
+      document.getElementById('chartEditSubject').innerHTML = attLabels.map(s=>`<option value="${s}">${s}</option>`).join('');
+      document.getElementById('chartEditTest').innerHTML = testLabels.map(s=>`<option value="${s}">${s}</option>`).join('');
+    }
+
+    function applyChartEdit(){
+      const subj = document.getElementById('chartEditSubject').value;
+      const val = parseFloat(document.getElementById('chartEditValue').value);
+      if(!subj || isNaN(val)) return alert('choose subject and value');
+      const item = state.attendance.find(a=>a.subject===subj);
+      if(item){ item.percent = val; addLog(`Chart edit: ${subj} -> ${val}%`); persistAndRender(); }
+    }
+
+    function applyTestEdit(){
+      const subj = document.getElementById('chartEditTest').value;
+      const val = parseFloat(document.getElementById('chartEditTestValue').value);
+      if(!subj || isNaN(val)) return alert('choose test and marks');
+      const item = state.tests.find(t=>t.subject===subj);
+      if(item){ item.marks = val; addLog(`Test edit: ${subj} -> ${val}`); persistAndRender(); }
+    }
+
+    /* ---------- Trigger Words / Phrases ---------- */
+    document.getElementById('triggerForm').addEventListener('submit', e=>{
+      e.preventDefault();
+      const word = document.getElementById('triggerWord').value.trim();
+      const phrase = document.getElementById('triggerPhrase').value.trim();
+      if(!word && !phrase) return alert('Enter word or phrase');
+      triggers.push({word, phrase});
+      addLog(`Added trigger: word="${word}" phrase="${phrase}"`);
+      renderTriggers();
+      document.getElementById('triggerForm').reset();
+    });
+
+    function renderTriggers(){
+      const c = document.getElementById('triggerList');
+      if(triggers.length===0){ c.innerHTML='No triggers set'; return; }
+      c.innerHTML = triggers.map((t,i)=>`<div style="padding:6px;border-bottom:1px solid rgba(255,255,255,0.05)">#${i+1} Word: <strong>${t.word}</strong>, Phrase: <strong>${t.phrase}</strong> 
+      <button class="btn tiny btn-danger" onclick="deleteTrigger(${i})">Delete</button></div>`).join('');
+    }
+
+    function deleteTrigger(index){
+      triggers.splice(index,1);
+      addLog(`Deleted trigger #${index+1}`);
+      renderTriggers();
+    }
+
+    /* ---------- Feedback & Logs ---------- */
+    function renderFeedback(){
+      const c = document.getElementById('feedbackList');
+      if(!state.feedback || state.feedback.length===0){ c.innerHTML = '<div class="small muted">No feedback yet</div>'; return; }
+      c.innerHTML = state.feedback.map(f=>`<div style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)">${f}</div>`).join('');
+    }
+
+    function renderLogs(){
+      const c = document.getElementById('actionLogs');
+      c.innerHTML = state.logs.map(l=>`<div style="padding:6px;border-bottom:1px solid rgba(255,255,255,0.02);font-size:12px">${l}</div>`).join('');
+    }
+
+  </script>
+  <!-- ROW 4: Admin & Users -->
+  <div class="row">
+    <div class="col card">
+      <h3>Admin Profile</h3>
+      <div>Name: <span id="adminNameDisplay"></span></div>
+      <div>Email: <span id="adminEmailDisplay"></span></div>
+      <div class="space"></div>
+      <button class="btn btn-primary" onclick="openEditProfile()">Edit Profile</button>
+    </div>
+
+    <div class="col card">
+      <h3>Users</h3>
+      <input type="text" id="searchUser" placeholder="Search users..." oninput="filterUsers()">
+      <table id="usersTable" class="full-width">
+        <thead>
+          <tr><th>Username</th><th>Role</th><th>Badges</th><th>Actions</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="space"></div>
+      <form id="createUserForm">
+        <label>Username</label><input type="text" id="newUserName">
+        <label>Role</label>
+        <select id="newUserRole">
+          <option value="student">Student</option>
+          <option value="teacher">Teacher</option>
+        </select>
+        <label>Password</label><input type="text" id="newUserPassword">
+        <button class="btn btn-primary" type="submit">Add User</button>
+      </form>
+      <div class="space"></div>
+      <label>Delete User</label>
+      <select id="deleteUserSelect"></select>
+      <button class="btn btn-danger tiny" onclick="deleteUser()">Delete</button>
+    </div>
+
+    <div class="col card">
+      <h3>Assign / Remove Badges</h3>
+      <label>Select User</label>
+      <select id="badgeUserSelect"></select>
+      <label>Select Badge</label>
+      <select id="badgeRoleSelect">
+        <option value="student">Student</option>
+        <option value="teacher">Teacher</option>
+        <option value="top">Top Performer</option>
+      </select>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-primary" onclick="assignBadge()">Assign Badge</button>
+        <button class="btn btn-ghost" onclick="removeBadge()">Remove Badge</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="space"></div>
+
+  <!-- ROW 5: Batches & Data -->
+  <div class="row">
+    <div class="col card">
+      <h3>Batches</h3>
+      <select id="batchSelect"></select>
+      <button class="btn btn-danger tiny" onclick="deleteBatch()">Delete Batch</button>
+    </div>
+
+    <div class="col card">
+      <h3>Export / Import Data</h3>
+      <button class="btn btn-primary" onclick="exportData()">Export JSON</button>
+      <button class="btn btn-ghost" onclick="importDataPrompt()">Import JSON</button>
+      <div class="space"></div>
+      <button class="btn btn-danger" onclick="clearAllData()">Clear All Data</button>
+    </div>
+  </div>
+
+  <!-- JS: Admin, Users, Batches, Badges, Persistence -->
+  <script>
+    /* ---------- Persistence ---------- */
+    const STORAGE_KEY = 'student_assistant_data_v2';
+    let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    const defaultState = {
+      admin: { name:'Admin', email:'admin@example.com' },
+      users: [],
+      batches: Array.from({length:20},(_,i)=>i+1),
+      academic: [],
+      attendance: [],
+      tests: [],
+      feedback: [],
+      logs: []
+    };
+    state = Object.assign({}, defaultState, state);
+
+    function saveStorage(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    function addLog(msg){ state.logs.unshift(`${new Date().toISOString()} — ${msg}`); if(state.logs.length>500) state.logs.length=500; saveStorage(); renderAll(); }
+
+    /* ---------- Admin ---------- */
+    function openEditProfile(){
+      const name = prompt('Enter admin name', state.admin.name);
+      if(name) state.admin.name=name.trim();
+      const email = prompt('Enter admin email', state.admin.email);
+      if(email) state.admin.email=email.trim();
+      addLog('Admin profile updated');
+      saveStorage(); renderAll();
+    }
+
+    /* ---------- Users ---------- */
+    function renderUsers(){
+      const tbody = document.querySelector('#usersTable tbody'); tbody.innerHTML='';
+      (state.users||[]).forEach(u=>{
+        const tr = document.createElement('tr');
+        const badgesHTML = (u.badges||[]).map(b=>`<span class="badge badge-${b}">${b}</span>`).join(' ');
+        tr.innerHTML=`<td>${u.username}</td><td>${u.role}</td><td>${badgesHTML}</td>
+        <td><button class="btn tiny btn-ghost" onclick="showEditUser('${u.username}')">Edit</button>
+            <button class="btn tiny btn-danger" onclick="deleteUserByName('${u.username}')">Delete</button></td>`;
+        tbody.appendChild(tr);
+      });
+
+      ['deleteUserSelect','badgeUserSelect'].forEach(id=>{
+        const sel = document.getElementById(id);
+        sel.innerHTML = (state.users||[]).map(u=>`<option value="${u.username}">${u.username}</option>`).join('');
+      });
+    }
+
+    function showEditUser(username){
+      const user = state.users.find(u=>u.username===username); if(!user) return;
+      const newRole = prompt('Edit role for '+username, user.role);
+      if(newRole){ user.role=newRole; addLog(`Edited user ${username} role -> ${newRole}`); saveStorage(); renderAll(); }
+    }
+
+    function deleteUserByName(username){
+      if(!confirm(`Delete user ${username}?`)) return;
+      state.users = state.users.filter(u=>u.username!==username);
+      addLog(`Deleted user ${username}`);
+      saveStorage(); renderAll();
+    }
+
+    document.getElementById('createUserForm').addEventListener('submit', e=>{
+      e.preventDefault();
+      const username = document.getElementById('newUserName').value.trim();
+      const role = document.getElementById('newUserRole').value;
+      const password = document.getElementById('newUserPassword').value;
+      if(!username) return alert('Enter username');
+      if(state.users.find(u=>u.username===username)) return alert('User exists');
+      state.users.unshift({username,role,badges:[role],password});
+      addLog(`Created user ${username} (${role})`);
+      document.getElementById('createUserForm').reset();
+      saveStorage(); renderAll();
+    });
+
+    function deleteUser(){ 
+      const sel=document.getElementById('deleteUserSelect').value; 
+      if(!sel) return alert('select user'); 
+      deleteUserByName(sel);
+    }
+
+    /* ---------- Badge ---------- */
+    function assignBadge(){
+      const u=document.getElementById('badgeUserSelect').value;
+      const b=document.getElementById('badgeRoleSelect').value;
+      const user = state.users.find(x=>x.username===u);
+      if(!user) return alert('No user');
+      user.badges = user.badges||[];
+      if(!user.badges.includes(b)){ user.badges.push(b); addLog(`Assigned badge ${b} to ${u}`); saveStorage(); renderAll(); } 
+      else alert('User already has badge');
+    }
+    function removeBadge(){
+      const u=document.getElementById('badgeUserSelect').value;
+      const b=document.getElementById('badgeRoleSelect').value;
+      const user = state.users.find(x=>x.username===u); if(!user) return alert('No user');
+      user.badges = (user.badges||[]).filter(x=>x!==b);
+      addLog(`Removed badge ${b} from ${u}`); saveStorage(); renderAll();
+    }
+
+    /* ---------- Batches ---------- */
+    function renderBatchSelect(){
+      const sel = document.getElementById('batchSelect');
+      sel.innerHTML = (state.batches||[]).map(b=>`<option value="${b}">Batch ${b}</option>`).join('');
+    }
+    function deleteBatch(){
+      const val=parseInt(document.getElementById('batchSelect').value);
+      if(!val) return; if(!confirm(`Delete batch ${val}?`)) return;
+      state.batches = state.batches.filter(b=>b!==val);
+      addLog(`Deleted batch ${val}`); saveStorage(); renderBatchSelect();
+    }
+
+    /* ---------- Export / Import / Clear ---------- */
+    function exportData(){
+      const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download='student_assistant_data.json'; a.click(); URL.revokeObjectURL(url);
+    }
+
+    function importDataPrompt(){
+      const input=document.createElement('input'); input.type='file'; input.accept='application/json';
+      input.onchange=e=>{
+        const f=e.target.files[0]; if(!f) return;
+        const reader=new FileReader();
+        reader.onload=evt=>{
+          try{
+            const data=JSON.parse(evt.target.result);
+            if(confirm('Replace current data with imported data?')){ state=Object.assign({},defaultState,data); addLog('Imported data'); saveStorage(); renderAll(); }
+          } catch(err){ alert('Invalid JSON'); }
+        };
+        reader.readAsText(f);
+      }; input.click();
+    }
+
+    function clearAllData(){ if(!confirm('Clear all data?')) return; state=JSON.parse(JSON.stringify(defaultState)); addLog('Cleared all data'); saveStorage(); renderAll(); }
+
+    /* ---------- Filter Users ---------- */
+    function filterUsers(){
+      const q=document.getElementById('searchUser').value.toLowerCase();
+      document.querySelectorAll('#usersTable tbody tr').forEach(tr=>{
+        tr.style.display = tr.children[0].textContent.toLowerCase().includes(q)?'':'none';
+      });
+    }
+
+        </script>
+  <!-- ROW 6: Academic, Attendance, Tests -->
 <div class="row">
   <div class="col card">
-    <h2>Admin Profile</h2>
-    <div><strong>Name:</strong> <span id="adminNameDisplay"></span></div>
-    <div><strong>Email:</strong> <span id="adminEmailDisplay"></span></div>
-    <button class="btn btn-primary" onclick="openEditProfile()">Edit Profile</button>
+    <h3>Academic Items</h3>
+    <form id="acadForm">
+      <label>Type</label>
+      <select id="acadType">
+        <option value="note">Note</option>
+        <option value="assignment">Assignment</option>
+        <option value="notice">Notice</option>
+      </select>
+      <label>Title/Subject</label>
+      <input id="acadTitle" type="text" placeholder="Title or subject">
+      <label>Content</label>
+      <textarea id="acadContent" placeholder="Content..."></textarea>
+      <label>Assign to student (optional)</label>
+      <select id="acadStudentSelect"><option value="">All students</option></select>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-primary" type="submit">Add item</button>
+        <button class="btn btn-ghost" type="button" onclick="renderAcademic()">Refresh</button>
+      </div>
+    </form>
+    <div class="space"></div>
+    <div class="muted small">Academic list</div>
+    <div id="academicList" class="list"></div>
   </div>
-  <div class="col card">
-    <h2>Theme</h2>
-    <button class="btn btn-primary" onclick="toggleTheme()">Toggle Dark/Light</button>
-  </div>
-</div>
-<div class="space"></div>
-<div class="row">
-  <div class="col card">
-    <h3>Analytics Summary</h3>
-    <div><strong>Average Attendance:</strong> <span id="avgAttendance">0%</span></div>
-    <div><strong>Average Marks:</strong> <span id="avgMarks">0</span></div>
-    <div><strong>Top Student:</strong> <span id="topStudent">N/A</span></div>
-  </div>
-  <div class="col card">
-    <h3>Search Users</h3>
-    <input type="text" id="searchUsers" placeholder="Search by username or role" />
-  </div>
-  <div class="col card">
-    <h3>Search Attendance</h3>
-    <input type="text" id="searchAttendance" placeholder="Search by subject" />
-  </div>
-  <div class="col card">
-    <h3>Search Tests</h3>
-    <input type="text" id="searchTests" placeholder="Search by subject" />
-  </div>
-</div>
-<div class="space"></div>
-<!-- PART 3: Attendance, Tests, Charts -->
-<div class="col card">
-  <h3>Attendance (subjects & %)</h3>
-  <form id="attendanceForm">
-    <label>Subject name</label>
-    <input id="attendanceSubject" type="text" placeholder="e.g. Mathematics" required>
 
-    <label>Percentage</label>
-    <input id="attendancePercent" type="number" min="0" max="100" placeholder="80" required>
-
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="btn btn-primary" type="submit">Add / Update</button>
-      <button class="btn btn-ghost" type="button" onclick="renderAttendance()">Refresh</button>
+  <div class="col card">
+    <h3>Attendance (Subjects & %)</h3>
+    <form id="attendanceForm">
+      <label>Subject name</label>
+      <input id="attendanceSubject" type="text" placeholder="e.g. Mathematics" required>
+      <label>Percentage</label>
+      <input id="attendancePercent" type="number" min="0" max="100" placeholder="80" required>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-primary" type="submit">Add / Update</button>
+        <button class="btn btn-ghost" type="button" onclick="renderAttendance()">Refresh</button>
+      </div>
+    </form>
+    <div class="space"></div>
+    <div class="muted small">Attendance list</div>
+    <div id="attendanceList" class="list"></div>
+    <div class="space"></div>
+    <label>Delete subject</label>
+    <div class="inline">
+      <select id="deleteSubjectSelect"></select>
+      <button class="btn btn-danger tiny" onclick="deleteSubject()">Delete</button>
     </div>
-  </form>
-
-  <div class="space"></div>
-  <div class="muted small">Attendance list</div>
-  <div id="attendanceList" class="list"></div>
-
-  <div class="space"></div>
-  <label>Delete subject</label>
-  <div class="inline">
-    <select id="deleteSubjectSelect"></select>
-    <button class="btn btn-danger tiny" onclick="deleteSubject()">Delete</button>
   </div>
-</div>
 
-<div class="col card">
-  <h3>Test Scores</h3>
-  <form id="testForm">
-    <label>Subject</label>
-    <input id="testSubject" type="text" placeholder="e.g. Physics" required>
-    <label>Marks</label>
-    <input id="testMarks" type="number" min="0" max="100" placeholder="75" required>
-
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="btn btn-primary" type="submit">Add / Update test</button>
-      <button class="btn btn-ghost" type="button" onclick="renderTests()">Refresh</button>
+  <div class="col card">
+    <h3>Test Scores</h3>
+    <form id="testForm">
+      <label>Subject</label>
+      <input id="testSubject" type="text" placeholder="e.g. Physics" required>
+      <label>Marks</label>
+      <input id="testMarks" type="number" min="0" max="100" placeholder="75" required>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-primary" type="submit">Add / Update test</button>
+        <button class="btn btn-ghost" type="button" onclick="renderTests()">Refresh</button>
+      </div>
+    </form>
+    <div class="space"></div>
+    <div class="muted small">Test list</div>
+    <div id="testList" class="list"></div>
+    <div class="space"></div>
+    <label>Delete test</label>
+    <div class="inline">
+      <select id="deleteTestSelect"></select>
+      <button class="btn btn-danger tiny" onclick="deleteTest()">Delete</button>
     </div>
-  </form>
-
-  <div class="space"></div>
-  <div class="muted small">Test list</div>
-  <div id="testList" class="list"></div>
-
-  <div class="space"></div>
-  <label>Delete test</label>
-  <div class="inline">
-    <select id="deleteTestSelect"></select>
-    <button class="btn btn-danger tiny" onclick="deleteTest()">Delete</button>
   </div>
 </div>
 
-<!-- Charts -->
-<div class="col card">
-  <h3>Attendance Chart</h3>
-  <canvas id="attendanceChart"></canvas>
-  <div class="space"></div>
-  <div class="muted small">Edit a subject's % directly: choose subject -> change value -> click Update</div>
-  <div class="inline" style="margin-top:8px">
-    <select id="chartEditSubject"></select>
-    <input id="chartEditValue" type="number" min="0" max="100" placeholder="%" />
-    <button class="btn btn-primary" onclick="applyChartEdit()">Update</button>
-  </div>
-</div>
-
-<div class="col card">
-  <h3>Test Chart</h3>
-  <canvas id="testChart"></canvas>
-  <div class="space"></div>
-  <div class="muted small">Edit test marks: choose test -> change marks -> Update</div>
-  <div class="inline" style="margin-top:8px">
-    <select id="chartEditTest"></select>
-    <input id="chartEditTestValue" type="number" min="0" max="100" placeholder="marks" />
-    <button class="btn btn-primary" onclick="applyTestEdit()">Update</button>
-  </div>
+<!-- Theme toggle -->
+<div class="space"></div>
+<div style="text-align:center;">
+  <button class="btn btn-ghost" onclick="toggleTheme()">Toggle Dark/Light Theme</button>
 </div>
 
 <script>
+/* ---------- Academic ---------- */
+document.getElementById('acadForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const type = document.getElementById('acadType').value;
+  const title = document.getElementById('acadTitle').value.trim();
+  const content = document.getElementById('acadContent').value.trim();
+  const student = document.getElementById('acadStudentSelect').value || '';
+  if(!title||!content) return alert('Title/content required');
+  const id = 'acad_'+Date.now();
+  state.academic.unshift({id,type,title,content,student});
+  addLog(`Added academic ${type}: ${title}`);
+  saveStorage(); renderAcademic();
+  document.getElementById('acadForm').reset();
+});
+
+function renderAcademic(){
+  const c=document.getElementById('academicList'); c.innerHTML='';
+  (state.academic||[]).forEach(a=>{
+    const div=document.createElement('div');
+    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+    div.innerHTML=`<strong>[${a.type.toUpperCase()}]</strong> ${a.title} 
+      <div class="small">${a.student?'For: '+a.student:'For: All'}</div>
+      <div style="margin-top:6px">${a.content}</div>
+      <div style="margin-top:6px">
+        <button class="btn tiny btn-ghost" onclick="editAcademic('${a.id}')">Edit</button>
+        <button class="btn tiny btn-danger" onclick="deleteAcademic('${a.id}')">Delete</button>
+      </div>`;
+    c.appendChild(div);
+  });
+
+  // update student select
+  const acadStudent=document.getElementById('acadStudentSelect');
+  acadStudent.innerHTML='<option value="">All students</option>';
+  state.users.filter(u=>u.role==='student').forEach(s=>{
+    acadStudent.insertAdjacentHTML('beforeend',`<option value="${s.username}">${s.username}</option>`);
+  });
+}
+
+function editAcademic(id){
+  const item = state.academic.find(x=>x.id===id);
+  if(!item) return;
+  const newTitle = prompt('Title', item.title);
+  const newContent = prompt('Content', item.content);
+  if(newTitle!==null) item.title=newTitle;
+  if(newContent!==null) item.content=newContent;
+  addLog(`Edited academic ${id}`);
+  saveStorage(); renderAcademic();
+}
+
+function deleteAcademic(id){
+  if(!confirm('Delete this academic item?')) return;
+  state.academic=state.academic.filter(x=>x.id!==id);
+  addLog(`Deleted academic ${id}`);
+  saveStorage(); renderAcademic();
+}
+
 /* ---------- Attendance ---------- */
 document.getElementById('attendanceForm').addEventListener('submit', e=>{
   e.preventDefault();
-  const subj = document.getElementById('attendanceSubject').value.trim();
-  const percent = parseFloat(document.getElementById('attendancePercent').value);
-  if(!subj || isNaN(percent)) return alert('enter valid subject & percent');
-  const found = state.attendance.find(a=>a.subject.toLowerCase()===subj.toLowerCase());
-  if(found){ found.percent = percent; addLog(`Updated attendance ${subj} -> ${percent}%`); }
-  else { state.attendance.unshift({ subject: subj, percent }); addLog(`Added attendance ${subj} -> ${percent}%`); }
-  persistAndRender();
-  document.getElementById('attendanceForm').reset();
+  const subj=document.getElementById('attendanceSubject').value.trim();
+  const percent=parseFloat(document.getElementById('attendancePercent').value);
+  if(!subj||isNaN(percent)) return alert('Enter valid subject & percent');
+  const found=state.attendance.find(a=>a.subject.toLowerCase()===subj.toLowerCase());
+  if(found){ found.percent=percent; addLog(`Updated attendance ${subj} -> ${percent}%`); }
+  else { state.attendance.unshift({subject:subj,percent}); addLog(`Added attendance ${subj} -> ${percent}%`); }
+  saveStorage(); renderAttendance(); document.getElementById('attendanceForm').reset();
 });
 
 function renderAttendance(){
-  const c = document.getElementById('attendanceList');
-  c.innerHTML = '';
+  const c=document.getElementById('attendanceList'); c.innerHTML='';
   (state.attendance||[]).forEach(a=>{
-    const div = document.createElement('div');
+    const div=document.createElement('div');
     div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
-    div.innerHTML = `<strong>${a.subject}</strong> — ${a.percent}% 
+    div.innerHTML=`<strong>${a.subject}</strong> — ${a.percent}% 
       <div style="margin-top:6px">
         <button class="btn tiny btn-ghost" onclick="promptEditAttendance('${a.subject}')">Edit</button>
         <button class="btn tiny btn-danger" onclick="deleteSubjectByName('${a.subject}')">Delete</button>
       </div>`;
     c.appendChild(div);
   });
-  const sel = document.getElementById('deleteSubjectSelect');
-  sel.innerHTML = (state.attendance||[]).map(a=>`<option value="${a.subject}">${a.subject}</option>`).join('') || '<option value="">No subjects</option>';
-  document.getElementById('chartEditSubject').innerHTML = (state.attendance||[]).map(a=>`<option value="${a.subject}">${a.subject}</option>`).join('');
+  document.getElementById('deleteSubjectSelect').innerHTML = (state.attendance||[]).map(a=>`<option value="${a.subject}">${a.subject}</option>`).join('');
 }
 
-function deleteSubject(){
-  const sel = document.getElementById('deleteSubjectSelect').value;
-  if(!sel) return alert('choose subject');
-  deleteSubjectByName(sel);
-}
 function deleteSubjectByName(name){
   if(!confirm(`Delete subject ${name}?`)) return;
-  state.attendance = state.attendance.filter(a=>a.subject!==name);
-  addLog(`Deleted subject ${name} from attendance`);
-  persistAndRender();
+  state.attendance=state.attendance.filter(a=>a.subject!==name);
+  addLog(`Deleted subject ${name}`);
+  saveStorage(); renderAttendance();
 }
+
 function promptEditAttendance(subject){
-  const item = state.attendance.find(a=>a.subject===subject);
-  if(!item) return;
-  const v = prompt(`Enter new % for ${subject}`, item.percent);
-  if(v===null) return;
-  const nv = parseFloat(v);
-  if(isNaN(nv)) return alert('invalid number');
-  item.percent = nv;
+  const item = state.attendance.find(a=>a.subject===subject); if(!item) return;
+  const v=prompt(`Enter new % for ${subject}`, item.percent);
+  if(v===null) return; const nv=parseFloat(v);
+  if(isNaN(nv)) return alert('Invalid number'); item.percent=nv;
   addLog(`Edited attendance ${subject} -> ${nv}%`);
-  persistAndRender();
+  saveStorage(); renderAttendance();
 }
 
 /* ---------- Tests ---------- */
 document.getElementById('testForm').addEventListener('submit', e=>{
   e.preventDefault();
-  const subj = document.getElementById('testSubject').value.trim();
-  const marks = parseFloat(document.getElementById('testMarks').value);
-  if(!subj || isNaN(marks)) return alert('enter valid test & marks');
-  const found = state.tests.find(t=>t.subject.toLowerCase()===subj.toLowerCase());
-  if(found){ found.marks = marks; addLog(`Updated test ${subj} -> ${marks}`); }
-  else { state.tests.unshift({ subject: subj, marks }); addLog(`Added test ${subj} -> ${marks}`); }
-  persistAndRender();
-  document.getElementById('testForm').reset();
+  const subj=document.getElementById('testSubject').value.trim();
+  const marks=parseFloat(document.getElementById('testMarks').value);
+  if(!subj||isNaN(marks)) return alert('Enter valid test & marks');
+  const found=state.tests.find(t=>t.subject.toLowerCase()===subj.toLowerCase());
+  if(found){ found.marks=marks; addLog(`Updated test ${subj} -> ${marks}`); }
+  else { state.tests.unshift({subject:subj,marks}); addLog(`Added test ${subj} -> ${marks}`); }
+  saveStorage(); renderTests(); document.getElementById('testForm').reset();
 });
 
 function renderTests(){
-  const c = document.getElementById('testList');
-  c.innerHTML = '';
+  const c=document.getElementById('testList'); c.innerHTML='';
   (state.tests||[]).forEach(t=>{
-    const div = document.createElement('div');
+    const div=document.createElement('div');
     div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
-    div.innerHTML = `<strong>${t.subject}</strong> — ${t.marks} 
+    div.innerHTML=`<strong>${t.subject}</strong> — ${t.marks} 
       <div style="margin-top:6px">
         <button class="btn tiny btn-ghost" onclick="promptEditTest('${t.subject}')">Edit</button>
         <button class="btn tiny btn-danger" onclick="deleteTestByName('${t.subject}')">Delete</button>
       </div>`;
     c.appendChild(div);
   });
-  document.getElementById('deleteTestSelect').innerHTML = (state.tests||[]).map(t=>`<option value="${t.subject}">${t.subject}</option>`).join('') || '<option value="">No tests</option>';
-  document.getElementById('chartEditTest').innerHTML = (state.tests||[]).map(t=>`<option value="${t.subject}">${t.subject}</option>`).join('');
+  document.getElementById('deleteTestSelect').innerHTML = (state.tests||[]).map(t=>`<option value="${t.subject}">${t.subject}</option>`).join('');
 }
 
-function deleteTest(){
-  const sel = document.getElementById('deleteTestSelect').value;
-  if(!sel) return alert('choose test');
-  deleteTestByName(sel);
-}
 function deleteTestByName(name){
   if(!confirm(`Delete test ${name}?`)) return;
   state.tests = state.tests.filter(t=>t.subject!==name);
   addLog(`Deleted test ${name}`);
-  persistAndRender();
-}
-function promptEditTest(subject){
-  const item = state.tests.find(t=>t.subject===subject);
-  if(!item) return;
-  const v = prompt(`Enter new marks for ${subject}`, item.marks);
-  if(v===null) return;
-  const nv = parseFloat(v);
-  if(isNaN(nv)) return alert('invalid number');
-  item.marks = nv;
-  addLog(`Edited test ${subject} -> ${nv}`);
-  persistAndRender();
+  saveStorage(); renderTests();
 }
 
+function promptEditTest(subject){
+  const item = state.tests.find(t=>t.subject===subject); if(!item) return;
+  const v = prompt(`Enter new marks for ${subject}`, item.marks);
+  if(v===null) return;
+  const nv = parseFloat(v); if(isNaN(nv)) return alert('Invalid number');
+  item.marks = nv;
+  addLog(`Edited test ${subject} -> ${nv}`);
+  saveStorage(); renderTests();
+}
+
+/* ---------- Theme Toggle ---------- */
+function toggleTheme(){
+  const root = document.documentElement;
+  const dark = root.style.getPropertyValue('--bg') === '#1f2937';
+  if(dark){
+    root.style.setProperty('--bg','#f9fafb');
+    root.style.setProperty('--card','#ffffff');
+    root.style.setProperty('--text','#111827');
+    root.style.setProperty('--accent','#3b82f6');
+  } else {
+    root.style.setProperty('--bg','#1f2937');
+    root.style.setProperty('--card','#111827');
+    root.style.setProperty('--text','#f9fafb');
+    root.style.setProperty('--accent','#4f46e5');
+  }
+}
+</script>
+  <script>
 /* ---------- Charts ---------- */
 let attendanceChart=null, testChart=null;
 function renderCharts(){
@@ -259,155 +804,411 @@ function renderCharts(){
 
   const attLabels = (state.attendance||[]).map(a=>a.subject);
   const attData = (state.attendance||[]).map(a=>a.percent);
-
   const testLabels = (state.tests||[]).map(t=>t.subject);
   const testData = (state.tests||[]).map(t=>t.marks);
 
-  if(attendanceChart) {
+  if(attendanceChart){
     attendanceChart.data.labels = attLabels;
     attendanceChart.data.datasets[0].data = attData;
     attendanceChart.update();
   } else {
-    attendanceChart = new Chart(attCtx, {
+    attendanceChart = new Chart(attCtx,{
       type:'bar',
-      data:{ labels:attLabels, datasets:[{label:'Attendance %',data:attData, backgroundColor:'#4f46e5'}]},
+      data:{labels:attLabels, datasets:[{label:'Attendance %',data:attData, backgroundColor:'#4f46e5'}]},
       options:{responsive:true,plugins:{legend:{display:false}}}
     });
   }
 
-  if(testChart) {
+  if(testChart){
     testChart.data.labels = testLabels;
     testChart.data.datasets[0].data = testData;
     testChart.update();
   } else {
-    testChart = new Chart(testCtx, {
+    testChart = new Chart(testCtx,{
       type:'bar',
-      data:{ labels:testLabels, datasets:[{label:'Test marks',data:testData, backgroundColor:'#3b82f6'}]},
+      data:{labels:testLabels,datasets:[{label:'Test Marks',data:testData,backgroundColor:'#3b82f6'}]},
       options:{responsive:true,plugins:{legend:{display:false}}}
     });
   }
-
-  // populate chart edit selects
-  document.getElementById('chartEditSubject').innerHTML = (state.attendance||[]).map(a=>`<option value="${a.subject}">${a.subject}</option>`).join('');
-  document.getElementById('chartEditTest').innerHTML = (state.tests||[]).map(t=>`<option value="${t.subject}">${t.subject}</option>`).join('');
 }
 
-function applyChartEdit(){
-  const subj = document.getElementById('chartEditSubject').value;
-  const val = parseFloat(document.getElementById('chartEditValue').value);
-  if(!subj || isNaN(val)) return alert('choose subject and value');
-  const item = state.attendance.find(a=>a.subject===subj);
-  if(item){ item.percent = val; addLog(`Chart edit: ${subj} -> ${val}%`); persistAndRender(); }
-}
-
-function applyTestEdit(){
-  const subj = document.getElementById('chartEditTest').value;
-  const val = parseFloat(document.getElementById('chartEditTestValue').value);
-  if(!subj || isNaN(val)) return alert('choose test and marks');
-  const item = state.tests.find(t=>t.subject===subj);
-  if(item){ item.marks = val; addLog(`Test edit: ${subj} -> ${val}`); persistAndRender(); }
-}
-  <div class="row">
-  <div class="col card">
-    <h3>Trigger Words & Phrases</h3>
-    <form id="triggerForm">
-      <label>Add Trigger Word/Phrase</label>
-      <input id="triggerInput" type="text" placeholder="e.g. urgent, help needed" />
-      <button class="btn btn-primary" type="submit">Add Trigger</button>
-    </form>
-
-    <div class="space"></div>
-    <div class="muted small">Existing Triggers</div>
-    <div id="triggerList" class="list"></div>
-  </div>
-</div>
-  <script>
-const STORAGE_KEY = 'student_assistant_data_v2';
-let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
-  admin: { name:'Admin', email:'admin@example.com' },
-  users: [], batches:Array.from({length:20},(_,i)=>i+1),
-  academic:[], attendance:[], tests:[], feedback:[], logs:[], triggers:[]
-};
-
-// ---------- Utilities ----------
-function saveState(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); renderAll(); }
-function addLog(msg){ state.logs.unshift(`${new Date().toISOString()} — ${msg}`); saveState(); }
-
-// ---------- Theme ----------
-let darkTheme = true;
-function toggleTheme(){
-  if(darkTheme){
-    document.documentElement.style.setProperty('--bg','#fff');
-    document.documentElement.style.setProperty('--card','#f3f4f6');
-    document.documentElement.style.setProperty('--accent','#4f46e5');
-    document.documentElement.style.setProperty('--text','#111');
-    document.documentElement.style.setProperty('--muted','#6b7280');
-  } else {
-    document.documentElement.style.setProperty('--bg','#1f2937');
-    document.documentElement.style.setProperty('--card','#374151');
-    document.documentElement.style.setProperty('--accent','#4f46e5');
-    document.documentElement.style.setProperty('--text','#f9fafb');
-    document.documentElement.style.setProperty('--muted','#9ca3af');
+/* ---------- Analytics Summary Cards ---------- */
+function renderAnalytics(){
+  const avgAtt = state.attendance.length ? (state.attendance.reduce((a,b)=>a+b.percent,0)/state.attendance.length).toFixed(2) : 0;
+  const avgMarks = state.tests.length ? (state.tests.reduce((a,b)=>a+b.marks,0)/state.tests.length).toFixed(2) : 0;
+  let topStudent = 'N/A';
+  if(state.users.length && state.tests.length){
+    const studentAvgs = state.users.filter(u=>u.role==='student').map(s=>{
+      const marks = state.tests.filter(t=>t.student===s.username).map(t=>t.marks);
+      const avg = marks.length ? marks.reduce((a,b)=>a+b,0)/marks.length : 0;
+      return {username:s.username, avg};
+    });
+    if(studentAvgs.length) topStudent = studentAvgs.reduce((a,b)=>a.avg>b.avg?a:b).username;
   }
-  darkTheme = !darkTheme;
+  document.getElementById('analyticsAttendance').textContent = avgAtt + '%';
+  document.getElementById('analyticsMarks').textContent = avgMarks;
+  document.getElementById('analyticsTopStudent').textContent = topStudent;
 }
 
-// ---------- Admin Profile ----------
-function renderAdminProfile(){
-  document.getElementById('adminNameDisplay').textContent = state.admin.name;
-  document.getElementById('adminEmailDisplay').textContent = state.admin.email;
+/* ---------- Trigger Words/Phrases & Real-time notifications ---------- */
+let triggers = ['urgent','help','exam']; // default
+function addTrigger(word){
+  if(word && !triggers.includes(word)) triggers.push(word);
 }
-function openEditProfile(){
-  const newName = prompt('Admin name', state.admin.name);
-  if(newName) state.admin.name = newName;
-  const newEmail = prompt('Admin email', state.admin.email);
-  if(newEmail) state.admin.email = newEmail;
-  addLog('Admin profile updated');
-  saveState();
+function removeTrigger(word){
+  triggers = triggers.filter(w=>w!==word);
+}
+function checkTriggers(msg){
+  triggers.forEach(t=>{
+    if(msg.toLowerCase().includes(t.toLowerCase())){
+      addLog(`⚠ Trigger detected: "${t}" in message: "${msg}"`);
+      renderLogs();
+    }
+  });
 }
 
-// ---------- Trigger Words ----------
-function renderTriggers(){
-  const c=document.getElementById('triggerList');
-  if(!state.triggers.length){ c.innerHTML='<div class="small muted">No triggers set</div>'; return; }
-  c.innerHTML='';
-  state.triggers.forEach((t,i)=>{
-    const div=document.createElement('div');
-    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.1)';
-    div.innerHTML=`<span>${t}</span>
-      <button class="btn tiny btn-ghost" onclick="editTrigger(${i})">Edit</button>
-      <button class="btn tiny btn-danger" onclick="deleteTrigger(${i})">Delete</button>`;
+/* ---------- Student-specific Dashboard ---------- */
+let currentUser = null;
+function loginAsStudent(){
+  const uname = prompt('Enter your student username:');
+  const user = state.users.find(u=>u.username===uname && u.role==='student');
+  if(!user) return alert('Student not found');
+  currentUser = user.username;
+  filterStudentDashboard();
+}
+function logoutStudent(){
+  currentUser = null;
+  renderAll();
+}
+function filterStudentDashboard(){
+  renderUsers();
+  renderAcademic();
+  renderAttendance();
+  renderTests();
+  renderCharts();
+  if(currentUser){
+    // filter academic, attendance, tests
+    document.querySelectorAll('#academicList > div').forEach(d=>{
+      if(!d.innerHTML.includes(`For: All`) && !d.innerHTML.includes(currentUser)) d.style.display='none';
+    });
+    document.querySelectorAll('#attendanceList > div').forEach(d=>d.style.display='block'); // show all attendance
+    document.querySelectorAll('#testList > div').forEach(d=>{
+      if(!d.innerHTML.includes(currentUser)) d.style.display='none';
+    });
+  }
+}
+
+/* ---------- Hook triggers to feedback & academic items ---------- */
+function addFeedback(msg){
+  if(!msg) return;
+  state.feedback.unshift(msg);
+  checkTriggers(msg);
+  saveStorage();
+  renderFeedback();
+}
+
+/* ---------- Override addLog to check triggers in logs too ---------- */
+function addLog(msg){
+  const t = new Date().toISOString();
+  const logEntry = `${t} — ${msg}`;
+  state.logs.unshift(logEntry);
+  if(state.logs.length>500) state.logs.length=500;
+  checkTriggers(msg);
+  saveStorage(); renderLogs();
+  renderAnalytics();
+  renderCharts();
+}
+
+/* ---------- Init ---------- */
+renderAll();
+renderAnalytics();
+      </script>
+  <script>
+/* ---------- Theme Toggle ---------- */
+let darkMode = false;
+function toggleTheme(){
+  darkMode = !darkMode;
+  const root = document.documentElement;
+  if(darkMode){
+    root.style.setProperty('--bg','#1e1e2f');
+    root.style.setProperty('--card','#2c2c3e');
+    root.style.setProperty('--text','#f0f0f0');
+    root.style.setProperty('--accent','#4f46e5');
+  } else {
+    root.style.setProperty('--bg','#fefefe');
+    root.style.setProperty('--card','#ffffff');
+    root.style.setProperty('--text','#111');
+    root.style.setProperty('--accent','#4f46e5');
+  }
+}
+
+/* ---------- Trigger Words/Phrases Management UI ---------- */
+function renderTriggerList(){
+  const container = document.getElementById('triggerList');
+  container.innerHTML = triggers.map(t=>`<div class="inline" style="margin-bottom:4px">
+    <span>${t}</span>
+    <button class="btn tiny btn-danger" onclick="removeTrigger('${t}')">Remove</button>
+  </div>`).join('');
+}
+
+function addTriggerUI(){
+  const val = prompt('Enter new trigger word/phrase:');
+  if(val && !triggers.includes(val)){
+    triggers.push(val);
+    addLog(`Added trigger word/phrase: "${val}"`);
+    renderTriggerList();
+  }
+}
+
+/* ---------- Feedback Form Enhancement ---------- */
+document.getElementById('feedbackForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const msg = document.getElementById('feedbackInput').value.trim();
+  if(!msg) return;
+  addFeedback(msg);
+  document.getElementById('feedbackInput').value='';
+});
+
+/* ---------- Search / Filter Utility ---------- */
+function filterList(listId, query){
+  const q = query.toLowerCase();
+  document.querySelectorAll(`#${listId} > div`).forEach(div=>{
+    if(div.textContent.toLowerCase().includes(q)) div.style.display='block';
+    else div.style.display='none';
+  });
+}
+
+/* ---------- Search Inputs ---------- */
+document.getElementById('userSearch').addEventListener('input', e=>{
+  filterList('usersTable', e.target.value);
+});
+document.getElementById('attendanceSearch').addEventListener('input', e=>{
+  filterList('attendanceList', e.target.value);
+});
+document.getElementById('testSearch').addEventListener('input', e=>{
+  filterList('testList', e.target.value);
+});
+
+/* ---------- Initialize ---------- */
+renderTriggerList();
+toggleTheme(); // default theme
+    <script>
+/* ---------- Student-Specific Dashboard ---------- */
+let currentUser = null; // null = admin, else student username
+
+function loginStudent(){
+  const username = prompt('Enter your student username:');
+  if(!username) return;
+  const student = state.users.find(u=>u.username===username && u.role==='student');
+  if(!student) return alert('Student not found');
+  currentUser = student.username;
+  addLog(`Student logged in: ${currentUser}`);
+  renderAll();
+}
+
+function logoutUser(){
+  currentUser = null;
+  addLog('Logged out');
+  renderAll();
+}
+
+/* ---------- Filter data for student ---------- */
+function studentFilter(arr, key='student'){
+  if(!currentUser) return arr;
+  return arr.filter(item=>!item[key] || item[key]===currentUser);
+}
+
+/* Override render functions to respect current user */
+function renderAcademic(){
+  const c = document.getElementById('academicList');
+  c.innerHTML = '';
+  studentFilter(state.academic).forEach(a=>{
+    const div = document.createElement('div');
+    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+    div.innerHTML = `<strong>[${a.type.toUpperCase()}]</strong> ${a.title} 
+      <div class="small">${a.student ? 'For: '+a.student : 'For: All'}</div>
+      <div style="margin-top:6px">${a.content}</div>
+      ${!currentUser ? `<div style="margin-top:6px">
+        <button class="btn tiny btn-ghost" onclick="editAcademic('${a.id}')">Edit</button>
+        <button class="btn tiny btn-danger" onclick="deleteAcademic('${a.id}')">Delete</button>
+      </div>` : ''}
+    `;
     c.appendChild(div);
   });
 }
-document.getElementById('triggerForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const val=document.getElementById('triggerInput').value.trim();
-  if(!val || state.triggers.includes(val)) return alert('Invalid or duplicate trigger');
-  state.triggers.push(val);
-  addLog(`Added trigger: ${val}`);
-  document.getElementById('triggerInput').value='';
-  saveState();
-});
-function editTrigger(i){
-  const newVal = prompt('Edit trigger', state.triggers[i]);
-  if(newVal) { addLog(`Trigger edited: ${state.triggers[i]} -> ${newVal}`); state.triggers[i]=newVal; saveState(); }
-}
-function deleteTrigger(i){ addLog(`Trigger deleted: ${state.triggers[i]}`); state.triggers.splice(i,1); saveState(); }
 
-// ---------- Check triggers ----------
-function checkTriggers(text){
-  state.triggers.forEach(t=>{
-    if(text.toLowerCase().includes(t.toLowerCase())) addLog(`⚠️ Trigger detected: "${t}" in "${text}"`);
+function renderAttendance(){
+  const c = document.getElementById('attendanceList');
+  c.innerHTML = '';
+  studentFilter(state.attendance,'subject').forEach(a=>{
+    const div = document.createElement('div');
+    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+    div.innerHTML = `<strong>${a.subject}</strong> — ${a.percent}% 
+      ${!currentUser ? `<div style="margin-top:6px">
+        <button class="btn tiny btn-ghost" onclick="promptEditAttendance('${a.subject}')">Edit</button>
+        <button class="btn tiny btn-danger" onclick="deleteSubjectByName('${a.subject}')">Delete</button>
+      </div>` : ''}
+    `;
+    c.appendChild(div);
   });
 }
 
-// ---------- Render All ----------
-function renderAll(){
-  renderAdminProfile();
-  renderTriggers();
-  // renderUsers(); renderAttendance(); renderTests(); renderCharts(); renderFeedback(); renderLogs();
+function renderTests(){
+  const c = document.getElementById('testList');
+  c.innerHTML = '';
+  studentFilter(state.tests,'subject').forEach(t=>{
+    const div = document.createElement('div');
+    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+    div.innerHTML = `<strong>${t.subject}</strong> — ${t.marks} 
+      ${!currentUser ? `<div style="margin-top:6px">
+        <button class="btn tiny btn-ghost" onclick="promptEditTest('${t.subject}')">Edit</button>
+        <button class="btn tiny btn-danger" onclick="deleteTestByName('${t.subject}')">Delete</button>
+      </div>` : ''}
+    `;
+    c.appendChild(div);
+  });
 }
 
-renderAll();
+/* ---------- Trigger Word/Phrase Detection ---------- */
+function checkTriggers(message){
+  triggers.forEach(t=>{
+    if(message.toLowerCase().includes(t.toLowerCase())){
+      addLog(`Trigger detected: "${t}" in message "${message}"`);
+      // optional: show alert popup
+      if(!currentUser) alert(`Trigger word detected: "${t}"`);
+    }
+  });
+}
+
+function addFeedback(msg){
+  state.feedback.unshift(msg);
+  checkTriggers(msg);
+  persistAndRender();
+}
+
+/* ---------- Initial UI ---------- */
+if(!currentUser){
+  document.getElementById('loginStudentBtn').style.display='inline-block';
+} else {
+  document.getElementById('loginStudentBtn').style.display='none';
+}
 </script>
+  <script>
+/* ---------- Trigger Word / Phrase UI ---------- */
+function openTriggerSettings(){
+  const word = prompt('Enter trigger word');
+  if(word) { triggers.push(word); addLog(`Added trigger word: ${word}`); persistAndRender(); }
+  const phrase = prompt('Enter trigger phrase');
+  if(phrase) { triggers.push(phrase); addLog(`Added trigger phrase: ${phrase}`); persistAndRender(); }
+}
+
+function clearTriggers(){
+  if(confirm('Clear all triggers?')){
+    triggers = [];
+    addLog('Cleared all trigger words/phrases');
+    persistAndRender();
+  }
+}
+
+/* ---------- Dark / Light Theme Toggle ---------- */
+function toggleTheme(){
+  document.body.classList.toggle('dark-theme');
+  const mode = document.body.classList.contains('dark-theme') ? 'Dark' : 'Light';
+  addLog(`Switched to ${mode} theme`);
+}
+
+/* ---------- Real-time updates ---------- */
+function setupRealtime(){
+  // Update charts, analytics cards, and lists every 2 seconds
+  setInterval(()=>{
+    renderAll();
+  }, 2000);
+}
+
+/* ---------- Analytics Summary Cards ---------- */
+function renderAnalytics(){
+  const attAvg = state.attendance.length>0 ? 
+    (state.attendance.reduce((a,b)=>a+b.percent,0)/state.attendance.length).toFixed(2) : '0';
+  const testAvg = state.tests.length>0 ? 
+    (state.tests.reduce((a,b)=>a+b.marks,0)/state.tests.length).toFixed(2) : '0';
+  
+  let topStudent = '-';
+  const students = state.users.filter(u=>u.role==='student');
+  if(students.length>0 && state.tests.length>0){
+    let scores = students.map(s=>{
+      const studentTests = state.tests.filter(t=>!t.student || t.student===s.username);
+      const avg = studentTests.length>0 ? studentTests.reduce((a,b)=>a+b.marks,0)/studentTests.length : 0;
+      return {username:s.username, avg};
+    });
+    scores.sort((a,b)=>b.avg-a.avg);
+    topStudent = scores[0].username + ' (' + scores[0].avg.toFixed(2) + ')';
+  }
+
+  document.getElementById('analyticsAttendance').textContent = attAvg + '%';
+  document.getElementById('analyticsTests').textContent = testAvg;
+  document.getElementById('analyticsTopStudent').textContent = topStudent;
+}
+
+/* ---------- Init Realtime ---------- */
+setupRealtime();
+    </script>
+  <script>
+/* ---------- Helper functions for triggers & notifications ---------- */
+const triggers = []; // global trigger word/phrase list
+
+function checkTriggers(text){
+  triggers.forEach(tr=>{
+    if(text.toLowerCase().includes(tr.toLowerCase())){
+      addLog(`Trigger detected: "${tr}" in "${text}"`);
+      showNotification(`Trigger: "${tr}" detected`);
+    }
+  });
+}
+
+function showNotification(msg){
+  const notif = document.createElement('div');
+  notif.className = 'notification';
+  notif.textContent = msg;
+  notif.style.position='fixed';
+  notif.style.bottom='20px';
+  notif.style.right='20px';
+  notif.style.padding='10px 16px';
+  notif.style.backgroundColor='#facc15';
+  notif.style.color='#000';
+  notif.style.borderRadius='6px';
+  notif.style.boxShadow='0 2px 8px rgba(0,0,0,0.3)';
+  notif.style.zIndex=9999;
+  document.body.appendChild(notif);
+  setTimeout(()=>notif.remove(), 4000);
+}
+
+/* ---------- Monitor new academic & feedback items for triggers ---------- */
+function monitorTriggers(){
+  const newAcademic = state.academic[state.academic.length-1];
+  if(newAcademic) checkTriggers(newAcademic.content);
+
+  const newFeedback = state.feedback[state.feedback.length-1];
+  if(newFeedback) checkTriggers(newFeedback);
+}
+
+/* ---------- Hook monitor into persistAndRender ---------- */
+const originalPersist = persistAndRender;
+persistAndRender = function(){
+  originalPersist();
+  monitorTriggers();
+  renderAnalytics();
+}
+
+/* ---------- Initialize theme based on previous preference ---------- */
+if(localStorage.getItem('theme')==='dark') document.body.classList.add('dark-theme');
+
+/* ---------- Optional: store theme preference ---------- */
+document.getElementById('themeToggleBtn')?.addEventListener('click', ()=>{
+  toggleTheme();
+  const isDark = document.body.classList.contains('dark-theme');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+});
+  </script>
+  
+                                                         </script>
+  
