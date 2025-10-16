@@ -403,12 +403,11 @@
         <th>On Duty</th>
       </tr>
     </thead>
-    <tbody id="attendanceTableBody">
-      <!-- Rows populated dynamically -->
-    </tbody>
+    <tbody id="attendanceTableBody"></tbody>
   </table>
 
   <div style="margin-top:10px;">
+    <button class="primary-btn" onclick="saveAttendance()">Save Attendance</button>
     <button class="primary-btn" onclick="exportAttendance()">Export CSV</button>
     <input type="file" id="importFile" accept=".csv">
     <button class="primary-btn" onclick="importAttendance()">Import CSV</button>
@@ -416,6 +415,71 @@
 </div>
 
 <script>
+  // Initialize attendance object
+  facultyData.attendance = facultyData.attendance || {};
+
+  // Render table
+  function renderAttendance() {
+    const tbody = document.getElementById("attendanceTableBody");
+    tbody.innerHTML = '';
+    facultyData.assignedStudents.forEach(student => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${student}</td>
+        <td><input type="radio" name="att_${student}" value="Present" ${facultyData.attendance[student]==='Present'?'checked':''}></td>
+        <td><input type="radio" name="att_${student}" value="Absent" ${facultyData.attendance[student]==='Absent'?'checked':''}></td>
+        <td><input type="radio" name="att_${student}" value="Late" ${facultyData.attendance[student]==='Late'?'checked':''}></td>
+        <td><input type="radio" name="att_${student}" value="On Duty" ${facultyData.attendance[student]==='On Duty'?'checked':''}></td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  // Save selections
+  function saveAttendance() {
+    facultyData.assignedStudents.forEach(student => {
+      const radios = document.getElementsByName(`att_${student}`);
+      radios.forEach(r => {
+        if(r.checked) facultyData.attendance[student] = r.value;
+      });
+    });
+    alert("✅ Attendance saved!");
+    console.log(facultyData.attendance);
+  }
+
+  // Export attendance CSV
+  function exportAttendance() {
+    let csv = "Student,Status\n";
+    for(const student in facultyData.attendance){
+      csv += `${student},${facultyData.attendance[student] || ''}\n`;
+    }
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "attendance.csv";
+    link.click();
+  }
+
+  // Import attendance CSV
+  function importAttendance() {
+    const file = document.getElementById("importFile").files[0];
+    if(!file) return alert("Select a CSV file first");
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const lines = e.target.result.split('\n').slice(1);
+      lines.forEach(line=>{
+        const [student,status] = line.split(',');
+        if(student && status) facultyData.attendance[student.trim()] = status.trim();
+      });
+      alert("✅ Attendance imported!");
+      renderAttendance();
+    };
+    reader.readAsText(file);
+  }
+
+  renderAttendance();
+</script>
+  
   // Initialize attendance table
   function renderAttendance() {
     const tbody = document.getElementById("attendanceTableBody");
