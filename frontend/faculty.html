@@ -191,20 +191,24 @@ function renderFeedbacks(){
 function logout(){ alert("Logging out..."); window.location.href="index.html";}
 
 // Test / MCQ
-function addQuestion(){
-  const container=document.getElementById("questionsContainer");
-  const qDiv=document.createElement("div"); qDiv.className="question-card";
-  qDiv.innerHTML=`<input type="text" placeholder="Question" class="question-text">
-  <input type="text" placeholder="Option A" class="option">
-  <input type="text" placeholder="Option B" class="option">
-  <input type="text" placeholder="Option C" class="option">
-  <input type="text" placeholder="Option D" class="option">
-  <select class="correct-option">
-    <option value="A">Correct: A</option>
-    <option value="B">Correct: B</option>
-    <option value="C">Correct: C</option>
-    <option value="D">Correct: D</option>
-  </select>`;
+function addQuestion() {
+  const container = document.getElementById("questionsContainer");
+  const qDiv = document.createElement("div");
+  qDiv.className = "question-card";
+
+  qDiv.innerHTML = `
+    <input type="text" placeholder="Question" class="question-text">
+    <input type="text" placeholder="Option A" class="option">
+    <input type="text" placeholder="Option B" class="option">
+    <input type="text" placeholder="Option C" class="option">
+    <input type="text" placeholder="Option D" class="option">
+    <select class="correct-option">
+      <option value="A">Correct: A</option>
+      <option value="B">Correct: B</option>
+      <option value="C">Correct: C</option>
+      <option value="D">Correct: D</option>
+    </select>
+  `;
   container.appendChild(qDiv);
 }
 function submitTest(){
