@@ -47,6 +47,81 @@
           <option value="tester">TESTER</option>
           <option value="moderator">MODERATOR</option>
         </select>
+        <!-- Badge Management -->
+<div class="row">
+  <div class="col card">
+    <h3>Badge Management</h3>
+    <form id="badgeForm">
+      <label>Assign Badge</label>
+      <input id="badgeName" type="text" placeholder="Enter badge name" required>
+      <label>Assign to User</label>
+      <select id="badgeUserSelect">
+        <option value="">Select user</option>
+      </select>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button class="btn btn-primary" type="submit">Add Badge</button>
+        <button class="btn btn-ghost" type="button" onclick="renderBadges()">Refresh</button>
+      </div>
+    </form>
+    <div class="space"></div>
+    <div class="muted small">Badge list</div>
+    <div id="badgeList" class="list"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- Badge Management ---------- */
+state.badges = state.badges || [];
+
+// Populate user select
+function updateBadgeUserSelect() {
+  const select = document.getElementById('badgeUserSelect');
+  select.innerHTML = '<option value="">Select user</option>';
+  (state.users||[]).forEach(u=>{
+    select.insertAdjacentHTML('beforeend', `<option value="${u.username}">${u.username}</option>`);
+  });
+}
+
+// Add badge
+document.getElementById('badgeForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const badge = document.getElementById('badgeName').value.trim();
+  const user = document.getElementById('badgeUserSelect').value;
+  if(!badge || !user) return alert('Enter badge name and select user');
+  state.badges.push({badge,user});
+  addLog(`Assigned badge "${badge}" to ${user}`);
+  saveStorage();
+  renderBadges();
+  document.getElementById('badgeForm').reset();
+});
+
+// Render badge list
+function renderBadges() {
+  const c = document.getElementById('badgeList');
+  c.innerHTML = '';
+  (state.badges||[]).forEach((b,i)=>{
+    const div = document.createElement('div');
+    div.style.padding='6px'; div.style.borderBottom='1px solid rgba(0,0,0,0.05)';
+    div.innerHTML = `<strong>${b.badge}</strong> — ${b.user} 
+      <button class="btn tiny btn-danger" onclick="deleteBadge(${i})">Delete</button>`;
+    c.appendChild(div);
+  });
+  updateBadgeUserSelect();
+}
+
+// Delete badge
+function deleteBadge(index){
+  if(!confirm('Delete this badge?')) return;
+  const removed = state.badges.splice(index,1);
+  addLog(`Removed badge "${removed[0].badge}" from ${removed[0].user}`);
+  saveStorage();
+  renderBadges();
+}
+
+// Initial render
+updateBadgeUserSelect();
+renderBadges();
+</script>
         <div style="display:flex;gap:8px;margin-top:10px;">
           <button class="btn btn-primary" type="submit">Add / Update User</button>
           <button class="btn btn-ghost" type="button" onclick="renderUsers()">Refresh</button>
