@@ -3,5 +3,25 @@
     "password": "$2b$12$y5k4pP29v1px5AIiF8pfuOjGK8asqx9pR1zZiWG5y/1UJu2ZK16Le",
     "role": "admin",
     "createdAt": "2025-10-10T08:00:00.000Z"
+  },
+  "faculty001@college.com": {
+    "password": "$2b$12$v3bJkqW7p9YIcvZs0xploeXfljZ.tU4ybmQvQpPP7HSh8ThOTuFni",
+    "role": "faculty",
+    "createdAt": "2025-10-12T09:30:00.000Z"
+  },
+  "tester001@college.com": {
+    "password": "$2b$12$kzvMdUuTPazc9lY2v27CXO6FJPOQbThmPjFvhED1h9yZCzqHCUC5K",
+    "role": "tester",
+    "createdAt": "2025-10-12T09:35:00.000Z"
+  },
+  "moderator001@college.com": {
+    "password": "$2b$12$J9YwkpF7P34wbH1MpvqkUu5vlNqC4czmnc9PQfGCCiFR2h3U6oUju",
+    "role": "moderator",
+    "createdAt": "2025-10-12T09:40:00.000Z"
+  },
+  "23ME101": {
+    "password": "$2b$12$0GVtkSw6eDKU5j7OtxdUoO3lDMgTxchC7x2vPzU5EtYYJ03bQKKpO",
+    "role": "student",
+    "createdAt": "2025-10-12T09:45:00.000Z"
   }
 }
