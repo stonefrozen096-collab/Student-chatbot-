@@ -1,235 +1,244 @@
-<!-- ROW: Attendance Entry -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dashboard</title>
+<style>
+  body { margin:0; font-family: 'Segoe UI', sans-serif; background:#f5f5f5; }
+  .container { max-width:1200px; margin:20px auto; padding:10px; }
+  .row { display:flex; flex-wrap:wrap; gap:20px; }
+  .col { flex:1; min-width:300px; background:white; padding:15px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
+  h3 { margin-top:0; color:#1f2937; }
+  input, textarea, select { width:100%; padding:8px; margin:4px 0 10px; border-radius:5px; border:1px solid #ccc; }
+  button { padding:6px 12px; border:none; border-radius:5px; cursor:pointer; }
+  button.btn-primary { background:#4f46e5; color:white; }
+  button.btn-ghost { background:#e5e7eb; color:#374151; }
+  button.btn-danger { background:#ef4444; color:white; }
+  .list { max-height:300px; overflow-y:auto; }
+  .small { font-size:0.85rem; color:#6b7280; }
+  .space { height:10px; }
+  .card-header { font-weight:bold; margin-bottom:8px; color:#111827; }
+  .summary-cards { display:flex; gap:12px; flex-wrap:wrap; }
+  .summary-card { flex:1; padding:12px; text-align:center; color:white; border-radius:8px; }
+  .summary-card.attendance { background:#3b82f6; }
+  .summary-card.marks { background:#10b981; }
+  .summary-card.top { background:#f59e0b; }
+  canvas { background:#f3f4f6; border-radius:8px; }
+</style>
+</head>
+<body>
+<canvas id="bg-canvas" style="position:fixed;top:0;left:0;z-index:-1;"></canvas>
+
 <div class="container">
+  <!-- Summary Cards -->
   <div class="row">
-    <div class="col card">
-      <h3>Mark Attendance</h3>
-      <form id="attendanceForm">
-        <label>Student</label>
-        <select id="attendanceStudent">
-          <option value="">Select Student</option>
-        </select>
-
-        <label>Subject</label>
-        <input type="text" id="attendanceSubject" placeholder="Enter subject e.g. Math" required>
-
-        <label>Percentage</label>
-        <input type="number" id="attendancePercent" placeholder="0-100" min="0" max="100" required>
-
-        <div style="margin-top:10px; display:flex; gap:8px;">
-          <button type="submit" class="btn btn-primary">Add / Update Attendance</button>
-          <button type="button" class="btn btn-ghost" onclick="renderAttendance()">Refresh List</button>
-        </div>
-      </form>
-
-      <div class="space"></div>
-      <div class="muted small">Attendance Records</div>
-      <div id="attendanceList" class="list"></div>
-    </div>
-  </div>
-</div>
-
-<script>
-/* ---------- Populate Student Dropdown ---------- */
-function populateAttendanceStudents() {
-  const sel = document.getElementById('attendanceStudent');
-  sel.innerHTML = '<option value="">Select Student</option>';
-  (state.users || []).filter(u => u.role === 'student')
-    .forEach(s => sel.insertAdjacentHTML('beforeend', `<option value="${s.username}">${s.username}</option>`));
-}
-
-/* ---------- Add / Update Attendance ---------- */
-document.getElementById('attendanceForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const student = document.getElementById('attendanceStudent').value;
-  const subject = document.getElementById('attendanceSubject').value.trim();
-  const percent = parseFloat(document.getElementById('attendancePercent').value);
-
-  if (!student || !subject || isNaN(percent) || percent < 0 || percent > 100) {
-    return alert('Please fill all fields correctly.');
-  }
-
-  state.attendance = state.attendance || [];
-
-  // Check if record exists for student + subject
-  const existing = state.attendance.find(a => a.student === student && a.subject === subject);
-  if (existing) {
-    existing.percent = percent;
-    addLog(`Updated attendance for ${student} - ${subject}: ${percent}%`);
-  } else {
-    state.attendance.push({ student, subject, percent });
-    addLog(`Added attendance for ${student} - ${subject}: ${percent}%`);
-  }
-
-  saveStorage();
-  renderAttendance();
-  document.getElementById('attendanceForm').reset();
-});
-
-/* ---------- Render Attendance List ---------- */
-function renderAttendance() {
-  const c = document.getElementById('attendanceList');
-  c.innerHTML = '';
-  if (!state.attendance || state.attendance.length === 0) {
-    c.innerHTML = '<div class="small muted">No attendance records</div>';
-    return;
-  }
-
-  state.attendance.forEach((a, i) => {
-    const div = document.createElement('div');
-    div.style.padding = '6px';
-    div.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
-    div.innerHTML = `<strong>${a.student}</strong> → ${a.subject}: ${a.percent}%
-      <button class="btn tiny btn-ghost" onclick="editAttendance(${i})">Edit</button>
-      <button class="btn tiny btn-danger" onclick="deleteAttendance(${i})">Delete</button>`;
-    c.appendChild(div);
-  });
-}
-
-/* ---------- Edit Attendance ---------- */
-function editAttendance(index) {
-  const a = state.attendance[index];
-  const newPercent = prompt(`Enter new percentage for ${a.student} - ${a.subject}`, a.percent);
-  if (newPercent !== null) {
-    const p = parseFloat(newPercent);
-    if (!isNaN(p) && p >= 0 && p <= 100) {
-      a.percent = p;
-      addLog(`Edited attendance for ${a.student} - ${a.subject}: ${p}%`);
-      saveStorage();
-      renderAttendance();
-      renderCharts(); // real-time chart update
-    } else alert('Invalid percentage');
-  }
-}
-
-/* ---------- Delete Attendance ---------- */
-function deleteAttendance(index) {
-  if (!confirm('Delete this attendance record?')) return;
-  const a = state.attendance.splice(index, 1)[0];
-  addLog(`Deleted attendance for ${a.student} - ${a.subject}`);
-  saveStorage();
-  renderAttendance();
-  renderCharts(); // real-time chart update
-}
-
-/* ---------- Initial Population ---------- */
-populateAttendanceStudents();
-renderAttendance();
-</script>
-<!-- ROW: Analytics Summary -->
-<div class="container">
-  <div class="row">
-    <div class="col card">
+    <div class="col">
       <h3>Analytics Summary</h3>
-      <div class="summary-cards" style="display:flex; gap:12px;">
-        <div class="card" style="flex:1; padding:12px; text-align:center; background:#3b82f6; color:white;">
+      <div class="summary-cards">
+        <div class="summary-card attendance">
           <div>Average Attendance</div>
-          <div id="avgAttendance" style="font-size:20px; font-weight:bold;">0%</div>
+          <div id="avgAttendance" style="font-size:20px;font-weight:bold;">0%</div>
         </div>
-        <div class="card" style="flex:1; padding:12px; text-align:center; background:#10b981; color:white;">
+        <div class="summary-card marks">
           <div>Average Marks</div>
-          <div id="avgMarks" style="font-size:20px; font-weight:bold;">0</div>
+          <div id="avgMarks" style="font-size:20px;font-weight:bold;">0</div>
         </div>
-        <div class="card" style="flex:1; padding:12px; text-align:center; background:#f59e0b; color:white;">
+        <div class="summary-card top">
           <div>Top Student</div>
-          <div id="topStudent" style="font-size:20px; font-weight:bold;">-</div>
+          <div id="topStudent" style="font-size:20px;font-weight:bold;">-</div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- ROW: Charts -->
-<div class="container">
+  <!-- Charts -->
   <div class="row">
-    <div class="col card">
+    <div class="col">
       <h3>Attendance Chart</h3>
-      <canvas id="attendanceChart"></canvas>
+      <canvas id="attendanceChart" height="200"></canvas>
     </div>
-    <div class="col card">
+    <div class="col">
       <h3>Test Marks Chart</h3>
-      <canvas id="testChart"></canvas>
+      <canvas id="testChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- Placeholder Sections -->
+  <div class="row">
+    <div class="col" id="attendanceSection">
+      <h3>Attendance Section</h3>
+      <!-- Attendance table will go here -->
+    </div>
+    <div class="col" id="testCreationSection">
+      <h3>Test Creation Section</h3>
+      <!-- MCQ / Short answer form will go here -->
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col" id="triggersSection">
+      <h3>Chatbot Trigger Words / Phrases</h3>
+      <!-- Trigger form will go here -->
+    </div>
+    <div class="col" id="masterCommandsSection">
+      <h3>Master Commands</h3>
+      <!-- Master command form will go here -->
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col" id="importExportSection">
+      <h3>Import / Export Data</h3>
+      <!-- Import/export buttons -->
     </div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-let attendanceChart = null, testChart = null;
-
-/* ---------- Render Charts ---------- */
-function renderCharts() {
-  const attCtx = document.getElementById('attendanceChart').getContext('2d');
-  const testCtx = document.getElementById('testChart').getContext('2d');
-
-  // Attendance Chart Data
-  const attLabels = (state.attendance || []).map(a => `${a.student} - ${a.subject}`);
-  const attData = (state.attendance || []).map(a => a.percent);
-
-  // Test Chart Data (from created tests)
-  const testLabels = (state.createdTests || []).map(t => t.subject);
-  const testData = (state.createdTests || []).map(t => t.type === 'short' ? 0 : (t.answer ? 100 : 0));
-
-  // Attendance Chart
-  if (attendanceChart) {
-    attendanceChart.data.labels = attLabels;
-    attendanceChart.data.datasets[0].data = attData;
-    attendanceChart.update();
-  } else {
-    attendanceChart = new Chart(attCtx, {
-      type: 'bar',
-      data: { labels: attLabels, datasets: [{ label: 'Attendance %', data: attData, backgroundColor: '#4f46e5' }] },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
-    });
-  }
-
-  // Test Chart
-  if (testChart) {
-    testChart.data.labels = testLabels;
-    testChart.data.datasets[0].data = testData;
-    testChart.update();
-  } else {
-    testChart = new Chart(testCtx, {
-      type: 'bar',
-      data: { labels: testLabels, datasets: [{ label: 'Test Marks', data: testData, backgroundColor: '#3b82f6' }] },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
-    });
-  }
-
-  /* ---------- Update Summary Cards ---------- */
-  const avgAttendance = attData.length ? (attData.reduce((a, b) => a + b, 0) / attData.length).toFixed(1) + '%' : '0%';
-  const avgMarks = testData.length ? (testData.reduce((a, b) => a + b, 0) / testData.length).toFixed(1) : 0;
-
-  const topStudentObj = (state.users || []).filter(u => u.role === 'student').map(s => {
-    const tests = (state.createdTests || []).filter(t => !t.student || t.student === s.username);
-    const avg = tests.length ? tests.reduce((sum, t) => sum + (t.type === 'short' ? 0 : 100), 0) / tests.length : 0;
-    return { username: s.username, avg };
-  }).sort((a, b) => b.avg - a.avg)[0];
-
-  document.getElementById('avgAttendance').innerText = avgAttendance;
-  document.getElementById('avgMarks').innerText = avgMarks;
-  document.getElementById('topStudent').innerText = topStudentObj ? `${topStudentObj.username} (${topStudentObj.avg.toFixed(1)})` : '-';
-}
-
-/* ---------- Real-Time Update Hook ---------- */
-function updateAll() {
-  renderAttendance();
-  renderCreatedTests();
-  renderAcademic();
-  renderFeedback();
-  renderLogs();
-  renderCharts();
-}
-
-/* Call this after every add/edit/delete to reflect changes immediately */
-window.persistAndRender = function() {
-  saveStorage();
-  updateAll();
-}
-
-/* Initialize */
-updateAll();
+  // Placeholder for future JS (charts, triggers, attendance, tests)
 </script>
-<!-- ROW: Test Creation -->
+</body>
+</html>
+<div class="card" id="attendanceSection">
+  <h3>Student Attendance</h3>
+  
+  <!-- Student Attendance Table -->
+  <table class="attendance-table">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Present</th>
+        <th>Absent</th>
+        <th>Late</th>
+        <th>On Duty</th>
+      </tr>
+    </thead>
+    <tbody id="attendanceTableBody">
+      <!-- JS will populate student rows here -->
+    </tbody>
+  </table>
+
+  <div style="margin-top:10px; display:flex; gap:8px;">
+    <button class="btn btn-primary" onclick="saveAttendance()">Save Attendance</button>
+    <button class="btn btn-secondary" onclick="exportAttendance()">Export Attendance</button>
+    <button class="btn btn-ghost" onclick="importAttendancePrompt()">Import Attendance</button>
+  </div>
+</div>
+<div class="card" id="testCreationSection">
+  <h3>Create Test</h3>
+
+  <form id="testForm">
+    <label>Test Type</label>
+    <select id="testTypeSelect">
+      <option value="mcq">MCQ</option>
+      <option value="short">Short Answer</option>
+    </select>
+
+    <label>Subject</label>
+    <input type="text" id="testSubjectInput" placeholder="e.g. Math" required>
+
+    <label>Question</label>
+    <textarea id="testQuestionInput" placeholder="Enter the question..." required></textarea>
+
+    <!-- MCQ Options Section -->
+    <div id="mcqOptionsContainer" style="display:none;">
+      <label>Options</label>
+      <div id="mcqOptionsList"></div>
+      <button type="button" class="btn btn-ghost" onclick="addMCQOption()">Add Option</button>
+      <label>Correct Answer</label>
+      <select id="mcqAnswerSelect"></select>
+    </div>
+
+    <label>Assign to student (optional)</label>
+    <select id="testAssignStudent">
+      <option value="">All Students</option>
+    </select>
+
+    <div style="margin-top:10px; display:flex; gap:8px;">
+      <button type="submit" class="btn btn-primary">Add Test</button>
+      <button type="button" class="btn btn-ghost" onclick="renderCreatedTests()">Refresh</button>
+    </div>
+  </form>
+
+  <div class="space"></div>
+  <div class="muted small">Test List</div>
+  <div id="createdTestList" class="list"></div>
+
+  <div style="margin-top:10px; display:flex; gap:8px;">
+    <button class="btn btn-secondary" onclick="exportTests()">Export Tests</button>
+    <button class="btn btn-ghost" onclick="importTestsPrompt()">Import Tests</button>
+  </div>
+</div>
+/* ---------- Export / Import All Data ---------- */
+function exportAllData(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'student_assistant_all_data.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  addLog('Exported all data');
+}
+
+function importAllDataPrompt(){
+  const input = document.createElement('input'); 
+  input.type='file'; input.accept='application/json';
+  input.onchange = e => {
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = evt => {
+      try {
+        const data = JSON.parse(evt.target.result);
+        if(confirm('Replace all current data with imported data?')){
+          state = Object.assign({}, defaultState, data);
+          addLog('Imported all data');
+          saveStorage();
+          updateAll();
+        }
+      } catch(err){ alert('Invalid JSON'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+/* ---------- Export / Import Attendance Only ---------- */
+function exportAttendance(){
+  const blob = new Blob([JSON.stringify(state.attendance || [], null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'attendance_data.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  addLog('Exported attendance');
+}
+
+function importAttendancePrompt(){
+  const input = document.createElement('input'); 
+  input.type='file'; input.accept='application/json';
+  input.onchange = e => {
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = evt => {
+      try {
+        const data = JSON.parse(evt.target.result);
+        if(Array.isArray(data)){
+          state.attendance = data;
+          addLog('Imported attendance');
+          saveStorage();
+          updateAll();
+        } else alert('Invalid attendance data');
+      } catch(err){ alert('Invalid JSON'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+<!-- ROW 13: Test / MCQ Creation -->
 <div class="container">
   <div class="row">
     <div class="col card">
@@ -247,17 +256,16 @@ updateAll();
         <label>Question</label>
         <textarea id="testQuestionInput" placeholder="Enter the question..." required></textarea>
 
+        <!-- MCQ Options Section -->
         <div id="mcqOptionsContainer" style="display:none;">
           <label>Options (comma separated)</label>
-          <input type="text" id="mcqOptionsInput" placeholder="Option1,Option2,Option3,Option4">
+          <input type="text" id="mcqOptionsInput" placeholder="Option1,Option2,Option3,...">
           <label>Correct Option</label>
-          <input type="text" id="mcqAnswerInput" placeholder="Correct option text">
+          <input type="text" id="mcqAnswerInput" placeholder="Enter correct option text">
         </div>
 
         <label>Assign to student (optional)</label>
-        <select id="testAssignStudent">
-          <option value="">All Students</option>
-        </select>
+        <select id="testAssignStudent"><option value="">All Students</option></select>
 
         <div style="margin-top:10px; display:flex; gap:8px;">
           <button type="submit" class="btn btn-primary">Add Test</button>
@@ -276,47 +284,44 @@ updateAll();
 /* ---------- Test Creation ---------- */
 const testTypeSelect = document.getElementById('testTypeSelect');
 const mcqContainer = document.getElementById('mcqOptionsContainer');
-
-testTypeSelect.addEventListener('change', () => {
-  mcqContainer.style.display = testTypeSelect.value === 'mcq' ? 'block' : 'none';
+testTypeSelect.addEventListener('change', ()=>{
+  mcqContainer.style.display = testTypeSelect.value==='mcq'?'block':'none';
 });
 
-document.getElementById('createTestForm').addEventListener('submit', e => {
+document.getElementById('createTestForm').addEventListener('submit', e=>{
   e.preventDefault();
   const type = testTypeSelect.value;
   const subject = document.getElementById('testSubjectInput').value.trim();
   const question = document.getElementById('testQuestionInput').value.trim();
-  const student = document.getElementById('testAssignStudent').value || '';
+  const student = document.getElementById('testAssignStudent').value||'';
+  if(!subject||!question) return alert('Enter subject & question');
 
-  if (!subject || !question) return alert('Enter subject & question');
+  let testItem = {id:'test_'+Date.now(), type, subject, question, student};
 
-  let testItem = { id: 'test_' + Date.now(), type, subject, question, student };
-
-  if (type === 'mcq') {
-    const options = document.getElementById('mcqOptionsInput').value.split(',').map(o => o.trim()).filter(Boolean);
+  if(type==='mcq'){
+    const options = document.getElementById('mcqOptionsInput').value.split(',').map(o=>o.trim()).filter(Boolean);
     const answer = document.getElementById('mcqAnswerInput').value.trim();
-    if (options.length < 2 || !answer || !options.includes(answer)) return alert('Invalid MCQ options or answer');
-    testItem.options = options;
-    testItem.answer = answer;
+    if(options.length<2 || !answer || !options.includes(answer)) return alert('Invalid MCQ options or answer');
+    testItem.options = options; testItem.answer = answer;
   }
 
-  state.createdTests = state.createdTests || [];
+  state.createdTests = state.createdTests||[];
   state.createdTests.unshift(testItem);
   addLog(`Created ${type} test for ${subject}`);
-  persistAndRender();
+  saveStorage(); renderCreatedTests();
   document.getElementById('createTestForm').reset();
 });
 
-/* ---------- Render Created Tests ---------- */
-function renderCreatedTests() {
-  const c = document.getElementById('createdTestList'); c.innerHTML = '';
-  (state.createdTests || []).forEach(t => {
-    const div = document.createElement('div');
-    div.style.padding = '8px'; div.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
-    div.innerHTML = `<strong>[${t.type.toUpperCase()}]</strong> ${t.subject}
-      <div class="small">For: ${t.student || 'All'}</div>
+function renderCreatedTests(){
+  const c = document.getElementById('createdTestList'); c.innerHTML='';
+  (state.createdTests||[]).forEach(t=>{
+    const div=document.createElement('div');
+    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+    div.innerHTML=`
+      <strong>[${t.type.toUpperCase()}]</strong> ${t.subject}
+      <div class="small">For: ${t.student||'All'}</div>
       <div>${t.question}</div>
-      ${t.type === 'mcq' ? '<div>Options: ' + t.options.join(', ') + ' | Answer: ' + t.answer + '</div>' : ''}
+      ${t.type==='mcq'?'<div>Options: '+t.options.join(', ')+' | Answer: '+t.answer+'</div>':''}
       <div style="margin-top:6px">
         <button class="btn tiny btn-ghost" onclick="editCreatedTest('${t.id}')">Edit</button>
         <button class="btn tiny btn-danger" onclick="deleteCreatedTest('${t.id}')">Delete</button>
@@ -324,516 +329,278 @@ function renderCreatedTests() {
     c.appendChild(div);
   });
 
-  // Update assign student select
+  // Update student select
   const sel = document.getElementById('testAssignStudent');
-  sel.innerHTML = '<option value="">All Students</option>';
-  (state.users || []).filter(u => u.role === 'student').forEach(s => {
-    sel.insertAdjacentHTML('beforeend', `<option value="${s.username}">${s.username}</option>`);
+  sel.innerHTML='<option value="">All Students</option>';
+  (state.users||[]).filter(u=>u.role==='student').forEach(s=>{
+    sel.insertAdjacentHTML('beforeend',`<option value="${s.username}">${s.username}</option>`);
   });
 }
 
-/* ---------- Edit / Delete Test ---------- */
-function editCreatedTest(id) {
-  const t = state.createdTests.find(x => x.id === id); if (!t) return;
-  const newQ = prompt('Question', t.question); if (newQ !== null) t.question = newQ;
-  if (t.type === 'mcq') {
-    const newOpts = prompt('Options (comma separated)', t.options.join(',')); if (newOpts !== null) t.options = newOpts.split(',').map(o => o.trim());
-    const newAns = prompt('Answer', t.answer); if (newAns !== null) t.answer = newAns;
+function editCreatedTest(id){
+  const t = state.createdTests.find(x=>x.id===id); if(!t) return;
+  const newQ = prompt('Question', t.question); if(newQ!==null) t.question=newQ;
+  if(t.type==='mcq'){
+    const newOpts = prompt('Options (comma separated)', t.options.join(',')); if(newOpts!==null) t.options=newOpts.split(',').map(o=>o.trim());
+    const newAns = prompt('Answer', t.answer); if(newAns!==null) t.answer=newAns;
   }
   addLog(`Edited test ${t.subject}`);
-  persistAndRender();
+  saveStorage(); renderCreatedTests();
 }
 
-function deleteCreatedTest(id) {
-  if (!confirm('Delete this test?')) return;
-  state.createdTests = state.createdTests.filter(x => x.id !== id);
+function deleteCreatedTest(id){
+  if(!confirm('Delete this test?')) return;
+  state.createdTests = state.createdTests.filter(x=>x.id!==id);
   addLog(`Deleted test ${id}`);
-  persistAndRender();
-}
-
-/* ---------- Student Dashboard ---------- */
-function renderStudentDashboard(student) {
-  const username = student.username;
-
-  const studentAttendance = state.attendance || [];
-  const studentTests = (state.createdTests || []).filter(t => !t.student || t.student === username);
-  const studentAcademic = (state.academic || []).filter(a => !a.student || a.student === username);
-
-  // Attendance Chart
-  const attLabels = studentAttendance.map(a => a.subject);
-  const attData = studentAttendance.map(a => a.percent);
-
-  const testLabels = studentTests.map(t => t.subject);
-  const testData = studentTests.map(t => t.type === 'short' ? 0 : (t.answer ? 100 : 0));
-
-  if (window.attendanceChart) {
-    attendanceChart.data.labels = attLabels;
-    attendanceChart.data.datasets[0].data = attData;
-    attendanceChart.update();
-  }
-  if (window.testChart) {
-    testChart.data.labels = testLabels;
-    testChart.data.datasets[0].data = testData;
-    testChart.update();
-  }
-
-  // Academic list
-  const acadC = document.getElementById('academicList'); acadC.innerHTML = '';
-  studentAcademic.forEach(a => {
-    const div = document.createElement('div');
-    div.innerHTML = `<strong>[${a.type.toUpperCase()}]</strong> ${a.title}<div>${a.content}</div>`;
-    acadC.appendChild(div);
-  });
-}
-        </script>
-        <!-- ROW: Triggers & Master Commands -->
-<div class="container">
-  <div class="row">
-    <!-- Triggers -->
-    <div class="col card">
-      <h3>Chatbot Trigger Words / Phrases</h3>
-      <form id="triggerForm">
-        <label>Trigger Word / Phrase</label>
-        <input type="text" id="triggerInput" placeholder="e.g. hello, need help">
-        <label>Response</label>
-        <input type="text" id="responseInput" placeholder="Response for this trigger">
-        <div style="margin-top:10px; display:flex; gap:8px;">
-          <button type="submit" class="btn btn-primary">Add Trigger</button>
-          <button type="button" class="btn btn-ghost" onclick="renderTriggers()">Refresh</button>
-        </div>
-      </form>
-      <div class="space"></div>
-      <div class="muted small">Current Triggers</div>
-      <div id="triggerList" class="list"></div>
-    </div>
-
-    <!-- Master Commands -->
-    <div class="col card">
-      <h3>Master Command Tab</h3>
-      <form id="masterForm">
-        <label>Command Name</label>
-        <input type="text" id="commandName" placeholder="e.g. lockAll, deleteAll">
-        <label>Action / JS Code</label>
-        <textarea id="commandAction" placeholder="JavaScript code to execute"></textarea>
-        <div style="margin-top:10px; display:flex; gap:8px;">
-          <button type="submit" class="btn btn-primary">Add Command</button>
-          <button type="button" class="btn btn-ghost" onclick="renderMasterCommands()">Refresh</button>
-        </div>
-      </form>
-      <div class="space"></div>
-      <div class="muted small">Current Master Commands</div>
-      <div id="masterList" class="list"></div>
-    </div>
-  </div>
-</div>
-
-<script>
-/* ---------- Triggers ---------- */
-document.getElementById('triggerForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const trigger = document.getElementById('triggerInput').value.trim();
-  const response = document.getElementById('responseInput').value.trim();
-  if (!trigger || !response) return alert('Enter both trigger & response');
-  state.triggers = state.triggers || [];
-  state.triggers.unshift({ trigger, response });
-  addLog(`Added trigger: ${trigger} → ${response}`);
-  persistAndRender();
-  document.getElementById('triggerForm').reset();
-});
-
-function renderTriggers() {
-  const c = document.getElementById('triggerList'); c.innerHTML = '';
-  (state.triggers || []).forEach((t, i) => {
-    const div = document.createElement('div');
-    div.style.padding = '6px'; div.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
-    div.innerHTML = `<strong>${t.trigger}</strong> → ${t.response} 
-      <button class="btn tiny btn-ghost" onclick="editTrigger(${i})">Edit</button>
-      <button class="btn tiny btn-danger" onclick="deleteTrigger(${i})">Delete</button>`;
-    c.appendChild(div);
-  });
-}
-
-function editTrigger(index) {
-  const t = state.triggers[index];
-  if (!t) return;
-  const newTrigger = prompt('Trigger', t.trigger); if (newTrigger !== null) t.trigger = newTrigger;
-  const newResp = prompt('Response', t.response); if (newResp !== null) t.response = newResp;
-  addLog(`Edited trigger: ${t.trigger}`);
-  persistAndRender();
-}
-
-function deleteTrigger(index) {
-  if (!confirm('Delete this trigger?')) return;
-  const t = state.triggers.splice(index, 1)[0];
-  addLog(`Deleted trigger: ${t.trigger}`);
-  persistAndRender();
-}
-
-/* ---------- Master Commands ---------- */
-document.getElementById('masterForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const name = document.getElementById('commandName').value.trim();
-  const action = document.getElementById('commandAction').value.trim();
-  if (!name || !action) return alert('Enter both name & action');
-  state.masterCommands = state.masterCommands || [];
-  state.masterCommands.unshift({ name, action });
-  addLog(`Added master command: ${name}`);
-  persistAndRender();
-  document.getElementById('masterForm').reset();
-});
-
-function renderMasterCommands() {
-  const c = document.getElementById('masterList'); c.innerHTML = '';
-  (state.masterCommands || []).forEach((cmd, i) => {
-    const div = document.createElement('div');
-    div.style.padding = '6px'; div.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
-    div.innerHTML = `<strong>${cmd.name}</strong>
-      <button class="btn tiny btn-ghost" onclick="editMaster(${i})">Edit</button>
-      <button class="btn tiny btn-danger" onclick="deleteMaster(${i})">Delete</button>`;
-    c.appendChild(div);
-  });
-}
-
-function editMaster(index) {
-  const cmd = state.masterCommands[index];
-  if (!cmd) return;
-  const newName = prompt('Command Name', cmd.name); if (newName !== null) cmd.name = newName;
-  const newAction = prompt('JS Action', cmd.action); if (newAction !== null) cmd.action = newAction;
-  addLog(`Edited master command: ${cmd.name}`);
-  persistAndRender();
-}
-
-function deleteMaster(index) {
-  if (!confirm('Delete this command?')) return;
-  const cmd = state.masterCommands.splice(index, 1)[0];
-  addLog(`Deleted master command: ${cmd.name}`);
-  persistAndRender();
-}
-
-/* ---------- Student Dashboard Chatbot Hook ---------- */
-function checkTriggerInput(inputText) {
-  const txt = inputText.toLowerCase();
-  for (const t of (state.triggers || [])) {
-    if (txt.includes(t.trigger.toLowerCase())) return t.response;
-  }
-  return null;
+  saveStorage(); renderCreatedTests();
 }
     </script>
-    <!-- ROW: Feedback & Logs -->
-<div class="container">
-  <div class="row">
-    <!-- Feedback -->
-    <div class="col card">
-      <h3>Student Feedback</h3>
-      <div id="feedbackList" class="list"></div>
-    </div>
-
-    <!-- Logs -->
-    <div class="col card">
-      <h3>Action Logs</h3>
-      <div id="logsContainer" class="list"></div>
-      <div class="space"></div>
-      <button class="btn btn-ghost" onclick="renderLogs()">Refresh Logs</button>
-    </div>
-  </div>
-</div>
-
-<!-- ROW: Analytics Summary -->
+    <!-- ROW 14: Import / Export Section -->
 <div class="container">
   <div class="row">
     <div class="col card">
-      <h3>Analytics Summary</h3>
-      <div class="summary-cards" style="display:flex;gap:12px;">
-        <div class="card" style="flex:1;padding:12px;text-align:center;background:#3b82f6;color:white;">
-          <div>Average Attendance</div>
-          <div id="avgAttendance" style="font-size:20px;font-weight:bold;">0%</div>
-        </div>
-        <div class="card" style="flex:1;padding:12px;text-align:center;background:#10b981;color:white;">
-          <div>Average Marks</div>
-          <div id="avgMarks" style="font-size:20px;font-weight:bold;">0</div>
-        </div>
-        <div class="card" style="flex:1;padding:12px;text-align:center;background:#f59e0b;color:white;">
-          <div>Top Student</div>
-          <div id="topStudent" style="font-size:20px;font-weight:bold;">-</div>
-        </div>
+      <h3>Import / Export Data</h3>
+      
+      <!-- Attendance -->
+      <div class="section">
+        <h4>Attendance</h4>
+        <button class="btn btn-primary" onclick="exportAttendance()">Export Attendance</button>
+        <button class="btn btn-secondary" onclick="importAttendance()">Import Attendance</button>
+      </div>
+
+      <!-- Tests -->
+      <div class="section">
+        <h4>Tests</h4>
+        <button class="btn btn-primary" onclick="exportTests()">Export Tests</button>
+        <button class="btn btn-secondary" onclick="importTests()">Import Tests</button>
+      </div>
+
+      <!-- Triggers -->
+      <div class="section">
+        <h4>Chatbot Triggers</h4>
+        <button class="btn btn-primary" onclick="exportTriggers()">Export Triggers</button>
+        <button class="btn btn-secondary" onclick="importTriggers()">Import Triggers</button>
+      </div>
+
+      <!-- Master Commands -->
+      <div class="section">
+        <h4>Master Commands</h4>
+        <button class="btn btn-primary" onclick="exportMaster()">Export Commands</button>
+        <button class="btn btn-secondary" onclick="importMaster()">Import Commands</button>
+      </div>
+
+      <!-- Full Backup -->
+      <div class="section">
+        <h4>Full Backup / Restore</h4>
+        <button class="btn btn-primary" onclick="exportAll()">Export Full Data</button>
+        <button class="btn btn-danger" onclick="importAll()">Import Full Data</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ROW: Charts -->
+<script>
+/* ---------- Export Functions ---------- */
+function exportAttendance() {
+  const blob = new Blob([JSON.stringify(state.attendance || [], null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='attendance.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportTests() {
+  const blob = new Blob([JSON.stringify(state.createdTests || [], null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='tests.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportTriggers() {
+  const blob = new Blob([JSON.stringify(state.triggers || [], null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='triggers.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportMaster() {
+  const blob = new Blob([JSON.stringify(state.masterCommands || [], null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='master_commands.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportAll() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='full_backup.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------- Import Functions ---------- */
+function importAttendance() { importJSON('attendance'); }
+function importTests() { importJSON('tests'); }
+function importTriggers() { importJSON('triggers'); }
+function importMaster() { importJSON('masterCommands'); }
+function importAll() { importJSON('all'); }
+
+function importJSON(type) {
+  const input = document.createElement('input'); input.type='file'; input.accept='application/json';
+  input.onchange = e=>{
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = evt=>{
+      try {
+        const data = JSON.parse(evt.target.result);
+        if(confirm('Replace existing data with imported data?')){
+          switch(type){
+            case 'attendance': state.attendance = data || []; break;
+            case 'tests': state.createdTests = data || []; break;
+            case 'triggers': state.triggers = data || []; break;
+            case 'masterCommands': state.masterCommands = data || []; break;
+            case 'all': state = Object.assign({}, defaultState, data); break;
+          }
+          addLog(`Imported ${type} data via file`);
+          persistAndRender();
+        }
+      } catch(err){ alert('Invalid JSON file'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+</script>
+<!-- ROW: Attendance & Marks -->
 <div class="container">
   <div class="row">
     <div class="col card">
-      <h3>Attendance Chart</h3>
+      <h3>Manage Attendance & Marks</h3>
+      <form id="attendanceForm">
+        <label>Select Student</label>
+        <select id="attendanceStudentSelect">
+          <option value="">--Select Student--</option>
+        </select>
+
+        <label>Subject</label>
+        <input type="text" id="attendanceSubjectInput" placeholder="e.g. Math" required>
+
+        <label>Status</label>
+        <select id="attendanceStatus">
+          <option value="Present">Present</option>
+          <option value="Absent">Absent</option>
+          <option value="Late">Late</option>
+          <option value="On Duty">On Duty</option>
+        </select>
+
+        <label>Marks (Optional)</label>
+        <input type="number" id="attendanceMarksInput" placeholder="0-100" min="0" max="100">
+
+        <div style="margin-top:10px; display:flex; gap:8px;">
+          <button type="submit" class="btn btn-primary">Add Attendance</button>
+          <button type="button" class="btn btn-ghost" onclick="renderAttendanceList()">Refresh</button>
+        </div>
+      </form>
+
+      <div class="space"></div>
+      <div class="muted small">Attendance Records</div>
+      <div id="attendanceList" class="list"></div>
+    </div>
+
+    <div class="col card">
+      <h3>Attendance & Marks Chart</h3>
       <canvas id="attendanceChart"></canvas>
     </div>
-    <div class="col card">
-      <h3>Test Marks Chart</h3>
-      <canvas id="testChart"></canvas>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-let attendanceChart = null, testChart = null;
-
-/* ---------- Feedback & Logs ---------- */
-function renderFeedback(){
-  const c = document.getElementById('feedbackList');
-  c.innerHTML = (!state.feedback || state.feedback.length===0)
-    ? '<div class="small muted">No feedback yet</div>'
-    : state.feedback.map(f => `<div style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)">${f}</div>`).join('');
-}
-
-function renderLogs(){
-  const c = document.getElementById('logsContainer');
-  c.innerHTML = (state.logs || []).slice(0,50)
-    .map(l => `<div style="padding:6px;border-bottom:1px solid rgba(255,255,255,0.02);font-size:12px">${l}</div>`).join('');
-}
-
-/* ---------- Analytics & Charts ---------- */
-function renderCharts(){
-  const attCtx = document.getElementById('attendanceChart').getContext('2d');
-  const testCtx = document.getElementById('testChart').getContext('2d');
-
-  const attLabels = (state.attendance||[]).map(a => a.subject);
-  const attData = (state.attendance||[]).map(a => a.percent);
-  const testLabels = (state.tests||[]).map(t => t.subject);
-  const testData = (state.tests||[]).map(t => t.marks);
-
-  // Attendance Chart
-  if(attendanceChart){
-    attendanceChart.data.labels = attLabels;
-    attendanceChart.data.datasets[0].data = attData;
-    attendanceChart.update();
-  } else {
-    attendanceChart = new Chart(attCtx, {
-      type:'bar',
-      data:{ labels: attLabels, datasets:[{label:'Attendance %', data: attData, backgroundColor:'#4f46e5'}]},
-      options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}}}
-    });
-  }
-
-  // Test Chart
-  if(testChart){
-    testChart.data.labels = testLabels;
-    testChart.data.datasets[0].data = testData;
-    testChart.update();
-  } else {
-    testChart = new Chart(testCtx, {
-      type:'bar',
-      data:{ labels: testLabels, datasets:[{label:'Test Marks', data: testData, backgroundColor:'#3b82f6'}]},
-      options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}}}
-    });
-  }
-
-  // Update Summary Cards
-  const avgAttendance = attData.length ? (attData.reduce((a,b)=>a+b,0)/attData.length).toFixed(1)+'%' : '0%';
-  const avgMarks = testData.length ? (testData.reduce((a,b)=>a+b,0)/testData.length).toFixed(1) : 0;
-
-  const topStudentObj = (state.users||[])
-    .filter(u => u.role==='student')
-    .map(s => {
-      const tests = (state.tests||[]).filter(t => t.student===s.username);
-      const avg = tests.length ? tests.reduce((a,b)=>a+b.marks,0)/tests.length : 0;
-      return { username: s.username, avg };
-    }).sort((a,b)=>b.avg - a.avg)[0];
-
-  document.getElementById('avgAttendance').innerText = avgAttendance;
-  document.getElementById('avgMarks').innerText = avgMarks;
-  document.getElementById('topStudent').innerText = topStudentObj ? topStudentObj.username+' ('+topStudentObj.avg.toFixed(1)+')' : '-';
-}
-
-/* ---------- Real-Time Update Function ---------- */
-function updateAll(){
-  renderAttendance?.();
-  renderTests?.();
-  renderAcademic?.();
-  renderCreatedTests?.();
-  renderCharts();
-  renderFeedback();
-  renderLogs();
-}
-
-window.persistAndRender = function(){
-  saveStorage();
-  updateAll();
-}
-
-/* ---------- Initial Load ---------- */
-updateAll();
-</script>
-<!-- ROW: Student Dashboard -->
-<div class="container">
-  <div class="row">
-    <div class="col card">
-      <h3>Student Dashboard</h3>
-      <label>Enter Chat / Command:</label>
-      <input type="text" id="studentInput" placeholder="Type here...">
-      <div style="margin-top:8px;" id="chatResponse"></div>
-    </div>
-  </div>
-
-  <div class="row" style="margin-top:16px;">
-    <div class="col card">
-      <h3>Academic Items</h3>
-      <div id="academicList" class="list"></div>
-    </div>
-    <div class="col card">
-      <h3>Charts</h3>
-      <canvas id="studentAttendanceChart"></canvas>
-      <canvas id="studentTestChart" style="margin-top:12px;"></canvas>
-    </div>
   </div>
 </div>
 
 <script>
-/* ---------- Student Dashboard Rendering ---------- */
-function renderStudentDashboard(student){
-  const username = student.username;
-
-  // Filter data for student
-  const studentAttendance = state.attendance || [];
-  const studentTests = (state.createdTests||[]).filter(t => !t.student || t.student === username);
-  const studentAcademic = (state.academic||[]).filter(a => !a.student || a.student === username);
-
-  // Render academic items
-  const acadC = document.getElementById('academicList');
-  acadC.innerHTML = '';
-  studentAcademic.forEach(a=>{
-    const div = document.createElement('div');
-    div.innerHTML = `<strong>[${a.type.toUpperCase()}]</strong> ${a.title}<div>${a.content}</div>`;
-    acadC.appendChild(div);
+/* ---------- Populate Student Select ---------- */
+function populateAttendanceStudents(){
+  const sel = document.getElementById('attendanceStudentSelect');
+  sel.innerHTML = '<option value="">--Select Student--</option>';
+  (state.users||[]).filter(u=>u.role==='student').forEach(s=>{
+    sel.insertAdjacentHTML('beforeend', `<option value="${s.username}">${s.username}</option>`);
   });
-
-  // Render charts
-  const attLabels = studentAttendance.map(a=>a.subject);
-  const attData = studentAttendance.map(a=>a.percent);
-  const testLabels = studentTests.map(t=>t.subject);
-  const testData = studentTests.map(t=>t.type==='short'?0: (t.answer?100:0)); // simplified scoring
-
-  // Attendance chart
-  const attCtx = document.getElementById('studentAttendanceChart').getContext('2d');
-  if(window.studentAttendanceChart){
-    studentAttendanceChart.data.labels = attLabels;
-    studentAttendanceChart.data.datasets[0].data = attData;
-    studentAttendanceChart.update();
-  } else {
-    window.studentAttendanceChart = new Chart(attCtx,{
-      type:'bar',
-      data:{ labels: attLabels, datasets:[{label:'Attendance %', data: attData, backgroundColor:'#4f46e5'}]},
-      options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}}}
-    });
-  }
-
-  // Test chart
-  const testCtx = document.getElementById('studentTestChart').getContext('2d');
-  if(window.studentTestChart){
-    studentTestChart.data.labels = testLabels;
-    studentTestChart.data.datasets[0].data = testData;
-    studentTestChart.update();
-  } else {
-    window.studentTestChart = new Chart(testCtx,{
-      type:'bar',
-      data:{ labels: testLabels, datasets:[{label:'Test Marks', data: testData, backgroundColor:'#3b82f6'}]},
-      options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}}}
-    });
-  }
 }
 
-/* ---------- Chatbot / Trigger Handling ---------- */
-document.getElementById('studentInput').addEventListener('keydown', e=>{
-  if(e.key==='Enter'){
-    const input = e.target.value.trim();
-    if(!input) return;
-    const response = checkTriggerInput(input); // check triggers
-    const respDiv = document.getElementById('chatResponse');
-    respDiv.innerHTML = `<div><strong>You:</strong> ${input}</div><div><strong>Bot:</strong> ${response||'No matching trigger found.'}</div>`;
-    e.target.value = '';
-  }
+/* ---------- Add Attendance ---------- */
+document.getElementById('attendanceForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const student = document.getElementById('attendanceStudentSelect').value;
+  const subject = document.getElementById('attendanceSubjectInput').value.trim();
+  const status = document.getElementById('attendanceStatus').value;
+  const marks = parseFloat(document.getElementById('attendanceMarksInput').value) || 0;
+
+  if(!student || !subject || !status) return alert('Fill all required fields');
+
+  state.attendance = state.attendance||[];
+  const id = 'att_'+Date.now();
+  state.attendance.unshift({id, student, subject, status, marks});
+  addLog(`Added attendance for ${student} (${subject})`);
+  saveStorage();
+  renderAttendanceList();
+  renderAttendanceChart();
+  document.getElementById('attendanceForm').reset();
 });
 
-function checkTriggerInput(inputText){
-  const txt = inputText.toLowerCase();
-  for(const t of state.triggers||[]){
-    if((t.trigger && txt.includes(t.trigger)) || (t.phrase && txt.includes(t.phrase))){
-      return t.response;
-    }
+/* ---------- Render Attendance List ---------- */
+function renderAttendanceList(){
+  const c = document.getElementById('attendanceList');
+  if(!state.attendance || !state.attendance.length){
+    c.innerHTML = '<div class="small muted">No attendance records yet</div>';
+    return;
   }
-  return null;
+  c.innerHTML = state.attendance.map((a,i)=>{
+    return `<div style="padding:6px;border-bottom:1px solid rgba(255,255,255,0.1)">
+      <strong>${a.student}</strong> - ${a.subject} : ${a.status} | Marks: ${a.marks}
+      <button class="btn tiny btn-danger" onclick="deleteAttendance('${a.id}')">Delete</button>
+    </div>`;
+  }).join('');
 }
 
-/* ---------- Initialize Student Dashboard ---------- */
-function initStudent(username){
-  const student = (state.users||[]).find(u => u.username===username);
-  if(!student) return alert('Student not found');
-  renderStudentDashboard(student);
-}
-                           </script>
-                           <script>
-/* ---------- Student Dashboard Rendering ---------- */
-function renderStudentDashboard(student){
-  const username = student.username;
-
-  // Filter student-specific data
-  const studentAttendance = (state.attendance || []).map(a => ({
-    subject: a.subject,
-    percent: a.percent
-  }));
-  const studentTests = (state.createdTests || []).filter(t => !t.student || t.student === username);
-  const studentAcademic = (state.academic || []).filter(a => !a.student || a.student === username);
-
-  // Attendance Chart
-  const attLabels = studentAttendance.map(a => a.subject);
-  const attData = studentAttendance.map(a => a.percent);
-
-  // Test Chart (simplified scoring: MCQ 100 if answered, Short Answer 0)
-  const testLabels = studentTests.map(t => t.subject);
-  const testData = studentTests.map(t => t.type === 'short' ? 0 : (t.answer ? 100 : 0));
-
-  // Update chart datasets in real-time
-  if(window.attendanceChart){
-    attendanceChart.data.labels = attLabels;
-    attendanceChart.data.datasets[0].data = attData;
-    attendanceChart.update();
-  }
-  if(window.testChart){
-    testChart.data.labels = testLabels;
-    testChart.data.datasets[0].data = testData;
-    testChart.update();
-  }
-
-  // Render academic list
-  const acadC = document.getElementById('academicList');
-  acadC.innerHTML = '';
-  studentAcademic.forEach(a => {
-    const div = document.createElement('div');
-    div.style.padding = '6px';
-    div.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
-    div.innerHTML = `<strong>[${a.type.toUpperCase()}]</strong> ${a.title}
-                     <div>${a.content}</div>`;
-    acadC.appendChild(div);
-  });
-}
-
-/* ---------- Real-time Updates Wrapper ---------- */
-function updateAll(){
-  renderAttendance(); 
-  renderTests(); 
-  renderAcademic(); 
-  renderCreatedTests(); 
-  renderCharts(); 
-  renderFeedback(); 
-  renderLogs();
-}
-
-window.persistAndRender = function(){
+/* ---------- Delete Attendance ---------- */
+function deleteAttendance(id){
+  if(!confirm('Delete this attendance record?')) return;
+  state.attendance = state.attendance.filter(a=>a.id!==id);
+  addLog(`Deleted attendance ${id}`);
   saveStorage();
-  updateAll();
-};
+  renderAttendanceList();
+  renderAttendanceChart();
+}
 
-/* Call on load to render everything */
-updateAll();
-                           </script>
+/* ---------- Attendance Chart ---------- */
+let attendanceChartInstance = null;
+function renderAttendanceChart(){
+  const ctx = document.getElementById('attendanceChart').getContext('2d');
+
+  const students = [...new Set((state.attendance||[]).map(a=>a.student))];
+  const presentCounts = students.map(s=>state.attendance.filter(a=>a.student===s && a.status==='Present').length);
+  const absentCounts = students.map(s=>state.attendance.filter(a=>a.student===s && a.status==='Absent').length);
+  const lateCounts = students.map(s=>state.attendance.filter(a=>a.student===s && a.status==='Late').length);
+  const onDutyCounts = students.map(s=>state.attendance.filter(a=>a.student===s && a.status==='On Duty').length);
+
+  const data = {
+    labels: students,
+    datasets:[
+      {label:'Present', data:presentCounts, backgroundColor:'#10b981'},
+      {label:'Absent', data:absentCounts, backgroundColor:'#ef4444'},
+      {label:'Late', data:lateCounts, backgroundColor:'#f59e0b'},
+      {label:'On Duty', data:onDutyCounts, backgroundColor:'#3b82f6'}
+    ]
+  };
+
+  const options = {responsive:true, plugins:{legend:{position:'top'}}, scales:{y:{beginAtZero:true}}};
+
+  if(attendanceChartInstance){
+    attendanceChartInstance.data = data;
+    attendanceChartInstance.update();
+  } else {
+    attendanceChartInstance = new Chart(ctx,{type:'bar', data, options});
+  }
+}
+
+/* ---------- Initialize ---------- */
+populateAttendanceStudents();
+renderAttendanceList();
+renderAttendanceChart();
+       </script>
+
