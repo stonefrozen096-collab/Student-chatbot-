@@ -1,136 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="admin.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+<link rel="stylesheet" href="admin.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-<div class="container">
-  <h1>Admin Dashboard</h1>
 
-  <!-- ROW 1: Attendance Section -->
+<!-- Container -->
+<div class="container">
+
+  <!-- ROW 1: User & Student Management -->
   <div class="row">
     <div class="col card">
-      <h3>Attendance</h3>
-      <form id="attendanceForm">
-        <label>Select Student</label>
-        <select id="attendanceStudentSelect">
-          <option value="">-- Select Student --</option>
-        </select>
-
-        <label>Subject</label>
-        <input type="text" id="attendanceSubject" placeholder="e.g. Math" required>
-
-        <label>Mark Attendance</label>
-        <div id="attendanceOptions" style="display:flex; gap:10px;">
-          <label><input type="radio" name="attendance" value="Present"> Present</label>
-          <label><input type="radio" name="attendance" value="Absent"> Absent</label>
-          <label><input type="radio" name="attendance" value="Late"> Late</label>
-          <label><input type="radio" name="attendance" value="On Duty"> On Duty</label>
-        </div>
-
-        <div style="margin-top:10px; display:flex; gap:8px;">
-          <button type="submit" class="btn btn-primary">Add Attendance</button>
-          <button type="button" class="btn btn-ghost" onclick="renderAttendance()">Refresh</button>
-        </div>
-      </form>
-
-      <div class="space"></div>
-      <div class="muted small">Attendance Records</div>
-      <div id="attendanceList" class="list"></div>
+      <h3>Students</h3>
+      <div id="studentList" class="list"></div>
+      <button class="btn btn-primary" onclick="renderStudentFilter()">Refresh List</button>
     </div>
 
     <div class="col card">
-      <h3>Attendance Chart</h3>
-      <canvas id="attendanceChart" height="200"></canvas>
+      <h3>Add Student</h3>
+      <form id="addStudentForm">
+        <label>Username</label>
+        <input type="text" id="studentUsername" placeholder="Username" required>
+        <label>Name</label>
+        <input type="text" id="studentName" placeholder="Full Name" required>
+        <div style="margin-top:10px;">
+          <button type="submit" class="btn btn-primary">Add Student</button>
+        </div>
+      </form>
     </div>
   </div>
-</div>
-
-<script>
-let state = {
-  users: [{username:'student1', role:'student'},{username:'student2', role:'student'}],
-  attendance: []
-};
-
-let attendanceChart = null;
-
-/* ---------- Populate Student Dropdown ---------- */
-function populateStudentDropdown() {
-  const sel = document.getElementById('attendanceStudentSelect');
-  sel.innerHTML = '<option value="">-- Select Student --</option>';
-  state.users.filter(u => u.role==='student').forEach(s => {
-    sel.insertAdjacentHTML('beforeend', `<option value="${s.username}">${s.username}</option>`);
-  });
-}
-
-/* ---------- Add Attendance ---------- */
-document.getElementById('attendanceForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const student = document.getElementById('attendanceStudentSelect').value;
-  const subject = document.getElementById('attendanceSubject').value.trim();
-  const status = document.querySelector('input[name="attendance"]:checked')?.value;
-
-  if(!student || !subject || !status) return alert('Fill all fields');
-
-  state.attendance.unshift({student, subject, status});
-  renderAttendance();
-  document.getElementById('attendanceForm').reset();
-});
-
-/* ---------- Render Attendance List ---------- */
-function renderAttendance() {
-  const c = document.getElementById('attendanceList');
-  if(!state.attendance.length) { c.innerHTML='<div class="small muted">No attendance records</div>'; renderAttendanceChart(); return; }
-
-  c.innerHTML = state.attendance.map((a,i)=>`
-    <div style="padding:6px;border-bottom:1px solid rgba(0,0,0,0.1)">
-      <strong>${a.student}</strong> | ${a.subject} → ${a.status}
-      <button class="btn tiny btn-danger" onclick="deleteAttendance(${i})">Delete</button>
-    </div>`).join('');
-
-  renderAttendanceChart();
-}
-
-/* ---------- Delete Attendance ---------- */
-function deleteAttendance(index){
-  if(!confirm('Delete this attendance record?')) return;
-  state.attendance.splice(index,1);
-  renderAttendance();
-}
-
-/* ---------- Render Attendance Chart ---------- */
-function renderAttendanceChart(){
-  const ctx = document.getElementById('attendanceChart').getContext('2d');
-  const subjects = [...new Set(state.attendance.map(a=>a.subject))];
-
-  const dataset = subjects.map(sub=>{
-    const counts = {Present:0, Absent:0, Late:0, "On Duty":0};
-    state.attendance.filter(a=>a.subject===sub).forEach(a=>counts[a.status]++);
-    return counts;
-  });
-
-  const chartData = {
-    labels: subjects,
-    datasets:[
-      {label:'Present', data:dataset.map(d=>d.Present), backgroundColor:'#10b981'},
-      {label:'Absent', data:dataset.map(d=>d.Absent), backgroundColor:'#ef4444'},
-      {label:'Late', data:dataset.map(d=>d.Late), backgroundColor:'#f59e0b'},
-      {label:'On Duty', data:dataset.map(d=>d["On Duty"]), backgroundColor:'#3b82f6'}
-    ]
-  };
-
-  if(attendanceChart){
-    attendanceChart.data = chartData;
-    attendanceChart.update();
-  } else {
-    attendanceChart = new Chart(ctx, {type:'bar', data: chartData, options:{responsive:true, scales:{y:{beginAtZero:true}}}});
-  }
-}
-
-/* ---------- Init ---------- */
-populateStudentDropdown();
-renderAttendance();
-</script>
