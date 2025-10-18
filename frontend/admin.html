@@ -1,1055 +1,525 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Student Assistant Admin</title>
-<style>
-  :root {
-    --bg: #f9fafb;
-    --card: #ffffff;
-    --text: #111827;
-    --accent: #3b82f6;
-  }
-  body { margin:0; font-family:sans-serif; background:var(--bg); color:var(--text); }
-  .container { padding:20px; max-width:1400px; margin:auto; }
-  .row { display:flex; flex-wrap:wrap; gap:20px; }
-  .col { flex:1; min-width:280px; background:var(--card); padding:15px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.05);}
-  h3 { margin-top:0; }
-  .btn { padding:6px 12px; border:none; border-radius:4px; cursor:pointer; }
-  .btn-primary { background:var(--accent); color:#fff; }
-  .btn-ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
-  .btn-danger { background:#ef4444; color:#fff; }
-  .tiny { font-size:12px; padding:2px 6px; }
-  .space { height:12px; }
-  input, select, textarea { width:100%; padding:6px; margin:4px 0 10px; border:1px solid #ccc; border-radius:4px; }
-  .list { max-height:250px; overflow-y:auto; }
-  .muted { color:rgba(0,0,0,0.5); }
-  .inline { display:flex; gap:6px; align-items:center; }
-</style>
-</head>
-<body>
-<div class="container">
-  <h1>Student Assistant Admin Dashboard</h1>
-
-  <!-- User Management -->
-  <div class="row">
-    <div class="col">
-      <h3>Users</h3>
-      <form id="userForm">
-        <label>Username</label>
-        <input id="userUsername" type="text" placeholder="Enter username" required>
-        <label>Role</label>
-        <select id="userRole">
-          <option value="student">Student</option>
-          <option value="admin">Admin</option>
-          <option value="faculty">FACULTY</option>
-          <option value="tester">TESTER</option>
-          <option value="moderator">MODERATOR</option>
-        </select>
-        <!-- Badge Management -->
-<div class="row">
-  <div class="col card">
-    <h3>Badge Management</h3>
-    <form id="badgeForm">
-      <label>Assign Badge</label>
-      <input id="badgeName" type="text" placeholder="Enter badge name" required>
-      <label>Assign to User</label>
-      <select id="badgeUserSelect">
-        <option value="">Select user</option>
-      </select>
-      <div style="display:flex; gap:8px; margin-top:10px;">
-        <button class="btn btn-primary" type="submit">Add Badge</button>
-        <button class="btn btn-ghost" type="button" onclick="renderBadges()">Refresh</button>
-      </div>
-    </form>
-    <div class="space"></div>
-    <div class="muted small">Badge list</div>
-    <div id="badgeList" class="list"></div>
-  </div>
-</div>
-
-<script>
-/* ---------- Badge Management ---------- */
-state.badges = state.badges || [];
-
-// Populate user select
-function updateBadgeUserSelect() {
-  const select = document.getElementById('badgeUserSelect');
-  select.innerHTML = '<option value="">Select user</option>';
-  (state.users||[]).forEach(u=>{
-    select.insertAdjacentHTML('beforeend', `<option value="${u.username}">${u.username}</option>`);
-  });
-}
-
-// Add badge
-document.getElementById('badgeForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const badge = document.getElementById('badgeName').value.trim();
-  const user = document.getElementById('badgeUserSelect').value;
-  if(!badge || !user) return alert('Enter badge name and select user');
-  state.badges.push({badge,user});
-  addLog(`Assigned badge "${badge}" to ${user}`);
-  saveStorage();
-  renderBadges();
-  document.getElementById('badgeForm').reset();
-});
-
-// Render badge list
-function renderBadges() {
-  const c = document.getElementById('badgeList');
-  c.innerHTML = '';
-  (state.badges||[]).forEach((b,i)=>{
-    const div = document.createElement('div');
-    div.style.padding='6px'; div.style.borderBottom='1px solid rgba(0,0,0,0.05)';
-    div.innerHTML = `<strong>${b.badge}</strong> — ${b.user} 
-      <button class="btn tiny btn-danger" onclick="deleteBadge(${i})">Delete</button>`;
-    c.appendChild(div);
-  });
-  updateBadgeUserSelect();
-}
-
-// Delete badge
-function deleteBadge(index){
-  if(!confirm('Delete this badge?')) return;
-  const removed = state.badges.splice(index,1);
-  addLog(`Removed badge "${removed[0].badge}" from ${removed[0].user}`);
-  saveStorage();
-  renderBadges();
-}
-
-// Initial render
-updateBadgeUserSelect();
-renderBadges();
-</script>
-        <div style="display:flex;gap:8px;margin-top:10px;">
-          <button class="btn btn-primary" type="submit">Add / Update User</button>
-          <button class="btn btn-ghost" type="button" onclick="renderUsers()">Refresh</button>
-        </div>
-      </form>
-      <div class="space"></div>
-      <div class="muted small">User list</div>
-      <div id="userList" class="list"></div>
-    </div>
-  </div>
-
-<script>
-let state = {
-  users: [],
-  attendance: [],
-  tests: [],
-  academic: [],
-  triggers: [],
-  masterCommands: [],
-  logs: [],
-};
-const defaultState = JSON.parse(JSON.stringify(state));
-
-function saveStorage(){ localStorage.setItem('sa_state', JSON.stringify(state)); }
-function loadStorage(){ const d=localStorage.getItem('sa_state'); if(d) state=JSON.parse(d); }
-function addLog(msg){ const t=new Date().toLocaleString(); state.logs.unshift(`[${t}] ${msg}`); saveStorage(); renderLogs(); }
-
-loadStorage();
-
-/* ---------- User Management ---------- */
-document.getElementById('userForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const username=document.getElementById('userUsername').value.trim();
-  const role=document.getElementById('userRole').value;
-  if(!username) return alert('Enter username');
-  const found=state.users.find(u=>u.username===username);
-  if(found){ found.role=role; addLog(`Updated user ${username} to ${role}`); }
-  else { state.users.unshift({username,role}); addLog(`Added user ${username} as ${role}`); }
-  saveStorage(); renderUsers(); document.getElementById('userForm').reset();
-});
-
-function renderUsers(){
-  const c=document.getElementById('userList'); c.innerHTML='';
-  (state.users||[]).forEach(u=>{
-    const div=document.createElement('div');
-    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(0,0,0,0.05)';
-    div.innerHTML=`<strong>${u.username}</strong> — ${u.role}
-      <div style="margin-top:6px">
-        <button class="btn tiny btn-ghost" onclick="editUser('${u.username}')">Edit</button>
-        <button class="btn tiny btn-danger" onclick="deleteUser('${u.username}')">Delete</button>
-      </div>`;
-    c.appendChild(div);
-  });
-}
-
-function editUser(username){
-  const u=state.users.find(x=>x.username===username); if(!u) return;
-  const newRole=prompt(`Enter new role for ${username} (student/admin)`, u.role);
-  if(!newRole) return; u.role=newRole; addLog(`Updated user ${username} role to ${newRole}`);
-  saveStorage(); renderUsers();
-}
-
-function deleteUser(username){
-  if(!confirm(`Delete user ${username}?`)) return;
-  state.users=state.users.filter(u=>u.username!==username);
-  addLog(`Deleted user ${username}`); saveStorage(); renderUsers();
-}
-
-/* ---------- Logs ---------- */
-function renderLogs(){
-  const cLogs=document.getElementById('logsContainer'); if(!cLogs) return;
-  cLogs.innerHTML = state.logs.slice(0,50).map(l=>`<div style="padding:6px;border-bottom:1px solid rgba(0,0,0,0.02);font-size:12px">${l}</div>`).join('');
-}
-
-// Initial render
-renderUsers();
-</script>
-</div>
-</body>
-</html>
-<!-- ROW 2: Academic, Attendance, Tests -->
+<!-- ROW: Attendance Entry -->
 <div class="container">
   <div class="row">
-    <!-- Academic Items -->
     <div class="col card">
-      <h3>Academic Items</h3>
-      <form id="acadForm">
-        <label>Type</label>
-        <select id="acadType">
-          <option value="note">Note</option>
-          <option value="assignment">Assignment</option>
-          <option value="notice">Notice</option>
-        </select>
-        <label>Title/Subject</label>
-        <input id="acadTitle" type="text" placeholder="Title or subject" required>
-        <label>Content</label>
-        <textarea id="acadContent" placeholder="Content..." required></textarea>
-        <label>Assign to student (optional)</label>
-        <select id="acadStudentSelect"><option value="">All students</option></select>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-primary" type="submit">Add Item</button>
-          <button class="btn btn-ghost" type="button" onclick="renderAcademic()">Refresh</button>
-        </div>
-      </form>
-      <div class="space"></div>
-      <div class="muted small">Academic list</div>
-      <div id="academicList" class="list"></div>
-    </div>
-
-    <!-- Attendance -->
-    <div class="col card">
-      <h3>Attendance (Subjects & %)</h3>
+      <h3>Mark Attendance</h3>
       <form id="attendanceForm">
-        <label>Subject name</label>
-        <input id="attendanceSubject" type="text" placeholder="Mathematics" required>
-        <label>Percentage</label>
-        <input id="attendancePercent" type="number" min="0" max="100" placeholder="80" required>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-primary" type="submit">Add / Update</button>
-          <button class="btn btn-ghost" type="button" onclick="renderAttendance()">Refresh</button>
-        </div>
-      </form>
-      <div class="space"></div>
-      <div class="muted small">Attendance list</div>
-      <div id="attendanceList" class="list"></div>
-      <div class="space"></div>
-      <label>Delete subject</label>
-      <div class="inline">
-        <select id="deleteSubjectSelect"></select>
-        <button class="btn btn-danger tiny" onclick="deleteSubject()">Delete</button>
-      </div>
-    </div>
-
-    <!-- Test Scores -->
-    <div class="col card">
-      <h3>Tests</h3>
-      <form id="testForm">
-        <label>Subject</label>
-        <input id="testSubject" type="text" placeholder="Physics" required>
-        <label>Marks</label>
-        <input id="testMarks" type="number" min="0" max="100" placeholder="75" required>
-        <label>Type</label>
-        <select id="testType">
-          <option value="mcq">MCQ</option>
-          <option value="short">Short Answer</option>
+        <label>Student</label>
+        <select id="attendanceStudent">
+          <option value="">Select Student</option>
         </select>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-primary" type="submit">Add / Update Test</button>
-          <button class="btn btn-ghost" type="button" onclick="renderTests()">Refresh</button>
+
+        <label>Subject</label>
+        <input type="text" id="attendanceSubject" placeholder="Enter subject e.g. Math" required>
+
+        <label>Percentage</label>
+        <input type="number" id="attendancePercent" placeholder="0-100" min="0" max="100" required>
+
+        <div style="margin-top:10px; display:flex; gap:8px;">
+          <button type="submit" class="btn btn-primary">Add / Update Attendance</button>
+          <button type="button" class="btn btn-ghost" onclick="renderAttendance()">Refresh List</button>
         </div>
       </form>
+
       <div class="space"></div>
-      <div class="muted small">Test list</div>
-      <div id="testList" class="list"></div>
-      <div class="space"></div>
-      <label>Delete test</label>
-      <div class="inline">
-        <select id="deleteTestSelect"></select>
-        <button class="btn btn-danger tiny" onclick="deleteTest()">Delete</button>
-      </div>
+      <div class="muted small">Attendance Records</div>
+      <div id="attendanceList" class="list"></div>
     </div>
   </div>
 </div>
 
 <script>
-/* ---------- Academic ---------- */
-document.getElementById('acadForm').addEventListener('submit', e=>{
+/* ---------- Populate Student Dropdown ---------- */
+function populateAttendanceStudents() {
+  const sel = document.getElementById('attendanceStudent');
+  sel.innerHTML = '<option value="">Select Student</option>';
+  (state.users || []).filter(u => u.role === 'student')
+    .forEach(s => sel.insertAdjacentHTML('beforeend', `<option value="${s.username}">${s.username}</option>`));
+}
+
+/* ---------- Add / Update Attendance ---------- */
+document.getElementById('attendanceForm').addEventListener('submit', e => {
   e.preventDefault();
-  const type=document.getElementById('acadType').value;
-  const title=document.getElementById('acadTitle').value.trim();
-  const content=document.getElementById('acadContent').value.trim();
-  const student=document.getElementById('acadStudentSelect').value || '';
-  if(!title||!content) return alert('Title and Content required');
-  const id='acad_'+Date.now();
-  state.academic.unshift({id,type,title,content,student});
-  addLog(`Added academic ${type}: ${title}`);
-  saveStorage(); renderAcademic();
-  document.getElementById('acadForm').reset();
+  const student = document.getElementById('attendanceStudent').value;
+  const subject = document.getElementById('attendanceSubject').value.trim();
+  const percent = parseFloat(document.getElementById('attendancePercent').value);
+
+  if (!student || !subject || isNaN(percent) || percent < 0 || percent > 100) {
+    return alert('Please fill all fields correctly.');
+  }
+
+  state.attendance = state.attendance || [];
+
+  // Check if record exists for student + subject
+  const existing = state.attendance.find(a => a.student === student && a.subject === subject);
+  if (existing) {
+    existing.percent = percent;
+    addLog(`Updated attendance for ${student} - ${subject}: ${percent}%`);
+  } else {
+    state.attendance.push({ student, subject, percent });
+    addLog(`Added attendance for ${student} - ${subject}: ${percent}%`);
+  }
+
+  saveStorage();
+  renderAttendance();
+  document.getElementById('attendanceForm').reset();
 });
 
-function renderAcademic(){
-  const c=document.getElementById('academicList'); c.innerHTML='';
-  (state.academic||[]).forEach(a=>{
-    const div=document.createElement('div');
-    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(0,0,0,0.02)';
-    div.innerHTML=`<strong>[${a.type.toUpperCase()}]</strong> ${a.title} 
-      <div class="small">${a.student?'For: '+a.student:'For: All'}</div>
-      <div style="margin-top:6px">${a.content}</div>
-      <div style="margin-top:6px">
-        <button class="btn tiny btn-ghost" onclick="editAcademic('${a.id}')">Edit</button>
-        <button class="btn tiny btn-danger" onclick="deleteAcademic('${a.id}')">Delete</button>
-      </div>`;
+/* ---------- Render Attendance List ---------- */
+function renderAttendance() {
+  const c = document.getElementById('attendanceList');
+  c.innerHTML = '';
+  if (!state.attendance || state.attendance.length === 0) {
+    c.innerHTML = '<div class="small muted">No attendance records</div>';
+    return;
+  }
+
+  state.attendance.forEach((a, i) => {
+    const div = document.createElement('div');
+    div.style.padding = '6px';
+    div.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
+    div.innerHTML = `<strong>${a.student}</strong> → ${a.subject}: ${a.percent}%
+      <button class="btn tiny btn-ghost" onclick="editAttendance(${i})">Edit</button>
+      <button class="btn tiny btn-danger" onclick="deleteAttendance(${i})">Delete</button>`;
     c.appendChild(div);
   });
-
-  // Update student select
-  const acadStudent=document.getElementById('acadStudentSelect');
-  acadStudent.innerHTML='<option value="">All students</option>';
-  state.users.filter(u=>u.role==='student').forEach(s=>{
-    acadStudent.insertAdjacentHTML('beforeend',`<option value="${s.username}">${s.username}</option>`);
-  });
 }
 
-function editAcademic(id){
-  const item=state.academic.find(x=>x.id===id); if(!item) return;
-  const newTitle=prompt('Title', item.title);
-  const newContent=prompt('Content', item.content);
-  if(newTitle!==null) item.title=newTitle;
-  if(newContent!==null) item.content=newContent;
-  addLog(`Edited academic ${id}`);
-  saveStorage(); renderAcademic();
+/* ---------- Edit Attendance ---------- */
+function editAttendance(index) {
+  const a = state.attendance[index];
+  const newPercent = prompt(`Enter new percentage for ${a.student} - ${a.subject}`, a.percent);
+  if (newPercent !== null) {
+    const p = parseFloat(newPercent);
+    if (!isNaN(p) && p >= 0 && p <= 100) {
+      a.percent = p;
+      addLog(`Edited attendance for ${a.student} - ${a.subject}: ${p}%`);
+      saveStorage();
+      renderAttendance();
+      renderCharts(); // real-time chart update
+    } else alert('Invalid percentage');
+  }
 }
 
-function deleteAcademic(id){
-  if(!confirm('Delete this academic item?')) return;
-  state.academic=state.academic.filter(x=>x.id!==id);
-  addLog(`Deleted academic ${id}`);
-  saveStorage(); renderAcademic();
+/* ---------- Delete Attendance ---------- */
+function deleteAttendance(index) {
+  if (!confirm('Delete this attendance record?')) return;
+  const a = state.attendance.splice(index, 1)[0];
+  addLog(`Deleted attendance for ${a.student} - ${a.subject}`);
+  saveStorage();
+  renderAttendance();
+  renderCharts(); // real-time chart update
 }
 
-/* ---------- Attendance ---------- */
-document.getElementById('attendanceForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const subj=document.getElementById('attendanceSubject').value.trim();
-  const percent=parseFloat(document.getElementById('attendancePercent').value);
-  if(!subj||isNaN(percent)) return alert('Enter valid subject & percent');
-  const found=state.attendance.find(a=>a.subject.toLowerCase()===subj.toLowerCase());
-  if(found){ found.percent=percent; addLog(`Updated attendance ${subj} -> ${percent}%`); }
-  else { state.attendance.unshift({subject:subj,percent}); addLog(`Added attendance ${subj} -> ${percent}%`); }
-  saveStorage(); renderAttendance(); document.getElementById('attendanceForm').reset();
-});
-
-function renderAttendance(){
-  const c=document.getElementById('attendanceList'); c.innerHTML='';
-  (state.attendance||[]).forEach(a=>{
-    const div=document.createElement('div');
-    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(0,0,0,0.02)';
-    div.innerHTML=`<strong>${a.subject}</strong> — ${a.percent}% 
-      <div style="margin-top:6px">
-        <button class="btn tiny btn-ghost" onclick="promptEditAttendance('${a.subject}')">Edit</button>
-        <button class="btn tiny btn-danger" onclick="deleteSubjectByName('${a.subject}')">Delete</button>
-      </div>`;
-    c.appendChild(div);
-  });
-  document.getElementById('deleteSubjectSelect').innerHTML = (state.attendance||[]).map(a=>`<option value="${a.subject}">${a.subject}</option>`).join('');
-}
-
-function deleteSubjectByName(name){
-  if(!confirm(`Delete subject ${name}?`)) return;
-  state.attendance=state.attendance.filter(a=>a.subject!==name);
-  addLog(`Deleted subject ${name}`);
-  saveStorage(); renderAttendance();
-}
-
-function promptEditAttendance(subject){
-  const item=state.attendance.find(a=>a.subject===subject); if(!item) return;
-  const v=prompt(`Enter new % for ${subject}`, item.percent);
-  if(v===null) return; const nv=parseFloat(v);
-  if(isNaN(nv)) return alert('Invalid number'); item.percent=nv;
-  addLog(`Edited attendance ${subject} -> ${nv}%`);
-  saveStorage(); renderAttendance();
-}
-
-/* ---------- Tests ---------- */
-document.getElementById('testForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const subj=document.getElementById('testSubject').value.trim();
-  const marks=parseFloat(document.getElementById('testMarks').value);
-  const type=document.getElementById('testType').value;
-  if(!subj||isNaN(marks)) return alert('Enter valid test & marks');
-  const found=state.tests.find(t=>t.subject.toLowerCase()===subj.toLowerCase());
-  if(found){ found.marks=marks; found.type=type; addLog(`Updated test ${subj} -> ${marks}`); }
-  else { state.tests.unshift({subject:subj,marks,type}); addLog(`Added test ${subj} -> ${marks}`); }
-  saveStorage(); renderTests(); document.getElementById('testForm').reset();
-});
-
-function renderTests(){
-  const c=document.getElementById('testList'); c.innerHTML='';
-  (state.tests||[]).forEach(t=>{
-    const div=document.createElement('div');
-    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(0,0,0,0.02)';
-    div.innerHTML=`<strong>${t.subject}</strong> — ${t.marks} (${t.type.toUpperCase()})
-      <div style="margin-top:6px">
-        <button class="btn tiny btn-ghost" onclick="promptEditTest('${t.subject}')">Edit</button>
-        <button class="btn tiny btn-danger" onclick="deleteTestByName('${t.subject}')">Delete</button>
-      </div>`;
-    c.appendChild(div);
-  });
-  document.getElementById('deleteTestSelect').innerHTML = (state.tests||[]).map(t=>`<option value="${t.subject}">${t.subject}</option>`).join('');
-}
-
-function deleteTestByName(name){
-  if(!confirm(`Delete test ${name}?`)) return;
-  state.tests = state.tests.filter(t=>t.subject!==name);
-  addLog(`Deleted test ${name}`);
-  saveStorage(); renderTests();
-}
-
-function promptEditTest(subject){
-  const item=state.tests.find(t=>t.subject===subject); if(!item) return;
-  const v=prompt(`Enter new marks for ${subject}`, item.marks);
-  if(v===null) return; const nv=parseFloat(v);
-  if(isNaN(nv)) return alert('Invalid number'); item.marks=nv;
-  addLog(`Edited test ${subject} -> ${nv}`);
-  saveStorage(); renderTests();
-}
-
-// Initial render
-renderAcademic(); renderAttendance(); renderTests();
+/* ---------- Initial Population ---------- */
+populateAttendanceStudents();
+renderAttendance();
 </script>
-<!-- ROW 3: Charts and Trigger Words / Master Commands -->
+<!-- ROW: Analytics Summary -->
 <div class="container">
   <div class="row">
-    <!-- Charts -->
     <div class="col card">
-      <h3>Charts</h3>
-      <canvas id="attendanceChart" height="150"></canvas>
-      <canvas id="testChart" height="150" style="margin-top:16px;"></canvas>
-    </div>
-
-    <!-- Trigger Words/Phrases -->
-    <div class="col card">
-      <h3>Trigger Words / Phrases</h3>
-      <form id="triggerForm">
-        <label>Trigger Word/Phrase</label>
-        <input id="triggerWord" type="text" placeholder="Enter word or phrase" required>
-        <label>Response</label>
-        <input id="triggerResponse" type="text" placeholder="Response to show" required>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-primary" type="submit">Add Trigger</button>
-          <button class="btn btn-ghost" type="button" onclick="renderTriggers()">Refresh</button>
+      <h3>Analytics Summary</h3>
+      <div class="summary-cards" style="display:flex; gap:12px;">
+        <div class="card" style="flex:1; padding:12px; text-align:center; background:#3b82f6; color:white;">
+          <div>Average Attendance</div>
+          <div id="avgAttendance" style="font-size:20px; font-weight:bold;">0%</div>
         </div>
-      </form>
-      <div class="space"></div>
-      <div class="muted small">Trigger List</div>
-      <div id="triggerList" class="list"></div>
-    </div>
-
-    <!-- Master Commands -->
-    <div class="col card">
-      <h3>Master Commands</h3>
-      <form id="masterCommandForm">
-        <label>Command Name</label>
-        <input id="masterCommandName" type="text" placeholder="e.g. lock all" required>
-        <label>Action</label>
-        <input id="masterCommandAction" type="text" placeholder="JS command to execute" required>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-primary" type="submit">Add Command</button>
-          <button class="btn btn-ghost" type="button" onclick="renderMasterCommands()">Refresh</button>
+        <div class="card" style="flex:1; padding:12px; text-align:center; background:#10b981; color:white;">
+          <div>Average Marks</div>
+          <div id="avgMarks" style="font-size:20px; font-weight:bold;">0</div>
         </div>
-      </form>
-      <div class="space"></div>
-      <div class="muted small">Master Commands List</div>
-      <div id="masterCommandList" class="list"></div>
+        <div class="card" style="flex:1; padding:12px; text-align:center; background:#f59e0b; color:white;">
+          <div>Top Student</div>
+          <div id="topStudent" style="font-size:20px; font-weight:bold;">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW: Charts -->
+<div class="container">
+  <div class="row">
+    <div class="col card">
+      <h3>Attendance Chart</h3>
+      <canvas id="attendanceChart"></canvas>
+    </div>
+    <div class="col card">
+      <h3>Test Marks Chart</h3>
+      <canvas id="testChart"></canvas>
     </div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-/* ---------- Charts ---------- */
-let attendanceChart=null, testChart=null;
-function renderCharts(){
-  const attCtx=document.getElementById('attendanceChart').getContext('2d');
-  const testCtx=document.getElementById('testChart').getContext('2d');
+let attendanceChart = null, testChart = null;
 
-  const attLabels=(state.attendance||[]).map(a=>a.subject);
-  const attData=(state.attendance||[]).map(a=>a.percent);
+/* ---------- Render Charts ---------- */
+function renderCharts() {
+  const attCtx = document.getElementById('attendanceChart').getContext('2d');
+  const testCtx = document.getElementById('testChart').getContext('2d');
 
-  const testLabels=(state.tests||[]).map(t=>t.subject);
-  const testData=(state.tests||[]).map(t=>t.marks);
+  // Attendance Chart Data
+  const attLabels = (state.attendance || []).map(a => `${a.student} - ${a.subject}`);
+  const attData = (state.attendance || []).map(a => a.percent);
 
-  if(attendanceChart){
-    attendanceChart.data.labels=attLabels;
-    attendanceChart.data.datasets[0].data=attData;
+  // Test Chart Data (from created tests)
+  const testLabels = (state.createdTests || []).map(t => t.subject);
+  const testData = (state.createdTests || []).map(t => t.type === 'short' ? 0 : (t.answer ? 100 : 0));
+
+  // Attendance Chart
+  if (attendanceChart) {
+    attendanceChart.data.labels = attLabels;
+    attendanceChart.data.datasets[0].data = attData;
     attendanceChart.update();
   } else {
-    attendanceChart=new Chart(attCtx,{
-      type:'bar',
-      data:{labels:attLabels,datasets:[{label:'Attendance %',data:attData,backgroundColor:'#4f46e5'}]},
-      options:{responsive:true,plugins:{legend:{display:false}}}
+    attendanceChart = new Chart(attCtx, {
+      type: 'bar',
+      data: { labels: attLabels, datasets: [{ label: 'Attendance %', data: attData, backgroundColor: '#4f46e5' }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
     });
   }
 
-  if(testChart){
-    testChart.data.labels=testLabels;
-    testChart.data.datasets[0].data=testData;
+  // Test Chart
+  if (testChart) {
+    testChart.data.labels = testLabels;
+    testChart.data.datasets[0].data = testData;
     testChart.update();
   } else {
-    testChart=new Chart(testCtx,{
-      type:'bar',
-      data:{labels:testLabels,datasets:[{label:'Test Marks',data:testData,backgroundColor:'#3b82f6'}]},
-      options:{responsive:true,plugins:{legend:{display:false}}}
+    testChart = new Chart(testCtx, {
+      type: 'bar',
+      data: { labels: testLabels, datasets: [{ label: 'Test Marks', data: testData, backgroundColor: '#3b82f6' }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
     });
   }
+
+  /* ---------- Update Summary Cards ---------- */
+  const avgAttendance = attData.length ? (attData.reduce((a, b) => a + b, 0) / attData.length).toFixed(1) + '%' : '0%';
+  const avgMarks = testData.length ? (testData.reduce((a, b) => a + b, 0) / testData.length).toFixed(1) : 0;
+
+  const topStudentObj = (state.users || []).filter(u => u.role === 'student').map(s => {
+    const tests = (state.createdTests || []).filter(t => !t.student || t.student === s.username);
+    const avg = tests.length ? tests.reduce((sum, t) => sum + (t.type === 'short' ? 0 : 100), 0) / tests.length : 0;
+    return { username: s.username, avg };
+  }).sort((a, b) => b.avg - a.avg)[0];
+
+  document.getElementById('avgAttendance').innerText = avgAttendance;
+  document.getElementById('avgMarks').innerText = avgMarks;
+  document.getElementById('topStudent').innerText = topStudentObj ? `${topStudentObj.username} (${topStudentObj.avg.toFixed(1)})` : '-';
 }
 
-/* ---------- Trigger Words / Phrases ---------- */
-document.getElementById('triggerForm').addEventListener('submit', e=>{
+/* ---------- Real-Time Update Hook ---------- */
+function updateAll() {
+  renderAttendance();
+  renderCreatedTests();
+  renderAcademic();
+  renderFeedback();
+  renderLogs();
+  renderCharts();
+}
+
+/* Call this after every add/edit/delete to reflect changes immediately */
+window.persistAndRender = function() {
+  saveStorage();
+  updateAll();
+}
+
+/* Initialize */
+updateAll();
+</script>
+<!-- ROW: Test Creation -->
+<div class="container">
+  <div class="row">
+    <div class="col card">
+      <h3>Create Test</h3>
+      <form id="createTestForm">
+        <label>Test Type</label>
+        <select id="testTypeSelect">
+          <option value="mcq">MCQ</option>
+          <option value="short">Short Answer</option>
+        </select>
+
+        <label>Subject</label>
+        <input type="text" id="testSubjectInput" placeholder="Subject e.g. Math" required>
+
+        <label>Question</label>
+        <textarea id="testQuestionInput" placeholder="Enter the question..." required></textarea>
+
+        <div id="mcqOptionsContainer" style="display:none;">
+          <label>Options (comma separated)</label>
+          <input type="text" id="mcqOptionsInput" placeholder="Option1,Option2,Option3,Option4">
+          <label>Correct Option</label>
+          <input type="text" id="mcqAnswerInput" placeholder="Correct option text">
+        </div>
+
+        <label>Assign to student (optional)</label>
+        <select id="testAssignStudent">
+          <option value="">All Students</option>
+        </select>
+
+        <div style="margin-top:10px; display:flex; gap:8px;">
+          <button type="submit" class="btn btn-primary">Add Test</button>
+          <button type="button" class="btn btn-ghost" onclick="renderCreatedTests()">Refresh</button>
+        </div>
+      </form>
+
+      <div class="space"></div>
+      <div class="muted small">Test List</div>
+      <div id="createdTestList" class="list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- Test Creation ---------- */
+const testTypeSelect = document.getElementById('testTypeSelect');
+const mcqContainer = document.getElementById('mcqOptionsContainer');
+
+testTypeSelect.addEventListener('change', () => {
+  mcqContainer.style.display = testTypeSelect.value === 'mcq' ? 'block' : 'none';
+});
+
+document.getElementById('createTestForm').addEventListener('submit', e => {
   e.preventDefault();
-  const word=document.getElementById('triggerWord').value.trim();
-  const resp=document.getElementById('triggerResponse').value.trim();
-  if(!word||!resp) return alert('Enter both trigger and response');
-  state.triggers.unshift({word,resp});
-  addLog(`Added trigger: "${word}"`);
-  saveStorage(); renderTriggers();
+  const type = testTypeSelect.value;
+  const subject = document.getElementById('testSubjectInput').value.trim();
+  const question = document.getElementById('testQuestionInput').value.trim();
+  const student = document.getElementById('testAssignStudent').value || '';
+
+  if (!subject || !question) return alert('Enter subject & question');
+
+  let testItem = { id: 'test_' + Date.now(), type, subject, question, student };
+
+  if (type === 'mcq') {
+    const options = document.getElementById('mcqOptionsInput').value.split(',').map(o => o.trim()).filter(Boolean);
+    const answer = document.getElementById('mcqAnswerInput').value.trim();
+    if (options.length < 2 || !answer || !options.includes(answer)) return alert('Invalid MCQ options or answer');
+    testItem.options = options;
+    testItem.answer = answer;
+  }
+
+  state.createdTests = state.createdTests || [];
+  state.createdTests.unshift(testItem);
+  addLog(`Created ${type} test for ${subject}`);
+  persistAndRender();
+  document.getElementById('createTestForm').reset();
+});
+
+/* ---------- Render Created Tests ---------- */
+function renderCreatedTests() {
+  const c = document.getElementById('createdTestList'); c.innerHTML = '';
+  (state.createdTests || []).forEach(t => {
+    const div = document.createElement('div');
+    div.style.padding = '8px'; div.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
+    div.innerHTML = `<strong>[${t.type.toUpperCase()}]</strong> ${t.subject}
+      <div class="small">For: ${t.student || 'All'}</div>
+      <div>${t.question}</div>
+      ${t.type === 'mcq' ? '<div>Options: ' + t.options.join(', ') + ' | Answer: ' + t.answer + '</div>' : ''}
+      <div style="margin-top:6px">
+        <button class="btn tiny btn-ghost" onclick="editCreatedTest('${t.id}')">Edit</button>
+        <button class="btn tiny btn-danger" onclick="deleteCreatedTest('${t.id}')">Delete</button>
+      </div>`;
+    c.appendChild(div);
+  });
+
+  // Update assign student select
+  const sel = document.getElementById('testAssignStudent');
+  sel.innerHTML = '<option value="">All Students</option>';
+  (state.users || []).filter(u => u.role === 'student').forEach(s => {
+    sel.insertAdjacentHTML('beforeend', `<option value="${s.username}">${s.username}</option>`);
+  });
+}
+
+/* ---------- Edit / Delete Test ---------- */
+function editCreatedTest(id) {
+  const t = state.createdTests.find(x => x.id === id); if (!t) return;
+  const newQ = prompt('Question', t.question); if (newQ !== null) t.question = newQ;
+  if (t.type === 'mcq') {
+    const newOpts = prompt('Options (comma separated)', t.options.join(',')); if (newOpts !== null) t.options = newOpts.split(',').map(o => o.trim());
+    const newAns = prompt('Answer', t.answer); if (newAns !== null) t.answer = newAns;
+  }
+  addLog(`Edited test ${t.subject}`);
+  persistAndRender();
+}
+
+function deleteCreatedTest(id) {
+  if (!confirm('Delete this test?')) return;
+  state.createdTests = state.createdTests.filter(x => x.id !== id);
+  addLog(`Deleted test ${id}`);
+  persistAndRender();
+}
+
+/* ---------- Student Dashboard ---------- */
+function renderStudentDashboard(student) {
+  const username = student.username;
+
+  const studentAttendance = state.attendance || [];
+  const studentTests = (state.createdTests || []).filter(t => !t.student || t.student === username);
+  const studentAcademic = (state.academic || []).filter(a => !a.student || a.student === username);
+
+  // Attendance Chart
+  const attLabels = studentAttendance.map(a => a.subject);
+  const attData = studentAttendance.map(a => a.percent);
+
+  const testLabels = studentTests.map(t => t.subject);
+  const testData = studentTests.map(t => t.type === 'short' ? 0 : (t.answer ? 100 : 0));
+
+  if (window.attendanceChart) {
+    attendanceChart.data.labels = attLabels;
+    attendanceChart.data.datasets[0].data = attData;
+    attendanceChart.update();
+  }
+  if (window.testChart) {
+    testChart.data.labels = testLabels;
+    testChart.data.datasets[0].data = testData;
+    testChart.update();
+  }
+
+  // Academic list
+  const acadC = document.getElementById('academicList'); acadC.innerHTML = '';
+  studentAcademic.forEach(a => {
+    const div = document.createElement('div');
+    div.innerHTML = `<strong>[${a.type.toUpperCase()}]</strong> ${a.title}<div>${a.content}</div>`;
+    acadC.appendChild(div);
+  });
+}
+        </script>
+        <!-- ROW: Triggers & Master Commands -->
+<div class="container">
+  <div class="row">
+    <!-- Triggers -->
+    <div class="col card">
+      <h3>Chatbot Trigger Words / Phrases</h3>
+      <form id="triggerForm">
+        <label>Trigger Word / Phrase</label>
+        <input type="text" id="triggerInput" placeholder="e.g. hello, need help">
+        <label>Response</label>
+        <input type="text" id="responseInput" placeholder="Response for this trigger">
+        <div style="margin-top:10px; display:flex; gap:8px;">
+          <button type="submit" class="btn btn-primary">Add Trigger</button>
+          <button type="button" class="btn btn-ghost" onclick="renderTriggers()">Refresh</button>
+        </div>
+      </form>
+      <div class="space"></div>
+      <div class="muted small">Current Triggers</div>
+      <div id="triggerList" class="list"></div>
+    </div>
+
+    <!-- Master Commands -->
+    <div class="col card">
+      <h3>Master Command Tab</h3>
+      <form id="masterForm">
+        <label>Command Name</label>
+        <input type="text" id="commandName" placeholder="e.g. lockAll, deleteAll">
+        <label>Action / JS Code</label>
+        <textarea id="commandAction" placeholder="JavaScript code to execute"></textarea>
+        <div style="margin-top:10px; display:flex; gap:8px;">
+          <button type="submit" class="btn btn-primary">Add Command</button>
+          <button type="button" class="btn btn-ghost" onclick="renderMasterCommands()">Refresh</button>
+        </div>
+      </form>
+      <div class="space"></div>
+      <div class="muted small">Current Master Commands</div>
+      <div id="masterList" class="list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- Triggers ---------- */
+document.getElementById('triggerForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const trigger = document.getElementById('triggerInput').value.trim();
+  const response = document.getElementById('responseInput').value.trim();
+  if (!trigger || !response) return alert('Enter both trigger & response');
+  state.triggers = state.triggers || [];
+  state.triggers.unshift({ trigger, response });
+  addLog(`Added trigger: ${trigger} → ${response}`);
+  persistAndRender();
   document.getElementById('triggerForm').reset();
 });
 
-function renderTriggers(){
-  const c=document.getElementById('triggerList'); c.innerHTML='';
-  (state.triggers||[]).forEach((t,i)=>{
-    const div=document.createElement('div');
-    div.style.padding='6px'; div.style.borderBottom='1px solid rgba(0,0,0,0.02)';
-    div.innerHTML=`<strong>${t.word}</strong> → ${t.resp}
+function renderTriggers() {
+  const c = document.getElementById('triggerList'); c.innerHTML = '';
+  (state.triggers || []).forEach((t, i) => {
+    const div = document.createElement('div');
+    div.style.padding = '6px'; div.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
+    div.innerHTML = `<strong>${t.trigger}</strong> → ${t.response} 
+      <button class="btn tiny btn-ghost" onclick="editTrigger(${i})">Edit</button>
       <button class="btn tiny btn-danger" onclick="deleteTrigger(${i})">Delete</button>`;
     c.appendChild(div);
   });
 }
 
-function deleteTrigger(i){
-  state.triggers.splice(i,1);
-  addLog('Deleted trigger');
-  saveStorage(); renderTriggers();
+function editTrigger(index) {
+  const t = state.triggers[index];
+  if (!t) return;
+  const newTrigger = prompt('Trigger', t.trigger); if (newTrigger !== null) t.trigger = newTrigger;
+  const newResp = prompt('Response', t.response); if (newResp !== null) t.response = newResp;
+  addLog(`Edited trigger: ${t.trigger}`);
+  persistAndRender();
+}
+
+function deleteTrigger(index) {
+  if (!confirm('Delete this trigger?')) return;
+  const t = state.triggers.splice(index, 1)[0];
+  addLog(`Deleted trigger: ${t.trigger}`);
+  persistAndRender();
 }
 
 /* ---------- Master Commands ---------- */
-document.getElementById('masterCommandForm').addEventListener('submit', e=>{
+document.getElementById('masterForm').addEventListener('submit', e => {
   e.preventDefault();
-  const name=document.getElementById('masterCommandName').value.trim();
-  const action=document.getElementById('masterCommandAction').value.trim();
-  if(!name||!action) return alert('Enter command & action');
-  state.masterCommands.unshift({name,action});
+  const name = document.getElementById('commandName').value.trim();
+  const action = document.getElementById('commandAction').value.trim();
+  if (!name || !action) return alert('Enter both name & action');
+  state.masterCommands = state.masterCommands || [];
+  state.masterCommands.unshift({ name, action });
   addLog(`Added master command: ${name}`);
-  saveStorage(); renderMasterCommands();
-  document.getElementById('masterCommandForm').reset();
+  persistAndRender();
+  document.getElementById('masterForm').reset();
 });
 
-function renderMasterCommands(){
-  const c=document.getElementById('masterCommandList'); c.innerHTML='';
-  (state.masterCommands||[]).forEach((m,i)=>{
-    const div=document.createElement('div');
-    div.style.padding='6px'; div.style.borderBottom='1px solid rgba(0,0,0,0.02)';
-    div.innerHTML=`<strong>${m.name}</strong> → ${m.action}
-      <button class="btn tiny btn-danger" onclick="deleteMasterCommand(${i})">Delete</button>`;
+function renderMasterCommands() {
+  const c = document.getElementById('masterList'); c.innerHTML = '';
+  (state.masterCommands || []).forEach((cmd, i) => {
+    const div = document.createElement('div');
+    div.style.padding = '6px'; div.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
+    div.innerHTML = `<strong>${cmd.name}</strong>
+      <button class="btn tiny btn-ghost" onclick="editMaster(${i})">Edit</button>
+      <button class="btn tiny btn-danger" onclick="deleteMaster(${i})">Delete</button>`;
     c.appendChild(div);
   });
 }
 
-function deleteMasterCommand(i){
-  state.masterCommands.splice(i,1);
-  addLog('Deleted master command');
-  saveStorage(); renderMasterCommands();
-}
-
-// Initial chart render
-renderCharts();
-</script>
-<!-- ROW 4: Feedback & Logs -->
-<div class="container">
-  <div class="row">
-    <!-- Feedback Section -->
-    <div class="col card">
-      <h3>Feedback</h3>
-      <div id="feedbackList" class="list"></div>
-    </div>
-
-    <!-- Action Logs -->
-    <div class="col card">
-      <h3>Action Logs</h3>
-      <div id="logsContainer" class="list"></div>
-    </div>
-
-    <!-- Data Management -->
-    <div class="col card">
-      <h3>Data Management</h3>
-      <button class="btn btn-primary" onclick="exportData()">Export Data</button>
-      <button class="btn btn-ghost" onclick="importDataPrompt()">Import Data</button>
-      <button class="btn btn-danger" onclick="clearAllData()">Clear All Data</button>
-    </div>
-  </div>
-</div>
-
-<script>
-/* ---------- Feedback ---------- */
-function renderFeedback(){
-  const c = document.getElementById('feedbackList');
-  if(!state.feedback || state.feedback.length===0){
-    c.innerHTML='<div class="small muted">No feedback yet</div>';
-    return;
-  }
-  c.innerHTML = state.feedback.map(f=>`<div style="padding:8px;border-bottom:1px solid rgba(0,0,0,0.02)">${f}</div>`).join('');
-}
-
-/* ---------- Logs ---------- */
-function renderLogs(){
-  const c=document.getElementById('logsContainer');
-  c.innerHTML = state.logs.slice(0,50).map(l=>`<div style="padding:6px;border-bottom:1px solid rgba(0,0,0,0.02);font-size:12px">${l}</div>`).join('');
-}
-
-/* ---------- Export / Import Data ---------- */
-function exportData(){
-  const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download='student_assistant_data.json'; a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importDataPrompt(){
-  const input = document.createElement('input'); input.type='file'; input.accept='application/json';
-  input.onchange = e=>{
-    const f = e.target.files[0]; if(!f) return;
-    const reader = new FileReader();
-    reader.onload = evt=>{
-      try {
-        const data = JSON.parse(evt.target.result);
-        if(confirm('Replace current data with imported data?')){
-          state = Object.assign({}, defaultState, data);
-          addLog('Imported data via file');
-          persistAndRender();
-        }
-      } catch(err){ alert('Invalid JSON'); }
-    };
-    reader.readAsText(f);
-  };
-  input.click();
-}
-
-/* ---------- Clear All Data ---------- */
-function clearAllData(){
-  if(!confirm('Clear all saved data (this will reset everything)?')) return;
-  state = JSON.parse(JSON.stringify(defaultState));
-  addLog('Cleared all data');
+function editMaster(index) {
+  const cmd = state.masterCommands[index];
+  if (!cmd) return;
+  const newName = prompt('Command Name', cmd.name); if (newName !== null) cmd.name = newName;
+  const newAction = prompt('JS Action', cmd.action); if (newAction !== null) cmd.action = newAction;
+  addLog(`Edited master command: ${cmd.name}`);
   persistAndRender();
 }
 
-/* ---------- Background Animation (Particles) ---------- */
-(function background(){
-  const canvas = document.getElementById('bg-canvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-  let W,H,particles=[];
-
-  function resize(){
-    W = canvas.width = innerWidth;
-    H = canvas.height = innerHeight;
-    particles = Array.from({length: Math.max(24, Math.floor(W*H/140000))}, ()=>{
-      return {x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.5+0.5, vx:(Math.random()-0.5)*0.2, vy:- (Math.random()*0.3+0.02), hue:200+Math.random()*40, a:0.06+Math.random()*0.2};
-    });
-  }
-
-  function step(){
-    ctx.clearRect(0,0,W,H);
-    particles.forEach(p=>{
-      p.x += p.vx; p.y += p.vy;
-      if(p.x < -50) p.x = W+50; if(p.x > W+50) p.x=-50;
-      if(p.y < -50) p.y = H+50; if(p.y>H+50) p.y=-50;
-      ctx.beginPath();
-      ctx.fillStyle = `hsla(${p.hue},70%,60%,${p.a})`;
-      ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-    });
-    requestAnimationFrame(step);
-  }
-
-  addEventListener('resize', resize);
-  resize(); step();
-})();
-</script>
-<!-- ROW 5: Trigger Words & Student Filtering -->
-<div class="container">
-  <div class="row">
-    <!-- Trigger Words / Phrases -->
-    <div class="col card">
-      <h3>Chatbot Trigger Words / Phrases</h3>
-      <form id="triggerForm">
-        <label>Trigger Word/Phrase</label>
-        <input id="triggerWord" type="text" placeholder="e.g. help">
-        <label>Response</label>
-        <input id="triggerResponse" type="text" placeholder="Bot response...">
-        <div style="margin-top:8px">
-          <button class="btn btn-primary" type="submit">Add Trigger</button>
-          <button class="btn btn-ghost" type="button" onclick="renderTriggers()">Refresh</button>
-        </div>
-      </form>
-      <div class="space"></div>
-      <div id="triggerList" class="list"></div>
-    </div>
-
-    <!-- Student Filtering -->
-    <div class="col card">
-      <h3>Student Dashboard Filter</h3>
-      <label>Select Student</label>
-      <select id="studentFilter">
-        <option value="">All Students</option>
-      </select>
-      <button class="btn btn-ghost" onclick="applyStudentFilter()">Apply Filter</button>
-    </div>
-
-    <!-- Test Setup (MCQ / Short Answer) -->
-    <div class="col card">
-      <h3>Create Test Item</h3>
-      <form id="testSetupForm">
-        <label>Type</label>
-        <select id="testType">
-          <option value="mcq">MCQ</option>
-          <option value="short">Short Answer</option>
-        </select>
-        <label>Question</label>
-        <input id="testQuestion" type="text" placeholder="Question">
-        <label>Options (comma separated for MCQ)</label>
-        <input id="testOptions" type="text" placeholder="Option1, Option2, ...">
-        <label>Answer</label>
-        <input id="testAnswer" type="text" placeholder="Correct Answer">
-        <div style="margin-top:8px">
-          <button class="btn btn-primary" type="submit">Add Test Item</button>
-          <button class="btn btn-ghost" type="button" onclick="renderTestItems()">Refresh</button>
-        </div>
-      </form>
-      <div class="space"></div>
-      <div id="testItemsList" class="list"></div>
-    </div>
-  </div>
-</div>
-
-<script>
-/* ---------- Trigger Words / Phrases ---------- */
-document.getElementById('triggerForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const word = document.getElementById('triggerWord').value.trim();
-  const response = document.getElementById('triggerResponse').value.trim();
-  if(!word||!response) return alert('Trigger word and response required');
-  state.triggers.push({word,response});
-  addLog(`Added trigger: ${word} -> ${response}`);
-  saveStorage(); renderTriggers();
-  document.getElementById('triggerForm').reset();
-});
-
-function renderTriggers(){
-  const c=document.getElementById('triggerList');
-  if(!state.triggers || state.triggers.length===0) { c.innerHTML='<div class="small muted">No triggers set</div>'; return; }
-  c.innerHTML = state.triggers.map((t,i)=>`
-    <div style="padding:6px;border-bottom:1px solid rgba(0,0,0,0.02)">
-      <strong>${t.word}</strong> → ${t.response} 
-      <button class="btn tiny btn-danger" onclick="deleteTrigger(${i})">Delete</button>
-    </div>`).join('');
-}
-
-function deleteTrigger(index){
-  if(!confirm('Delete this trigger?')) return;
-  const t = state.triggers.splice(index,1);
-  addLog(`Deleted trigger: ${t[0].word}`);
-  saveStorage(); renderTriggers();
-}
-
-/* ---------- Student Filter ---------- */
-function populateStudentFilter(){
-  const sel=document.getElementById('studentFilter');
-  sel.innerHTML='<option value="">All Students</option>';
-  state.users.filter(u=>u.role==='student').forEach(s=>{
-    sel.insertAdjacentHTML('beforeend',`<option value="${s.username}">${s.username}</option>`);
-  });
-}
-
-function applyStudentFilter(){
-  const student = document.getElementById('studentFilter').value;
-  state.currentStudentFilter = student;
-  addLog(`Applied student filter: ${student||'All'}`);
+function deleteMaster(index) {
+  if (!confirm('Delete this command?')) return;
+  const cmd = state.masterCommands.splice(index, 1)[0];
+  addLog(`Deleted master command: ${cmd.name}`);
   persistAndRender();
 }
 
-/* ---------- Test Setup ---------- */
-document.getElementById('testSetupForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const type = document.getElementById('testType').value;
-  const question = document.getElementById('testQuestion').value.trim();
-  const options = document.getElementById('testOptions').value.trim();
-  const answer = document.getElementById('testAnswer').value.trim();
-  if(!question||!answer||(type==='mcq' && !options)) return alert('Fill all required fields');
-  const id = 'tst_'+Date.now();
-  state.testItems.unshift({id,type,question,options:options.split(','),answer});
-  addLog(`Added test item: ${question}`);
-  saveStorage(); renderTestItems();
-  document.getElementById('testSetupForm').reset();
-});
-
-function renderTestItems(){
-  const c=document.getElementById('testItemsList');
-  if(!state.testItems || state.testItems.length===0) { c.innerHTML='<div class="small muted">No test items</div>'; return; }
-  c.innerHTML = state.testItems.map(t=>{
-    return `<div style="padding:6px;border-bottom:1px solid rgba(0,0,0,0.02)">
-      <strong>${t.type.toUpperCase()}</strong>: ${t.question} 
-      <div class="small">Answer: ${t.answer}</div>
-      <button class="btn tiny btn-danger" onclick="deleteTestItem('${t.id}')">Delete</button>
-    </div>`;
-  }).join('');
-}
-
-function deleteTestItem(id){
-  if(!confirm('Delete this test item?')) return;
-  state.testItems = state.testItems.filter(t=>t.id!==id);
-  addLog(`Deleted test item ${id}`);
-  saveStorage(); renderTestItems();
-}
-</script>
-<!-- ROW 6: Analytics Summary & Charts -->
-<div class="container">
-  <div class="row">
-    <!-- Analytics Summary Cards -->
-    <div class="col card">
-      <h3>Analytics Summary</h3>
-      <div id="analyticsCards" style="display:flex;gap:10px;flex-wrap:wrap">
-        <div class="card small" id="avgAttendanceCard">Average Attendance: 0%</div>
-        <div class="card small" id="avgMarksCard">Average Marks: 0</div>
-        <div class="card small" id="topStudentCard">Top Student: -</div>
-      </div>
-    </div>
-    
-    <!-- Attendance Chart -->
-    <div class="col card">
-      <h3>Attendance Chart</h3>
-      <canvas id="attendanceChart" height="200"></canvas>
-    </div>
-
-    <!-- Test Scores Chart -->
-    <div class="col card">
-      <h3>Test Scores Chart</h3>
-      <canvas id="testChart" height="200"></canvas>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-let attendanceChart=null, testChart=null;
-
-/* ---------- Analytics Cards ---------- */
-function updateAnalytics(){
-  // Average Attendance
-  const avgAttendance = state.attendance.length ? 
-    (state.attendance.reduce((sum,a)=>sum+a.percent,0)/state.attendance.length).toFixed(2) : 0;
-  document.getElementById('avgAttendanceCard').innerText = `Average Attendance: ${avgAttendance}%`;
-
-  // Average Marks
-  const avgMarks = state.tests.length ? 
-    (state.tests.reduce((sum,t)=>sum+t.marks,0)/state.tests.length).toFixed(2) : 0;
-  document.getElementById('avgMarksCard').innerText = `Average Marks: ${avgMarks}`;
-
-  // Top Student (based on avg test marks)
-  let topStudent = '-';
-  if(state.users.filter(u=>u.role==='student').length && state.tests.length){
-    let bestAvg = 0;
-    state.users.filter(u=>u.role==='student').forEach(s=>{
-      const testsForStudent = state.tests.filter(t=>!t.student||t.student===s.username);
-      if(testsForStudent.length){
-        const avg = testsForStudent.reduce((sum,t)=>sum+t.marks,0)/testsForStudent.length;
-        if(avg>bestAvg){ bestAvg=avg; topStudent=s.username; }
-      }
-    });
-  }
-  document.getElementById('topStudentCard').innerText = `Top Student: ${topStudent}`;
-}
-
-/* ---------- Charts ---------- */
-function renderCharts(){
-  const attCtx = document.getElementById('attendanceChart').getContext('2d');
-  const testCtx = document.getElementById('testChart').getContext('2d');
-
-  const attLabels = (state.attendance||[]).map(a=>a.subject);
-  const attData = (state.attendance||[]).map(a=>a.percent);
-
-  const testLabels = (state.tests||[]).map(t=>t.subject);
-  const testData = (state.tests||[]).map(t=>t.marks);
-
-  if(attendanceChart){
-    attendanceChart.data.labels = attLabels;
-    attendanceChart.data.datasets[0].data = attData;
-    attendanceChart.update();
-  } else {
-    attendanceChart = new Chart(attCtx,{
-      type:'bar',
-      data:{labels:attLabels,datasets:[{label:'Attendance %',data:attData,backgroundColor:'#4f46e5'}]},
-      options:{responsive:true,plugins:{legend:{display:false}}}
-    });
-  }
-
-  if(testChart){
-    testChart.data.labels = testLabels;
-    testChart.data.datasets[0].data = testData;
-    testChart.update();
-  } else {
-    testChart = new Chart(testCtx,{
-      type:'bar',
-      data:{labels:testLabels,datasets:[{label:'Test Marks',data:testData,backgroundColor:'#3b82f6'}]},
-      options:{responsive:true,plugins:{legend:{display:false}}}
-    });
-  }
-}
-
-/* ---------- Unified Update ---------- */
-function updateDashboard(){
-  updateAnalytics();
-  renderCharts();
-}
-
-/* Call updateDashboard whenever data changes */
-function persistAndRender(){
-  saveStorage();
-  renderAcademic();
-  renderAttendance();
-  renderTests();
-  renderTestItems();
-  renderTriggers();
-  populateStudentFilter();
-  updateDashboard();
-  renderLogs();
-}
-
-</script>
-<!-- ROW 7: Master Commands & Trigger Words -->
-<div class="container">
-  <div class="row">
-    <!-- Master Commands -->
-    <div class="col card">
-      <h3>Master Commands</h3>
-      <div class="space"></div>
-      <label>Enter Command</label>
-      <input type="text" id="masterCommandInput" placeholder="e.g. lock all, delete all">
-      <button class="btn btn-primary" onclick="executeMasterCommand()">Execute</button>
-      <div class="muted small" style="margin-top:6px">Available: lock all, unlock all, delete all academic, delete all attendance, delete all tests</div>
-    </div>
-
-    <!-- Trigger Words / Phrases -->
-    <div class="col card">
-      <h3>Trigger Words / Phrases</h3>
-      <div class="space"></div>
-      <label>Trigger Word</label>
-      <input type="text" id="triggerWordInput" placeholder="e.g. hello">
-      <label>Trigger Phrase</label>
-      <input type="text" id="triggerPhraseInput" placeholder="e.g. show me attendance">
-      <label>Response</label>
-      <input type="text" id="triggerResponseInput" placeholder="e.g. Your attendance is 80%">
-      <button class="btn btn-primary" onclick="addTrigger()">Add Trigger</button>
-      <div class="space"></div>
-      <div class="muted small">Existing triggers</div>
-      <div id="triggerList" class="list"></div>
-    </div>
-  </div>
-</div>
-
-<script>
-/* ---------- Master Commands ---------- */
-function executeMasterCommand(){
-  const cmd = document.getElementById('masterCommandInput').value.trim().toLowerCase();
-  if(!cmd) return alert('Enter a command');
-  switch(cmd){
-    case 'lock all':
-      state.locked = true; addLog('All features locked'); break;
-    case 'unlock all':
-      state.locked = false; addLog('All features unlocked'); break;
-    case 'delete all academic':
-      state.academic=[]; addLog('Deleted all academic items'); break;
-    case 'delete all attendance':
-      state.attendance=[]; addLog('Deleted all attendance'); break;
-    case 'delete all tests':
-      state.tests=[]; addLog('Deleted all tests'); break;
-    default:
-      return alert('Unknown command');
-  }
-  persistAndRender();
-  document.getElementById('masterCommandInput').value='';
-}
-
-/* ---------- Trigger Words / Phrases ---------- */
-function addTrigger(){
-  const word = document.getElementById('triggerWordInput').value.trim().toLowerCase();
-  const phrase = document.getElementById('triggerPhraseInput').value.trim().toLowerCase();
-  const response = document.getElementById('triggerResponseInput').value.trim();
-  if(!word && !phrase) return alert('Enter trigger word or phrase');
-  if(!response) return alert('Enter response');
-  const id = 'trig_'+Date.now();
-  state.triggers.unshift({id, word, phrase, response});
-  addLog(`Added trigger: ${word||phrase} -> ${response}`);
-  saveStorage(); renderTriggers();
-  document.getElementById('triggerWordInput').value='';
-  document.getElementById('triggerPhraseInput').value='';
-  document.getElementById('triggerResponseInput').value='';
-}
-
-function renderTriggers(){
-  const c=document.getElementById('triggerList'); c.innerHTML='';
-  (state.triggers||[]).forEach(t=>{
-    const div=document.createElement('div');
-    div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
-    div.innerHTML=`<strong>${t.word||t.phrase}</strong> → ${t.response} 
-      <button class="btn tiny btn-danger" onclick="deleteTrigger('${t.id}')">Delete</button>`;
-    c.appendChild(div);
-  });
-}
-
-function deleteTrigger(id){
-  state.triggers=state.triggers.filter(t=>t.id!==id);
-  addLog(`Deleted trigger ${id}`);
-  saveStorage(); renderTriggers();
-}
-
-/* ---------- Student-Specific Filter ---------- */
-function populateStudentFilter(){
-  const select=document.getElementById('acadStudentSelect');
-  if(!select) return;
-  select.innerHTML='<option value="">All students</option>';
-  state.users.filter(u=>u.role==='student').forEach(s=>{
-    select.insertAdjacentHTML('beforeend',`<option value="${s.username}">${s.username}</option>`);
-  });
-}
-
-/* ---------- Student Dashboard Trigger Check ---------- */
-// For student.html
-function checkTriggerInput(inputText){
+/* ---------- Student Dashboard Chatbot Hook ---------- */
+function checkTriggerInput(inputText) {
   const txt = inputText.toLowerCase();
-  for(const t of state.triggers){
-    if((t.word && txt.includes(t.word)) || (t.phrase && txt.includes(t.phrase))){
-      return t.response;
-    }
+  for (const t of (state.triggers || [])) {
+    if (txt.includes(t.trigger.toLowerCase())) return t.response;
   }
   return null;
 }
-</script>
-<!-- ROW 8: Feedback & Logs -->
+    </script>
+    <!-- ROW: Feedback & Logs -->
 <div class="container">
   <div class="row">
     <!-- Feedback -->
@@ -1068,96 +538,7 @@ function checkTriggerInput(inputText){
   </div>
 </div>
 
-<!-- ROW 9: Export / Import / Clear -->
-<div class="container">
-  <div class="row">
-    <div class="col card">
-      <h3>Data Management</h3>
-      <button class="btn btn-primary" onclick="exportData()">Export Data</button>
-      <button class="btn btn-secondary" onclick="importDataPrompt()">Import Data</button>
-      <button class="btn btn-danger" onclick="clearAllData()">Clear All Data</button>
-    </div>
-  </div>
-</div>
-
-<!-- Background canvas -->
-<canvas id="bg-canvas" style="position:fixed;top:0;left:0;z-index:-1;"></canvas>
-
-<script>
-/* ---------- Render Feedback ---------- */
-function renderFeedback(){
-  const c=document.getElementById('feedbackList');
-  if(!state.feedback || state.feedback.length===0){
-    c.innerHTML='<div class="small muted">No feedback yet</div>'; return;
-  }
-  c.innerHTML = state.feedback.map(f=>`<div style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)">${f}</div>`).join('');
-}
-
-/* ---------- Render Logs ---------- */
-function renderLogs(){
-  const c=document.getElementById('logsContainer');
-  c.innerHTML = state.logs.slice(0,50).map(l=>`<div style="padding:6px;border-bottom:1px solid rgba(255,255,255,0.02);font-size:12px">${l}</div>`).join('');
-}
-
-/* ---------- Export / Import / Clear ---------- */
-function exportData(){
-  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='student_assistant_data.json'; a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importDataPrompt(){
-  const input = document.createElement('input'); input.type='file'; input.accept='application/json';
-  input.onchange = e=>{
-    const f = e.target.files[0]; if(!f) return;
-    const reader = new FileReader();
-    reader.onload = evt=>{
-      try {
-        const data = JSON.parse(evt.target.result);
-        if(confirm('Replace current data with imported data?')){
-          state = Object.assign({}, defaultState, data);
-          addLog('Imported data via file'); persistAndRender();
-        }
-      } catch(err){ alert('Invalid JSON'); }
-    };
-    reader.readAsText(f);
-  };
-  input.click();
-}
-
-function clearAllData(){
-  if(!confirm('Clear all saved data (this will reset everything)?')) return;
-  state = JSON.parse(JSON.stringify(defaultState));
-  addLog('Cleared all data');
-  persistAndRender();
-}
-
-/* ---------- Background Animation (Particles) ---------- */
-(function background(){
-  const canvas=document.getElementById('bg-canvas'); const ctx=canvas.getContext('2d');
-  let W,H,particles=[];
-  function resize(){
-    W=canvas.width=innerWidth; H=canvas.height=innerHeight;
-    particles = Array.from({length: Math.max(24, Math.floor(W*H/140000))}, ()=>{
-      return {x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.5+0.5, vx:(Math.random()-0.5)*0.2, vy:-(Math.random()*0.3+0.02), hue:200 + Math.random()*40, a:0.06+Math.random()*0.2};
-    });
-  }
-  function step(){
-    ctx.clearRect(0,0,W,H);
-    particles.forEach(p=>{
-      p.x += p.vx; p.y += p.vy;
-      if(p.x < -50) p.x = W+50; if(p.x > W+50) p.x = -50;
-      if(p.y < -50) p.y = H+50; if(p.y > H+50) p.y = -50;
-      ctx.beginPath(); ctx.fillStyle = `hsla(${p.hue},70%,60%,${p.a})`;
-      ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-    });
-    requestAnimationFrame(step);
-  }
-  addEventListener('resize',resize); resize(); step();
-})();
-</script>
-<!-- ROW 10: Analytics Summary -->
+<!-- ROW: Analytics Summary -->
 <div class="container">
   <div class="row">
     <div class="col card">
@@ -1180,7 +561,7 @@ function clearAllData(){
   </div>
 </div>
 
-<!-- ROW 11: Charts -->
+<!-- ROW: Charts -->
 <div class="container">
   <div class="row">
     <div class="col card">
@@ -1196,328 +577,223 @@ function clearAllData(){
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-let attendanceChart=null, testChart=null;
+let attendanceChart = null, testChart = null;
 
-/* ---------- Render Charts & Summary ---------- */
+/* ---------- Feedback & Logs ---------- */
+function renderFeedback(){
+  const c = document.getElementById('feedbackList');
+  c.innerHTML = (!state.feedback || state.feedback.length===0)
+    ? '<div class="small muted">No feedback yet</div>'
+    : state.feedback.map(f => `<div style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)">${f}</div>`).join('');
+}
+
+function renderLogs(){
+  const c = document.getElementById('logsContainer');
+  c.innerHTML = (state.logs || []).slice(0,50)
+    .map(l => `<div style="padding:6px;border-bottom:1px solid rgba(255,255,255,0.02);font-size:12px">${l}</div>`).join('');
+}
+
+/* ---------- Analytics & Charts ---------- */
 function renderCharts(){
-  const attCtx=document.getElementById('attendanceChart').getContext('2d');
-  const testCtx=document.getElementById('testChart').getContext('2d');
+  const attCtx = document.getElementById('attendanceChart').getContext('2d');
+  const testCtx = document.getElementById('testChart').getContext('2d');
 
-  const attLabels = (state.attendance||[]).map(a=>a.subject);
-  const attData = (state.attendance||[]).map(a=>a.percent);
-  const testLabels = (state.tests||[]).map(t=>t.subject);
-  const testData = (state.tests||[]).map(t=>t.marks);
+  const attLabels = (state.attendance||[]).map(a => a.subject);
+  const attData = (state.attendance||[]).map(a => a.percent);
+  const testLabels = (state.tests||[]).map(t => t.subject);
+  const testData = (state.tests||[]).map(t => t.marks);
 
-  /* Attendance Chart */
+  // Attendance Chart
   if(attendanceChart){
     attendanceChart.data.labels = attLabels;
     attendanceChart.data.datasets[0].data = attData;
     attendanceChart.update();
   } else {
-    attendanceChart = new Chart(attCtx,{
+    attendanceChart = new Chart(attCtx, {
       type:'bar',
-      data:{labels:attLabels,datasets:[{label:'Attendance %',data:attData,backgroundColor:'#4f46e5'}]},
-      options:{responsive:true,plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}}}
+      data:{ labels: attLabels, datasets:[{label:'Attendance %', data: attData, backgroundColor:'#4f46e5'}]},
+      options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}}}
     });
   }
 
-  /* Test Chart */
+  // Test Chart
   if(testChart){
     testChart.data.labels = testLabels;
     testChart.data.datasets[0].data = testData;
     testChart.update();
   } else {
-    testChart = new Chart(testCtx,{
+    testChart = new Chart(testCtx, {
       type:'bar',
-      data:{labels:testLabels,datasets:[{label:'Test Marks',data:testData,backgroundColor:'#3b82f6'}]},
-      options:{responsive:true,plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}}}
+      data:{ labels: testLabels, datasets:[{label:'Test Marks', data: testData, backgroundColor:'#3b82f6'}]},
+      options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}}}
     });
   }
 
-  /* Update Summary Cards */
-  const avgAttendance = attData.length? (attData.reduce((a,b)=>a+b,0)/attData.length).toFixed(1)+'%' : '0%';
-  const avgMarks = testData.length? (testData.reduce((a,b)=>a+b,0)/testData.length).toFixed(1) : 0;
+  // Update Summary Cards
+  const avgAttendance = attData.length ? (attData.reduce((a,b)=>a+b,0)/attData.length).toFixed(1)+'%' : '0%';
+  const avgMarks = testData.length ? (testData.reduce((a,b)=>a+b,0)/testData.length).toFixed(1) : 0;
 
-  const topStudentObj = state.users.filter(u=>u.role==='student').map(s=>{
-    const tests = state.tests.filter(t=>t.student===s.username);
-    const avg = tests.length? tests.reduce((a,b)=>a+b.marks,0)/tests.length : 0;
-    return {username:s.username, avg};
-  }).sort((a,b)=>b.avg - a.avg)[0];
+  const topStudentObj = (state.users||[])
+    .filter(u => u.role==='student')
+    .map(s => {
+      const tests = (state.tests||[]).filter(t => t.student===s.username);
+      const avg = tests.length ? tests.reduce((a,b)=>a+b.marks,0)/tests.length : 0;
+      return { username: s.username, avg };
+    }).sort((a,b)=>b.avg - a.avg)[0];
 
   document.getElementById('avgAttendance').innerText = avgAttendance;
   document.getElementById('avgMarks').innerText = avgMarks;
-  document.getElementById('topStudent').innerText = topStudentObj? topStudentObj.username+' ('+topStudentObj.avg.toFixed(1)+')':'-';
+  document.getElementById('topStudent').innerText = topStudentObj ? topStudentObj.username+' ('+topStudentObj.avg.toFixed(1)+')' : '-';
 }
 
-/* ---------- Real-Time Updates ---------- */
+/* ---------- Real-Time Update Function ---------- */
 function updateAll(){
-  renderAttendance(); renderTests(); renderAcademic(); renderCharts(); renderFeedback(); renderLogs();
+  renderAttendance?.();
+  renderTests?.();
+  renderAcademic?.();
+  renderCreatedTests?.();
+  renderCharts();
+  renderFeedback();
+  renderLogs();
 }
 
 window.persistAndRender = function(){
-  saveStorage(); updateAll();
+  saveStorage();
+  updateAll();
 }
 
-/* Call on load */
+/* ---------- Initial Load ---------- */
 updateAll();
 </script>
-<!-- ROW 12: Trigger Words / Phrases -->
+<!-- ROW: Student Dashboard -->
 <div class="container">
   <div class="row">
     <div class="col card">
-      <h3>Chatbot Trigger Words / Phrases</h3>
-      <form id="triggerForm">
-        <label>Trigger Word / Phrase</label>
-        <input type="text" id="triggerInput" placeholder="e.g. hello, need help">
-        <label>Response</label>
-        <input type="text" id="responseInput" placeholder="Response for this trigger">
-        <div style="margin-top:10px; display:flex; gap:8px;">
-          <button type="submit" class="btn btn-primary">Add Trigger</button>
-          <button type="button" class="btn btn-ghost" onclick="renderTriggers()">Refresh</button>
-        </div>
-      </form>
-      <div class="space"></div>
-      <div class="muted small">Current Triggers</div>
-      <div id="triggerList" class="list"></div>
+      <h3>Student Dashboard</h3>
+      <label>Enter Chat / Command:</label>
+      <input type="text" id="studentInput" placeholder="Type here...">
+      <div style="margin-top:8px;" id="chatResponse"></div>
     </div>
+  </div>
 
+  <div class="row" style="margin-top:16px;">
     <div class="col card">
-      <h3>Master Command Tab</h3>
-      <form id="masterForm">
-        <label>Command Name</label>
-        <input type="text" id="commandName" placeholder="e.g. lockAll, deleteAll">
-        <label>Action / JS Code</label>
-        <textarea id="commandAction" placeholder="JavaScript code to execute"></textarea>
-        <div style="margin-top:10px; display:flex; gap:8px;">
-          <button type="submit" class="btn btn-primary">Add Command</button>
-          <button type="button" class="btn btn-ghost" onclick="renderMasterCommands()">Refresh</button>
-        </div>
-      </form>
-      <div class="space"></div>
-      <div class="muted small">Current Master Commands</div>
-      <div id="masterList" class="list"></div>
+      <h3>Academic Items</h3>
+      <div id="academicList" class="list"></div>
+    </div>
+    <div class="col card">
+      <h3>Charts</h3>
+      <canvas id="studentAttendanceChart"></canvas>
+      <canvas id="studentTestChart" style="margin-top:12px;"></canvas>
     </div>
   </div>
 </div>
 
 <script>
-/* ---------- Triggers ---------- */
-document.getElementById('triggerForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const trigger = document.getElementById('triggerInput').value.trim();
-  const response = document.getElementById('responseInput').value.trim();
-  if(!trigger||!response) return alert('Enter both trigger & response');
-  state.triggers = state.triggers||[];
-  state.triggers.unshift({trigger,response});
-  addLog(`Added trigger: ${trigger} -> ${response}`);
-  saveStorage(); renderTriggers();
-  document.getElementById('triggerForm').reset();
-});
-
-function renderTriggers(){
-  const c=document.getElementById('triggerList');
-  c.innerHTML='';
-  (state.triggers||[]).forEach((t,i)=>{
-    const div=document.createElement('div');
-    div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
-    div.innerHTML=`<strong>${t.trigger}</strong> → ${t.response} 
-      <button class="btn tiny btn-ghost" onclick="editTrigger(${i})">Edit</button>
-      <button class="btn tiny btn-danger" onclick="deleteTrigger(${i})">Delete</button>`;
-    c.appendChild(div);
-  });
-}
-
-function editTrigger(index){
-  const t = state.triggers[index];
-  if(!t) return;
-  const newTrigger = prompt('Trigger', t.trigger); if(newTrigger!==null) t.trigger=newTrigger;
-  const newResp = prompt('Response', t.response); if(newResp!==null) t.response=newResp;
-  addLog(`Edited trigger: ${t.trigger}`);
-  saveStorage(); renderTriggers();
-}
-
-function deleteTrigger(index){
-  if(!confirm('Delete this trigger?')) return;
-  const t = state.triggers.splice(index,1)[0];
-  addLog(`Deleted trigger: ${t.trigger}`);
-  saveStorage(); renderTriggers();
-}
-
-/* ---------- Master Commands ---------- */
-document.getElementById('masterForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const name = document.getElementById('commandName').value.trim();
-  const action = document.getElementById('commandAction').value.trim();
-  if(!name||!action) return alert('Enter both name & action');
-  state.masterCommands = state.masterCommands||[];
-  state.masterCommands.unshift({name,action});
-  addLog(`Added master command: ${name}`);
-  saveStorage(); renderMasterCommands();
-  document.getElementById('masterForm').reset();
-});
-
-function renderMasterCommands(){
-  const c=document.getElementById('masterList');
-  c.innerHTML='';
-  (state.masterCommands||[]).forEach((cmd,i)=>{
-    const div=document.createElement('div');
-    div.style.padding='6px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
-    div.innerHTML=`<strong>${cmd.name}</strong>
-      <button class="btn tiny btn-ghost" onclick="editMaster(${i})">Edit</button>
-      <button class="btn tiny btn-danger" onclick="deleteMaster(${i})">Delete</button>`;
-    c.appendChild(div);
-  });
-}
-
-function editMaster(index){
-  const cmd = state.masterCommands[index];
-  if(!cmd) return;
-  const newName = prompt('Command Name', cmd.name); if(newName!==null) cmd.name=newName;
-  const newAction = prompt('JS Action', cmd.action); if(newAction!==null) cmd.action=newAction;
-  addLog(`Edited master command: ${cmd.name}`);
-  saveStorage(); renderMasterCommands();
-}
-
-function deleteMaster(index){
-  if(!confirm('Delete this command?')) return;
-  const cmd = state.masterCommands.splice(index,1)[0];
-  addLog(`Deleted master command: ${cmd.name}`);
-  saveStorage(); renderMasterCommands();
-}
-
-/* ---------- Student Page Chatbot Hook ----------
-   Example usage in student.html:
-   state.triggers = [{trigger:'hello',response:'Hi!'}];
-   Then in student input event:
-     state.triggers.forEach(t=>{
-       if(userInput.includes(t.trigger)) showResponse(t.response);
-     });
-*/
-</script>
-<!-- ROW 13: Test Creation (MCQ / Short Answer) -->
-<div class="container">
-  <div class="row">
-    <div class="col card">
-      <h3>Create Test</h3>
-      <form id="createTestForm">
-        <label>Test Type</label>
-        <select id="testTypeSelect">
-          <option value="mcq">MCQ</option>
-          <option value="short">Short Answer</option>
-        </select>
-        <label>Subject</label>
-        <input type="text" id="testSubjectInput" placeholder="Subject e.g. Math" required>
-        <label>Question</label>
-        <textarea id="testQuestionInput" placeholder="Enter the question..." required></textarea>
-        <div id="mcqOptionsContainer" style="display:none;">
-          <label>Options (comma separated)</label>
-          <input type="text" id="mcqOptionsInput" placeholder="Option1,Option2,Option3,Option4">
-          <label>Correct Option</label>
-          <input type="text" id="mcqAnswerInput" placeholder="Correct option text">
-        </div>
-        <label>Assign to student (optional)</label>
-        <select id="testAssignStudent"><option value="">All Students</option></select>
-        <div style="margin-top:10px; display:flex; gap:8px;">
-          <button type="submit" class="btn btn-primary">Add Test</button>
-          <button type="button" class="btn btn-ghost" onclick="renderCreatedTests()">Refresh</button>
-        </div>
-      </form>
-      <div class="space"></div>
-      <div class="muted small">Test List</div>
-      <div id="createdTestList" class="list"></div>
-    </div>
-  </div>
-</div>
-
-<script>
-/* ---------- Test Creation ---------- */
-const testTypeSelect = document.getElementById('testTypeSelect');
-const mcqContainer = document.getElementById('mcqOptionsContainer');
-testTypeSelect.addEventListener('change', ()=>{
-  mcqContainer.style.display = testTypeSelect.value==='mcq'?'block':'none';
-});
-
-document.getElementById('createTestForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const type = testTypeSelect.value;
-  const subject = document.getElementById('testSubjectInput').value.trim();
-  const question = document.getElementById('testQuestionInput').value.trim();
-  const student = document.getElementById('testAssignStudent').value||'';
-  if(!subject||!question) return alert('Enter subject & question');
-  let testItem = {id:'test_'+Date.now(), type, subject, question, student};
-  
-  if(type==='mcq'){
-    const options = document.getElementById('mcqOptionsInput').value.split(',').map(o=>o.trim()).filter(Boolean);
-    const answer = document.getElementById('mcqAnswerInput').value.trim();
-    if(options.length<2||!answer||!options.includes(answer)) return alert('Invalid MCQ options or answer');
-    testItem.options = options; testItem.answer = answer;
-  }
-  
-  state.createdTests = state.createdTests||[];
-  state.createdTests.unshift(testItem);
-  addLog(`Created ${type} test for ${subject}`);
-  saveStorage(); renderCreatedTests();
-  document.getElementById('createTestForm').reset();
-});
-
-function renderCreatedTests(){
-  const c=document.getElementById('createdTestList'); c.innerHTML='';
-  (state.createdTests||[]).forEach(t=>{
-    const div=document.createElement('div');
-    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
-    div.innerHTML=`<strong>[${t.type.toUpperCase()}]</strong> ${t.subject} 
-      <div class="small">For: ${t.student||'All'}</div>
-      <div>${t.question}</div>
-      ${t.type==='mcq'?'<div>Options: '+t.options.join(', ')+' | Answer: '+t.answer+'</div>':''}
-      <div style="margin-top:6px">
-        <button class="btn tiny btn-ghost" onclick="editCreatedTest('${t.id}')">Edit</button>
-        <button class="btn tiny btn-danger" onclick="deleteCreatedTest('${t.id}')">Delete</button>
-      </div>`;
-    c.appendChild(div);
-  });
-
-  // update assign student select
-  const sel = document.getElementById('testAssignStudent');
-  sel.innerHTML='<option value="">All Students</option>';
-  (state.users||[]).filter(u=>u.role==='student').forEach(s=>{
-    sel.insertAdjacentHTML('beforeend',`<option value="${s.username}">${s.username}</option>`);
-  });
-}
-
-function editCreatedTest(id){
-  const t = state.createdTests.find(x=>x.id===id); if(!t) return;
-  const newQ = prompt('Question', t.question); if(newQ!==null) t.question=newQ;
-  if(t.type==='mcq'){
-    const newOpts = prompt('Options (comma separated)', t.options.join(',')); if(newOpts!==null) t.options=newOpts.split(',').map(o=>o.trim());
-    const newAns = prompt('Answer', t.answer); if(newAns!==null) t.answer=newAns;
-  }
-  addLog(`Edited test ${t.subject}`);
-  saveStorage(); renderCreatedTests();
-}
-
-function deleteCreatedTest(id){
-  if(!confirm('Delete this test?')) return;
-  const t = state.createdTests.filter(x=>x.id!==id);
-  state.createdTests = t;
-  addLog(`Deleted test ${id}`);
-  saveStorage(); renderCreatedTests();
-}
-
-/* ---------- Student Dashboard Access ---------- */
+/* ---------- Student Dashboard Rendering ---------- */
 function renderStudentDashboard(student){
-  // Filter all lists for student only
   const username = student.username;
-  const studentAttendance = (state.attendance||[]); // show all subjects, optionally filter
-  const studentTests = (state.createdTests||[]).filter(t=>!t.student||t.student===username);
-  const studentAcademic = (state.academic||[]).filter(a=>!a.student||a.student===username);
 
-  // Render charts for student
+  // Filter data for student
+  const studentAttendance = state.attendance || [];
+  const studentTests = (state.createdTests||[]).filter(t => !t.student || t.student === username);
+  const studentAcademic = (state.academic||[]).filter(a => !a.student || a.student === username);
+
+  // Render academic items
+  const acadC = document.getElementById('academicList');
+  acadC.innerHTML = '';
+  studentAcademic.forEach(a=>{
+    const div = document.createElement('div');
+    div.innerHTML = `<strong>[${a.type.toUpperCase()}]</strong> ${a.title}<div>${a.content}</div>`;
+    acadC.appendChild(div);
+  });
+
+  // Render charts
   const attLabels = studentAttendance.map(a=>a.subject);
   const attData = studentAttendance.map(a=>a.percent);
   const testLabels = studentTests.map(t=>t.subject);
   const testData = studentTests.map(t=>t.type==='short'?0: (t.answer?100:0)); // simplified scoring
 
-  // Update chart datasets
+  // Attendance chart
+  const attCtx = document.getElementById('studentAttendanceChart').getContext('2d');
+  if(window.studentAttendanceChart){
+    studentAttendanceChart.data.labels = attLabels;
+    studentAttendanceChart.data.datasets[0].data = attData;
+    studentAttendanceChart.update();
+  } else {
+    window.studentAttendanceChart = new Chart(attCtx,{
+      type:'bar',
+      data:{ labels: attLabels, datasets:[{label:'Attendance %', data: attData, backgroundColor:'#4f46e5'}]},
+      options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}}}
+    });
+  }
+
+  // Test chart
+  const testCtx = document.getElementById('studentTestChart').getContext('2d');
+  if(window.studentTestChart){
+    studentTestChart.data.labels = testLabels;
+    studentTestChart.data.datasets[0].data = testData;
+    studentTestChart.update();
+  } else {
+    window.studentTestChart = new Chart(testCtx,{
+      type:'bar',
+      data:{ labels: testLabels, datasets:[{label:'Test Marks', data: testData, backgroundColor:'#3b82f6'}]},
+      options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}}}
+    });
+  }
+}
+
+/* ---------- Chatbot / Trigger Handling ---------- */
+document.getElementById('studentInput').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){
+    const input = e.target.value.trim();
+    if(!input) return;
+    const response = checkTriggerInput(input); // check triggers
+    const respDiv = document.getElementById('chatResponse');
+    respDiv.innerHTML = `<div><strong>You:</strong> ${input}</div><div><strong>Bot:</strong> ${response||'No matching trigger found.'}</div>`;
+    e.target.value = '';
+  }
+});
+
+function checkTriggerInput(inputText){
+  const txt = inputText.toLowerCase();
+  for(const t of state.triggers||[]){
+    if((t.trigger && txt.includes(t.trigger)) || (t.phrase && txt.includes(t.phrase))){
+      return t.response;
+    }
+  }
+  return null;
+}
+
+/* ---------- Initialize Student Dashboard ---------- */
+function initStudent(username){
+  const student = (state.users||[]).find(u => u.username===username);
+  if(!student) return alert('Student not found');
+  renderStudentDashboard(student);
+}
+                           </script>
+                           <script>
+/* ---------- Student Dashboard Rendering ---------- */
+function renderStudentDashboard(student){
+  const username = student.username;
+
+  // Filter student-specific data
+  const studentAttendance = (state.attendance || []).map(a => ({
+    subject: a.subject,
+    percent: a.percent
+  }));
+  const studentTests = (state.createdTests || []).filter(t => !t.student || t.student === username);
+  const studentAcademic = (state.academic || []).filter(a => !a.student || a.student === username);
+
+  // Attendance Chart
+  const attLabels = studentAttendance.map(a => a.subject);
+  const attData = studentAttendance.map(a => a.percent);
+
+  // Test Chart (simplified scoring: MCQ 100 if answered, Short Answer 0)
+  const testLabels = studentTests.map(t => t.subject);
+  const testData = studentTests.map(t => t.type === 'short' ? 0 : (t.answer ? 100 : 0));
+
+  // Update chart datasets in real-time
   if(window.attendanceChart){
     attendanceChart.data.labels = attLabels;
     attendanceChart.data.datasets[0].data = attData;
@@ -1529,12 +805,35 @@ function renderStudentDashboard(student){
     testChart.update();
   }
 
-  // Render lists
-  const acadC = document.getElementById('academicList'); acadC.innerHTML='';
-  studentAcademic.forEach(a=>{
-    const div=document.createElement('div');
-    div.innerHTML=`<strong>[${a.type.toUpperCase()}]</strong> ${a.title}<div>${a.content}</div>`;
+  // Render academic list
+  const acadC = document.getElementById('academicList');
+  acadC.innerHTML = '';
+  studentAcademic.forEach(a => {
+    const div = document.createElement('div');
+    div.style.padding = '6px';
+    div.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
+    div.innerHTML = `<strong>[${a.type.toUpperCase()}]</strong> ${a.title}
+                     <div>${a.content}</div>`;
     acadC.appendChild(div);
   });
 }
-</script>
+
+/* ---------- Real-time Updates Wrapper ---------- */
+function updateAll(){
+  renderAttendance(); 
+  renderTests(); 
+  renderAcademic(); 
+  renderCreatedTests(); 
+  renderCharts(); 
+  renderFeedback(); 
+  renderLogs();
+}
+
+window.persistAndRender = function(){
+  saveStorage();
+  updateAll();
+};
+
+/* Call on load to render everything */
+updateAll();
+                           </script>
