@@ -1,24 +1,35 @@
-<!-- PART 1: ATTENDANCE MCQ STYLE -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
 <div class="container">
+  <h1>Admin Dashboard</h1>
+
+  <!-- ROW 1: Attendance Section -->
   <div class="row">
     <div class="col card">
-      <h3>Student Attendance (MCQ Style)</h3>
+      <h3>Attendance</h3>
       <form id="attendanceForm">
-        <label>Student</label>
-        <select id="attendanceStudentSelect" required></select>
+        <label>Select Student</label>
+        <select id="attendanceStudentSelect">
+          <option value="">-- Select Student --</option>
+        </select>
 
         <label>Subject</label>
-        <input type="text" id="attendanceSubject" placeholder="Subject e.g. Math" required>
+        <input type="text" id="attendanceSubject" placeholder="e.g. Math" required>
 
-        <label>Status (Choose one)</label>
-        <div style="display:flex; gap:10px; margin-bottom:10px;">
-          <button type="button" class="status-btn btn" data-status="Present">Present</button>
-          <button type="button" class="status-btn btn" data-status="Absent">Absent</button>
-          <button type="button" class="status-btn btn" data-status="Late">Late</button>
-          <button type="button" class="status-btn btn" data-status="On Duty">On Duty</button>
+        <label>Mark Attendance</label>
+        <div id="attendanceOptions" style="display:flex; gap:10px;">
+          <label><input type="radio" name="attendance" value="Present"> Present</label>
+          <label><input type="radio" name="attendance" value="Absent"> Absent</label>
+          <label><input type="radio" name="attendance" value="Late"> Late</label>
+          <label><input type="radio" name="attendance" value="On Duty"> On Duty</label>
         </div>
-
-        <input type="hidden" id="attendanceStatus">
 
         <div style="margin-top:10px; display:flex; gap:8px;">
           <button type="submit" class="btn btn-primary">Add Attendance</button>
@@ -29,440 +40,97 @@
       <div class="space"></div>
       <div class="muted small">Attendance Records</div>
       <div id="attendanceList" class="list"></div>
+    </div>
 
-      <div style="margin-top:12px;">
-        <button class="btn btn-primary" onclick="exportAttendance()">Export Attendance</button>
-        <button class="btn btn-secondary" onclick="importAttendance()">Import Attendance</button>
-      </div>
-
-      <div style="margin-top:20px;">
-        <canvas id="attendanceBarChart" height="200"></canvas>
-        <canvas id="attendancePieChart" height="200" style="margin-top:20px;"></canvas>
-      </div>
+    <div class="col card">
+      <h3>Attendance Chart</h3>
+      <canvas id="attendanceChart" height="200"></canvas>
     </div>
   </div>
 </div>
 
 <script>
-// Initialize
-let attendanceChart = null, attendancePieChart = null;
+let state = {
+  users: [{username:'student1', role:'student'},{username:'student2', role:'student'}],
+  attendance: []
+};
 
-// Populate student select
-function populateAttendanceStudents(){
+let attendanceChart = null;
+
+/* ---------- Populate Student Dropdown ---------- */
+function populateStudentDropdown() {
   const sel = document.getElementById('attendanceStudentSelect');
-  sel.innerHTML = '<option value="">Select Student</option>';
-  (state.users||[]).filter(u=>u.role==='student').forEach(s=>{
+  sel.innerHTML = '<option value="">-- Select Student --</option>';
+  state.users.filter(u => u.role==='student').forEach(s => {
     sel.insertAdjacentHTML('beforeend', `<option value="${s.username}">${s.username}</option>`);
   });
 }
 
-// Handle status button click (MCQ style)
-document.querySelectorAll('.status-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.getElementById('attendanceStatus').value = btn.dataset.status;
-    // highlight selected
-    document.querySelectorAll('.status-btn').forEach(b=>b.classList.remove('btn-selected'));
-    btn.classList.add('btn-selected');
-  });
-});
-
-// Add attendance
+/* ---------- Add Attendance ---------- */
 document.getElementById('attendanceForm').addEventListener('submit', e=>{
   e.preventDefault();
   const student = document.getElementById('attendanceStudentSelect').value;
   const subject = document.getElementById('attendanceSubject').value.trim();
-  const status = document.getElementById('attendanceStatus').value;
+  const status = document.querySelector('input[name="attendance"]:checked')?.value;
 
-  if(!student || !subject || !status) return alert('Select student, subject, and status');
+  if(!student || !subject || !status) return alert('Fill all fields');
 
-  state.attendance = state.attendance||[];
-  state.attendance.unshift({id:'att_'+Date.now(), student, subject, status});
-  addLog(`Added attendance: ${student} - ${subject} - ${status}`);
-  saveStorage(); renderAttendance();
+  state.attendance.unshift({student, subject, status});
+  renderAttendance();
   document.getElementById('attendanceForm').reset();
-  document.querySelectorAll('.status-btn').forEach(b=>b.classList.remove('btn-selected'));
 });
 
-// Render attendance
-function renderAttendance(){
+/* ---------- Render Attendance List ---------- */
+function renderAttendance() {
   const c = document.getElementById('attendanceList');
-  c.innerHTML = '';
-  (state.attendance||[]).forEach((a)=>{
-    const div = document.createElement('div');
-    div.style.padding='6px';
-    div.style.borderBottom='1px solid rgba(0,0,0,0.05)';
-    div.innerHTML = `<strong>${a.student}</strong> - ${a.subject} : ${a.status}
-      <button class="btn tiny btn-ghost" onclick="editAttendance('${a.id}')">Edit</button>
-      <button class="btn tiny btn-danger" onclick="deleteAttendance('${a.id}')">Delete</button>`;
-    c.appendChild(div);
-  });
-  updateAttendanceCharts();
+  if(!state.attendance.length) { c.innerHTML='<div class="small muted">No attendance records</div>'; renderAttendanceChart(); return; }
+
+  c.innerHTML = state.attendance.map((a,i)=>`
+    <div style="padding:6px;border-bottom:1px solid rgba(0,0,0,0.1)">
+      <strong>${a.student}</strong> | ${a.subject} → ${a.status}
+      <button class="btn tiny btn-danger" onclick="deleteAttendance(${i})">Delete</button>
+    </div>`).join('');
+
+  renderAttendanceChart();
 }
 
-// Edit attendance
-function editAttendance(id){
-  const a = state.attendance.find(x=>x.id===id);
-  if(!a) return;
-  const newStatus = prompt('Update Status (Present/Absent/Late/On Duty)', a.status);
-  if(newStatus && ['Present','Absent','Late','On Duty'].includes(newStatus)){
-    a.status = newStatus;
-    addLog(`Updated attendance: ${a.student} - ${a.subject} - ${a.status}`);
-    saveStorage(); renderAttendance();
-  }
-}
-
-// Delete attendance
-function deleteAttendance(id){
+/* ---------- Delete Attendance ---------- */
+function deleteAttendance(index){
   if(!confirm('Delete this attendance record?')) return;
-  state.attendance = state.attendance.filter(x=>x.id!==id);
-  addLog(`Deleted attendance record ${id}`);
-  saveStorage(); renderAttendance();
+  state.attendance.splice(index,1);
+  renderAttendance();
 }
 
-// Charts
-function updateAttendanceCharts(){
-  const subjects = [...new Set((state.attendance||[]).map(a=>a.subject))];
-  const presentCount = subjects.map(sub => (state.attendance||[]).filter(a=>a.subject===sub && a.status==='Present').length);
+/* ---------- Render Attendance Chart ---------- */
+function renderAttendanceChart(){
+  const ctx = document.getElementById('attendanceChart').getContext('2d');
+  const subjects = [...new Set(state.attendance.map(a=>a.subject))];
 
-  // Bar Chart
-  const ctx = document.getElementById('attendanceBarChart').getContext('2d');
+  const dataset = subjects.map(sub=>{
+    const counts = {Present:0, Absent:0, Late:0, "On Duty":0};
+    state.attendance.filter(a=>a.subject===sub).forEach(a=>counts[a.status]++);
+    return counts;
+  });
+
+  const chartData = {
+    labels: subjects,
+    datasets:[
+      {label:'Present', data:dataset.map(d=>d.Present), backgroundColor:'#10b981'},
+      {label:'Absent', data:dataset.map(d=>d.Absent), backgroundColor:'#ef4444'},
+      {label:'Late', data:dataset.map(d=>d.Late), backgroundColor:'#f59e0b'},
+      {label:'On Duty', data:dataset.map(d=>d["On Duty"]), backgroundColor:'#3b82f6'}
+    ]
+  };
+
   if(attendanceChart){
-    attendanceChart.data.labels = subjects;
-    attendanceChart.data.datasets[0].data = presentCount;
+    attendanceChart.data = chartData;
     attendanceChart.update();
   } else {
-    attendanceChart = new Chart(ctx,{
-      type:'bar',
-      data:{labels:subjects,datasets:[{label:'Present Count', data: presentCount, backgroundColor:'#4f46e5'}]},
-      options:{responsive:true,plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
-    });
-  }
-
-  // Pie Chart
-  const statusCounts = ['Present','Absent','Late','On Duty'].map(st=> (state.attendance||[]).filter(a=>a.status===st).length);
-  const pieCtx = document.getElementById('attendancePieChart').getContext('2d');
-  if(attendancePieChart){
-    attendancePieChart.data.datasets[0].data = statusCounts;
-    attendancePieChart.update();
-  } else {
-    attendancePieChart = new Chart(pieCtx,{
-      type:'pie',
-      data:{labels:['Present','Absent','Late','On Duty'], datasets:[{data:statusCounts, backgroundColor:['#10b981','#ef4444','#f59e0b','#3b82f6']}]},
-      options:{responsive:true}
-    });
+    attendanceChart = new Chart(ctx, {type:'bar', data: chartData, options:{responsive:true, scales:{y:{beginAtZero:true}}}});
   }
 }
 
-// Export / Import Attendance
-function exportAttendance(){
-  const blob = new Blob([JSON.stringify(state.attendance||[], null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download='attendance.json'; a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importAttendance(){
-  const input = document.createElement('input'); input.type='file'; input.accept='application/json';
-  input.onchange = e=>{
-    const f = e.target.files[0]; if(!f) return;
-    const reader = new FileReader();
-    reader.onload = evt=>{
-      try{
-        const data = JSON.parse(evt.target.result);
-        if(!Array.isArray(data)) return alert('Invalid attendance file');
-        if(confirm('Replace current attendance with imported data?')){
-          state.attendance = data;
-          addLog('Imported attendance data');
-          saveStorage(); renderAttendance();
-        }
-      }catch(err){ alert('Invalid JSON'); }
-    };
-    reader.readAsText(f);
-  };
-  input.click();
-}
-
-// On load
-populateAttendanceStudents();
+/* ---------- Init ---------- */
+populateStudentDropdown();
 renderAttendance();
 </script>
-<!-- PART 2: TEST CREATION -->
-<div class="container">
-  <div class="row">
-    <div class="col card">
-      <h3>Create Test</h3>
-      <form id="createTestForm">
-        <label>Test Type</label>
-        <select id="testTypeSelect">
-          <option value="mcq">MCQ</option>
-          <option value="short">Short Answer</option>
-        </select>
-
-        <label>Subject</label>
-        <input type="text" id="testSubjectInput" placeholder="Subject e.g. Math" required>
-
-        <label>Question</label>
-        <textarea id="testQuestionInput" placeholder="Enter the question..." required></textarea>
-
-        <!-- MCQ Options Section -->
-        <div id="mcqOptionsContainer" style="display:none; margin-top:10px;">
-          <label>Options (comma separated)</label>
-          <input type="text" id="mcqOptionsInput" placeholder="Option1,Option2,Option3,Option4">
-          <label>Correct Option</label>
-          <input type="text" id="mcqAnswerInput" placeholder="Correct option text">
-        </div>
-
-        <label>Assign to Student (optional)</label>
-        <select id="testAssignStudent"><option value="">All Students</option></select>
-
-        <div style="margin-top:10px; display:flex; gap:8px;">
-          <button type="submit" class="btn btn-primary">Add Test</button>
-          <button type="button" class="btn btn-ghost" onclick="renderCreatedTests()">Refresh</button>
-        </div>
-      </form>
-
-      <div class="space"></div>
-      <div class="muted small">Test List</div>
-      <div id="createdTestList" class="list"></div>
-
-      <div style="margin-top:12px;">
-        <button class="btn btn-primary" onclick="exportTests()">Export Tests</button>
-        <button class="btn btn-secondary" onclick="importTests()">Import Tests</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-// MCQ show/hide
-const testTypeSelect = document.getElementById('testTypeSelect');
-const mcqContainer = document.getElementById('mcqOptionsContainer');
-testTypeSelect.addEventListener('change', ()=>{
-  mcqContainer.style.display = testTypeSelect.value==='mcq'?'block':'none';
-});
-
-// Populate student select
-function populateTestStudents(){
-  const sel = document.getElementById('testAssignStudent');
-  sel.innerHTML = '<option value="">All Students</option>';
-  (state.users||[]).filter(u=>u.role==='student').forEach(s=>{
-    sel.insertAdjacentHTML('beforeend', `<option value="${s.username}">${s.username}</option>`);
-  });
-}
-
-// Create test
-document.getElementById('createTestForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const type = testTypeSelect.value;
-  const subject = document.getElementById('testSubjectInput').value.trim();
-  const question = document.getElementById('testQuestionInput').value.trim();
-  const student = document.getElementById('testAssignStudent').value||'';
-
-  if(!subject || !question) return alert('Enter subject & question');
-
-  let testItem = {id:'test_'+Date.now(), type, subject, question, student};
-
-  if(type==='mcq'){
-    const options = document.getElementById('mcqOptionsInput').value.split(',').map(o=>o.trim()).filter(Boolean);
-    const answer = document.getElementById('mcqAnswerInput').value.trim();
-    if(options.length<2 || !answer || !options.includes(answer)) return alert('Invalid MCQ options or answer');
-    testItem.options = options;
-    testItem.answer = answer;
-  }
-
-  state.createdTests = state.createdTests||[];
-  state.createdTests.unshift(testItem);
-  addLog(`Created ${type} test for ${subject}`);
-  saveStorage(); renderCreatedTests();
-  document.getElementById('createTestForm').reset();
-});
-
-// Render created tests
-function renderCreatedTests(){
-  const c = document.getElementById('createdTestList'); c.innerHTML='';
-  (state.createdTests||[]).forEach(t=>{
-    const div = document.createElement('div');
-    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(0,0,0,0.05)';
-    div.innerHTML = `<strong>[${t.type.toUpperCase()}]</strong> ${t.subject}
-      <div class="small">For: ${t.student||'All'}</div>
-      <div>${t.question}</div>
-      ${t.type==='mcq'?'<div>Options: '+t.options.join(', ')+' | Answer: '+t.answer+'</div>':''}
-      <div style="margin-top:6px">
-        <button class="btn tiny btn-ghost" onclick="editCreatedTest('${t.id}')">Edit</button>
-        <button class="btn tiny btn-danger" onclick="deleteCreatedTest('${t.id}')">Delete</button>
-      </div>`;
-    c.appendChild(div);
-  });
-
-  // Update student select dynamically
-  populateTestStudents();
-}
-
-// Edit test
-function editCreatedTest(id){
-  const t = state.createdTests.find(x=>x.id===id); if(!t) return;
-  const newQ = prompt('Question', t.question); if(newQ!==null) t.question=newQ;
-  if(t.type==='mcq'){
-    const newOpts = prompt('Options (comma separated)', t.options.join(',')); if(newOpts!==null) t.options=newOpts.split(',').map(o=>o.trim());
-    const newAns = prompt('Answer', t.answer); if(newAns!==null) t.answer=newAns;
-  }
-  addLog(`Edited test ${t.subject}`);
-  saveStorage(); renderCreatedTests();
-}
-
-// Delete test
-function deleteCreatedTest(id){
-  if(!confirm('Delete this test?')) return;
-  state.createdTests = state.createdTests.filter(x=>x.id!==id);
-  addLog(`Deleted test ${id}`);
-  saveStorage(); renderCreatedTests();
-}
-
-// Export / Import Tests
-function exportTests(){
-  const blob = new Blob([JSON.stringify(state.createdTests||[], null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='tests.json'; a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importTests(){
-  const input = document.createElement('input'); input.type='file'; input.accept='application/json';
-  input.onchange = e=>{
-    const f = e.target.files[0]; if(!f) return;
-    const reader = new FileReader();
-    reader.onload = evt=>{
-      try{
-        const data = JSON.parse(evt.target.result);
-        if(!Array.isArray(data)) return alert('Invalid test file');
-        if(confirm('Replace current tests with imported data?')){
-          state.createdTests = data;
-          addLog('Imported test data');
-          saveStorage(); renderCreatedTests();
-        }
-      }catch(err){ alert('Invalid JSON'); }
-    };
-    reader.readAsText(f);
-  };
-  input.click();
-}
-
-// On load
-populateTestStudents();
-renderCreatedTests();
-                  </script>
-                  <!-- PART 3: REAL-TIME CHARTS & SUMMARY -->
-<div class="container">
-  <div class="row">
-    <!-- Summary Cards -->
-    <div class="col card" style="margin-bottom:12px;">
-      <h3>Analytics Summary</h3>
-      <div style="display:flex; gap:12px;">
-        <div class="card" style="flex:1; text-align:center; background:#3b82f6; color:white; padding:12px;">
-          <div>Average Attendance</div>
-          <div id="avgAttendance" style="font-size:20px; font-weight:bold;">0%</div>
-        </div>
-        <div class="card" style="flex:1; text-align:center; background:#10b981; color:white; padding:12px;">
-          <div>Average Marks</div>
-          <div id="avgMarks" style="font-size:20px; font-weight:bold;">0</div>
-        </div>
-        <div class="card" style="flex:1; text-align:center; background:#f59e0b; color:white; padding:12px;">
-          <div>Top Student</div>
-          <div id="topStudent" style="font-size:20px; font-weight:bold;">-</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="row">
-    <!-- Attendance Chart -->
-    <div class="col card">
-      <h3>Attendance Chart</h3>
-      <canvas id="attendanceChart"></canvas>
-    </div>
-    <!-- Test Marks Chart -->
-    <div class="col card">
-      <h3>Test Marks Chart</h3>
-      <canvas id="testChart"></canvas>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-// Chart instances
-let attendanceChart = null, testChart = null;
-
-// Real-time rendering
-function renderCharts(){
-  // Attendance data
-  const attLabels = (state.attendance||[]).map(a=>a.student);
-  const attData = (state.attendance||[]).map(a=>{
-    switch(a.status){
-      case 'Present': return 100;
-      case 'Absent': return 0;
-      case 'Late': return 50;
-      case 'On Duty': return 100;
-      default: return 0;
-    }
-  });
-
-  // Test data
-  const testLabels = (state.createdTests||[]).map(t=>t.student||'All');
-  const testData = (state.createdTests||[]).map(t=>{
-    if(t.type==='short') return 0; // simplified scoring for short answers
-    if(t.answer) return 100;
-    return 0;
-  });
-
-  // Attendance Chart
-  const attCtx = document.getElementById('attendanceChart').getContext('2d');
-  if(attendanceChart){
-    attendanceChart.data.labels = attLabels;
-    attendanceChart.data.datasets[0].data = attData;
-    attendanceChart.update();
-  } else {
-    attendanceChart = new Chart(attCtx, {
-      type:'bar',
-      data: { labels: attLabels, datasets:[{label:'Attendance %', data: attData, backgroundColor:'#4f46e5'}] },
-      options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}}}
-    });
-  }
-
-  // Test Chart
-  const testCtx = document.getElementById('testChart').getContext('2d');
-  if(testChart){
-    testChart.data.labels = testLabels;
-    testChart.data.datasets[0].data = testData;
-    testChart.update();
-  } else {
-    testChart = new Chart(testCtx, {
-      type:'bar',
-      data:{labels:testLabels, datasets:[{label:'Test Marks', data:testData, backgroundColor:'#3b82f6'}]},
-      options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}}}
-    });
-  }
-
-  // Update summary cards
-  const avgAttendance = attData.length ? (attData.reduce((a,b)=>a+b,0)/attData.length).toFixed(1)+'%' : '0%';
-  const avgMarks = testData.length ? (testData.reduce((a,b)=>a+b,0)/testData.length).toFixed(1) : 0;
-  const topStudentObj = (state.users||[]).filter(u=>u.role==='student')
-    .map(s=>{
-      const tests = (state.createdTests||[]).filter(t=>t.student===s.username);
-      const avg = tests.length ? tests.reduce((sum,t)=>sum+(t.type==='mcq'?100:0),0)/tests.length : 0;
-      return {username:s.username, avg};
-    }).sort((a,b)=>b.avg-a.avg)[0];
-
-  document.getElementById('avgAttendance').innerText = avgAttendance;
-  document.getElementById('avgMarks').innerText = avgMarks;
-  document.getElementById('topStudent').innerText = topStudentObj ? `${topStudentObj.username} (${topStudentObj.avg.toFixed(1)})` : '-';
-}
-
-// Call after any data change
-function updateChartsRealtime(){
-  renderCharts();
-}
-
-// Initial call
-updateChartsRealtime();
-      </script>
