@@ -1,1188 +1,489 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Student Assistant — Dashboard</title>
-
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-<!-- Minimal styles — you can move to admin.css -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+<link rel="stylesheet" href="Admin.css">
+<link rel="stylesheet" href="Animation.css">
+<link rel="stylesheet" href="Common.css">
 <style>
-  :root{
-    --bg:#0b1220;
-    --card:#0f1724;
-    --muted:#9aa4b2;
-    --accent1:#6d28d9;
-    --accent2:#3b82f6;
-    --glass: rgba(255,255,255,0.03);
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
-    background: linear-gradient(180deg,#071020 0%, #0b1220 50%, #071022 100%); color:#E6EEF6;
-    min-height:100vh; -webkit-font-smoothing:antialiased;
-  }
-  .wrap{max-width:1280px;margin:28px auto;padding:20px;position:relative;z-index:2}
-  header{display:flex;align-items:center;justify-content:space-between;gap:16px}
-  .brand{display:flex;align-items:center;gap:12px}
-  .logo{width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px}
-  h1{margin:0;font-size:20px}
-  .top-actions{display:flex;gap:10px;align-items:center}
-  .btn{padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:600}
-  .btn-ghost{background:transparent;color:var(--accent2);border:1px solid rgba(255,255,255,0.06)}
-  .btn-primary{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:white}
-  nav{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
-  nav a{color:var(--muted);text-decoration:none;padding:8px 10px;border-radius:8px;background:transparent}
-  nav a:hover{color:white;background:var(--glass)}
-  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:18px;margin-top:18px}
-  .card{grid-column:span 4;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:16px;box-shadow:0 6px 24px rgba(3,7,18,0.6);min-height:120px}
-  .card.large{grid-column:span 8;min-height:260px}
-  .kpi{display:flex;align-items:center;gap:12px}
-  .kpi .num{font-size:20px;font-weight:800}
-  .small{font-size:12px;color:var(--muted);margin-top:8px}
-  .muted{color:var(--muted)}
-  .list{max-height:200px;overflow:auto;margin-top:10px}
-  .list-item{padding:8px;border-radius:8px;margin-bottom:8px;background:linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));display:flex;justify-content:space-between;align-items:center;gap:8px}
-  .list-item .left{display:flex;flex-direction:column}
-  .chip{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.03);font-size:12px}
-  footer{margin-top:26px;color:var(--muted);font-size:13px;text-align:center}
-  /* responsive */
-  @media (max-width:980px){
-    .card{grid-column:span 12}
-    .card.large{grid-column:span 12}
-    .grid{gap:12px}
-  }
-
-  /* background canvas - subtle */
-  #bg-canvas{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.45}
-  .top-right{display:flex;gap:10px;align-items:center}
-  .datetime{padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:600;color:var(--muted)}
-  .search{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02);color:var(--muted)}
+  /* Extra inline tweaks if needed */
+  .card { padding:16px; margin:12px 0; border-radius:12px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.08);}
+  .btn { padding:6px 12px; border:none; border-radius:6px; cursor:pointer;}
+  .btn-primary { background:#4f46e5; color:white;}
+  .btn-danger { background:#ef4444; color:white;}
+  .btn-ghost { background:transparent; border:1px solid #ccc;}
+  .list { margin-top:10px; max-height:300px; overflow-y:auto; }
+  input, select, textarea { width:100%; padding:6px; margin:4px 0 10px 0; border-radius:6px; border:1px solid #ccc;}
 </style>
 </head>
 <body>
-<canvas id="bg-canvas" aria-hidden="true"></canvas>
-<div class="wrap" role="application" aria-label="Admin Dashboard">
-  <header>
-    <div class="brand">
-      <div class="logo">SA</div>
-      <div>
-        <h1>Student Assistant — Admin Dashboard</h1>
-        <div class="small muted">Real-time analytics · quick actions · system overview</div>
-      </div>
-    </div>
+<div class="container">
 
-    <div class="top-right">
-      <div class="datetime" id="datetime">--</div>
-      <input id="globalSearch" class="search" placeholder="Search users, tests, notices..." />
-      <div class="top-actions">
-        <button class="btn btn-ghost" id="openStudents">Students</button>
-        <button class="btn btn-ghost" id="openAttendance">Attendance</button>
-        <button class="btn btn-primary" id="openTests">Create Test</button>
-      </div>
-    </div>
-  </header>
-
-  <nav aria-label="Main navigation">
-    <a href="dashboard.html">Dashboard</a>
-    <a href="students.html">Students</a>
-    <a href="faculty.html">Faculty</a>
-    <a href="attendance.html">Attendance</a>
-    <a href="tests.html">Tests</a>
-    <a href="badges.html">Badges</a>
-    <a href="commands.html">Commands</a>
-    <a href="analytics.html">Analytics</a>
-    <a href="data.html">Data</a>
-  </nav>
-
-  <section class="grid" aria-live="polite">
-    <!-- KPIs -->
-    <div class="card">
-      <div class="kpi">
-        <div>
-          <div class="num" id="totalUsers">0</div>
-          <div class="small muted">Total users</div>
-        </div>
-        <div style="margin-left:auto;text-align:right">
-          <div class="chip" id="studentsCount">Students: 0</div>
-          <div style="height:6px"></div>
-          <div class="chip" id="facultyCount">Faculty: 0</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div>
-        <div class="num" id="avgAttendance">0%</div>
-        <div class="small muted">Average attendance</div>
-        <div class="small" id="attendanceSummary">—</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div>
-        <div class="num" id="avgMarks">0</div>
-        <div class="small muted">Average marks</div>
-        <div class="small" id="topStudent">Top student: -</div>
-      </div>
-    </div>
-
-    <!-- Charts large -->
-    <div class="card large">
-      <h3 style="margin-top:0">Attendance Overview</h3>
-      <canvas id="attendanceBar" height="120"></canvas>
-      <div style="display:flex;gap:10px;margin-top:12px">
-        <button class="btn btn-ghost" id="refreshCharts">Refresh</button>
-        <div class="small muted" id="lastUpdated">Last updated: —</div>
-      </div>
-    </div>
-
-    <!-- Recent notices -->
-    <div class="card">
-      <h3 style="margin-top:0">Recent Notices</h3>
-      <div id="noticesList" class="list"></div>
-    </div>
-
-    <!-- Triggers preview -->
-    <div class="card">
-      <h3 style="margin-top:0">Chatbot Triggers</h3>
-      <div id="triggersPreview" class="list"></div>
-    </div>
-
-    <!-- Recent tests -->
-    <div class="card">
-      <h3 style="margin-top:0">Recent Tests</h3>
-      <div id="testsPreview" class="list"></div>
-    </div>
-
-    <!-- Recent logs -->
-    <div class="card">
-      <h3 style="margin-top:0">Recent Logs</h3>
-      <div id="logsPreview" class="list"></div>
-    </div>
-  </section>
-
-  <footer>
-    <small>Local demo — data is read from <code>localStorage.sa_state</code>. Use the admin pages to modify data. Charts update in real-time.</small>
-  </footer>
-</div>
-
-<!-- Script: state handling + charts + animation -->
-<script>
-/*
-  Dashboard behavior:
-  - Reads `localStorage.sa_state` (JSON) into `state`.
-  - Provides real-time updates via storage event and an exposed persistAndRender() function.
-  - Renders KPIs, lists, and Chart.js charts.
-*/
-
-// default state shape (kept small; other pages may add more fields)
-let state = {
-  users: [],          // array {username, role, name?}
-  attendance: [],     // array {subject, percent}
-  tests: [],          // array {subject, marks, type?, student?}
-  academic: [],       // notices/assignments: {id,type,title,content,student}
-  triggers: [],       // array {trigger,response}
-  logs: [],           // array string
-  createdTests: [],   // created test items (MCQ/short)
-  feedback: []
-};
-
-const STORAGE_KEY = 'sa_state';
-
-// load state from localStorage
-function loadState(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return;
-    const parsed = JSON.parse(raw);
-    // shallow merge so existing properties stay
-    state = Object.assign({}, state, parsed);
-  }catch(e){
-    console.warn('Failed loading state', e);
-  }
-}
-
-// save (not used heavily here, but other pages call persistAndRender)
-function saveState(){
-  try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }catch(e){ console.warn('Failed saving state', e); }
-}
-
-// utility: add log
-function addLog(msg){
-  const t = new Date().toLocaleString();
-  state.logs = state.logs || [];
-  state.logs.unshift(`[${t}] ${msg}`);
-  if(state.logs.length>200) state.logs.length=200;
-  saveState();
-  renderLogs();
-}
-
-// expose persistAndRender so other pages can call it
-window.persistAndRender = function(){
-  saveState();
-  renderAll();
-};
-
-// initial load
-loadState();
-
-// Date/time display
-function startClock(){
-  const el = document.getElementById('datetime');
-  function tick(){
-    const now = new Date();
-    el.textContent = now.toLocaleString();
-  }
-  tick(); setInterval(tick,1000);
-}
-startClock();
-
-// charts
-let attendanceChart = null;
-function createAttendanceChart(labels, data){
-  const ctx = document.getElementById('attendanceBar').getContext('2d');
-  if(attendanceChart) attendanceChart.destroy();
-  attendanceChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Attendance %',
-        data,
-        backgroundColor: labels.map((_,i)=>`rgba(${70+i*10%255},130,255,0.85)`),
-        borderRadius:6,
-      }]
-    },
-    options: {
-      responsive:true,
-      animation:{duration:350},
-      scales:{
-        y:{beginAtZero:true, max:100, ticks:{stepSize:10}}
-      },
-      plugins:{legend:{display:false}}
-    }
-  });
-}
-
-// render lists and KPIs
-function renderKPIs(){
-  const totalUsers = (state.users||[]).length;
-  const students = (state.users||[]).filter(u=>u.role==='student').length;
-  const faculty = (state.users||[]).filter(u=>u.role==='faculty').length;
-  document.getElementById('totalUsers').textContent = totalUsers;
-  document.getElementById('studentsCount').textContent = `Students: ${students}`;
-  document.getElementById('facultyCount').textContent = `Faculty: ${faculty}`;
-}
-
-function renderAttendanceSummaryAndChart(){
-  const att = state.attendance || [];
-  const labels = att.map(a=>a.subject);
-  const data = att.map(a=>a.percent);
-  document.getElementById('avgAttendance').textContent = (data.length? (data.reduce((s,x)=>s+x,0)/data.length).toFixed(1) + '%' : '0%');
-  document.getElementById('attendanceSummary').textContent = (labels.length? labels.join(', ') : 'No subjects yet');
-  createAttendanceChart(labels, data);
-  document.getElementById('lastUpdated').textContent = 'Last updated: ' + new Date().toLocaleString();
-}
-
-function renderTestsPreview(){
-  const c = document.getElementById('testsPreview');
-  const arr = (state.createdTests || state.tests || []).slice(0,8);
-  if(arr.length===0){ c.innerHTML = '<div class="small muted">No tests yet</div>'; return; }
-  c.innerHTML = arr.map(t=>`<div class="list-item"><div class="left"><strong>${t.subject||t.type||t.id||'Test'}</strong><span class="small muted">${t.type? t.type.toUpperCase() : ''}</span></div><div class="chip">${t.student || 'All'}</div></div>`).join('');
-  // average marks
-  const marks = (state.tests||[]).map(t=>t.marks).filter(x=>typeof x==='number');
-  document.getElementById('avgMarks').textContent = (marks.length? (marks.reduce((a,b)=>a+b,0)/marks.length).toFixed(1) : '0');
-  // top student - naive
-  let top = '-';
-  try{
-    const students = (state.users||[]).filter(u=>u.role==='student');
-    if(students.length && (state.tests||[]).length){
-      let best=-1, bestName='-';
-      students.forEach(s=>{
-        const ts = (state.tests||[]).filter(t=>t.student===s.username);
-        if(ts.length){
-          const avg = ts.reduce((a,b)=>a+(b.marks||0),0)/ts.length;
-          if(avg>best){ best = avg; bestName = s.username; }
-        }
-      });
-      if(best>-1){ top = `${bestName} (${best.toFixed(1)})`; }
-    }
-  }catch(e){}
-  document.getElementById('topStudent').textContent = top;
-}
-
-function renderNotices(){
-  const c = document.getElementById('noticesList');
-  const arr = (state.academic||[]).filter(x=>x.type==='notice').slice(0,8);
-  if(arr.length===0){ c.innerHTML = '<div class="small muted">No notices</div>'; return; }
-  c.innerHTML = arr.map(n=>`<div class="list-item"><div class="left"><strong>${n.title}</strong><div class="small muted">${n.content}</div></div><div class="chip">${n.student||'All'}</div></div>`).join('');
-}
-
-function renderTriggers(){
-  const c = document.getElementById('triggersPreview');
-  const arr = (state.triggers||[]).slice(0,10);
-  if(arr.length===0){ c.innerHTML = '<div class="small muted">No triggers</div>'; return; }
-  c.innerHTML = arr.map(t=>`<div class="list-item"><div class="left"><strong>${t.trigger||t.word||t.phrase}</strong><div class="small muted">${t.response||t.resp||''}</div></div></div>`).join('');
-}
-
-function renderLogs(){
-  const c = document.getElementById('logsPreview');
-  const arr = (state.logs||[]).slice(0,12);
-  if(arr.length===0){ c.innerHTML = '<div class="small muted">No logs</div>'; return; }
-  c.innerHTML = arr.map(l=>`<div class="list-item"><div class="left"><div class="small muted">${l}</div></div></div>`).join('');
-}
-
-function renderAll(){
-  renderKPIs();
-  renderAttendanceSummaryAndChart();
-  renderTestsPreview();
-  renderNotices();
-  renderTriggers();
-  renderLogs();
-}
-
-// initial render
-renderAll();
-
-// watch for storage changes from other pages
-window.addEventListener('storage', (e)=>{
-  if(e.key === STORAGE_KEY){
-    loadState();
-    renderAll();
-  }
-});
-
-// also allow manual refresh
-document.getElementById('refreshCharts').addEventListener('click', ()=>{
-  loadState();
-  renderAll();
-  addLog('Manual refresh from dashboard');
-});
-
-// navigation button handlers (open pages)
-document.getElementById('openStudents').addEventListener('click', ()=> location.href='students.html');
-document.getElementById('openAttendance').addEventListener('click', ()=> location.href='attendance.html');
-document.getElementById('openTests').addEventListener('click', ()=> location.href='tests.html');
-
-// simple global search that highlights results by logging them (example behavior)
-document.getElementById('globalSearch').addEventListener('input', (e)=>{
-  const q = e.target.value.trim().toLowerCase();
-  if(!q){ renderAll(); return; }
-  // search users/tests/notices and show top matches in respective panels
-  const users = (state.users||[]).filter(u=>u.username && u.username.toLowerCase().includes(q)).slice(0,6);
-  const tests = (state.createdTests||[]).filter(t => (t.subject||'').toLowerCase().includes(q) || (t.question||'').toLowerCase().includes(q)).slice(0,6);
-  const notices = (state.academic||[]).filter(n => (n.title||'').toLowerCase().includes(q) || (n.content||'').toLowerCase().includes(q)).slice(0,6);
-
-  // temporary show results
-  document.getElementById('testsPreview').innerHTML = tests.length ? tests.map(t=>`<div class="list-item"><div class="left"><strong>${t.subject||t.type}</strong><div class="small muted">${t.question||''}</div></div></div>`).join('') : '<div class="small muted">No tests</div>';
-  document.getElementById('noticesList').innerHTML = notices.length ? notices.map(n=>`<div class="list-item"><div class="left"><strong>${n.title}</strong><div class="small muted">${n.content}</div></div></div>`).join('') : '<div class="small muted">No notices</div>';
-  document.getElementById('logsPreview').innerHTML = users.length ? users.map(u=>`<div class="list-item"><div class="left"><strong>${u.username}</strong><div class="small muted">${u.role}</div></div></div>`).join('') : '<div class="small muted">No users</div>';
-});
-
-// background animation (subtle floating particles)
-(function background(){
-  const canvas = document.getElementById('bg-canvas');
-  const ctx = canvas.getContext('2d');
-  let W = canvas.width = innerWidth;
-  let H = canvas.height = innerHeight;
-  let particles = [];
-  const N = Math.max(18, Math.floor((W*H)/140000));
-  function init(){
-    particles = Array.from({length:N}, ()=>{
-      return {x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.5+0.6, vx:(Math.random()-0.5)*0.25, vy:(Math.random()-0.5)*0.12, hue:200+Math.random()*40, a:0.06+Math.random()*0.22};
-    });
-  }
-  function resize(){ W = canvas.width = innerWidth; H = canvas.height = innerHeight; init(); }
-  window.addEventListener('resize', ()=>{ clearTimeout(window._bgR); window._bgR=setTimeout(resize,120); });
-  function frame(){
-    ctx.clearRect(0,0,W,H);
-    particles.forEach(p=>{
-      p.x += p.vx; p.y += p.vy;
-      if(p.x<-30) p.x=W+30; if(p.x>W+30) p.x=-30;
-      if(p.y<-30) p.y=H+30; if(p.y>H+30) p.y=-30;
-      ctx.beginPath();
-      ctx.fillStyle = `hsla(${p.hue},70%,60%,${p.a})`;
-      ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-    });
-    requestAnimationFrame(frame);
-  }
-  init(); frame();
-})();
-
-// If other pages expect persistAndRender to exist globally, ensure it does
-if(typeof window.persistAndRender !== 'function'){
-  window.persistAndRender = function(){ saveState(); renderAll(); };
-}
-
-// Expose state to console for debugging
-window._sa_state = state;
-</script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Student Assistant — Users</title>
-<style>
-  body{margin:0;font-family:Inter,system-ui,sans-serif;background:#0b1220;color:#E6EEF6;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:1000px;margin:28px auto;padding:20px}
-  h1{margin-bottom:10px}
-  .grid{display:grid;grid-template-columns:1fr 2fr;gap:18px}
-  .card{background:rgba(255,255,255,0.03);border-radius:12px;padding:16px;box-shadow:0 6px 24px rgba(3,7,18,0.6)}
-  label{display:block;margin-top:12px;margin-bottom:4px;font-size:14px;color:#9aa4b2}
-  input, select{width:100%;padding:8px;border-radius:6px;border:0;background:rgba(255,255,255,0.05);color:#E6EEF6}
-  button{padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:600;margin-top:10px}
-  .btn-primary{background:linear-gradient(90deg,#6d28d9,#3b82f6);color:white}
-  .btn-ghost{background:transparent;color:#3b82f6;border:1px solid rgba(255,255,255,0.06)}
-  .list{margin-top:10px;max-height:400px;overflow:auto}
-  .list-item{display:flex;justify-content:space-between;align-items:center;padding:8px;margin-bottom:8px;border-radius:8px;background:rgba(255,255,255,0.01)}
-  .chip{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.03);font-size:12px}
-  .top-actions{display:flex;gap:8px;margin-top:10px}
-  .small{font-size:12px;color:#9aa4b2}
-  .import-export{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1>User Management</h1>
-  <div class="grid">
-    <!-- Form -->
-    <div class="card">
-      <h3>Add User</h3>
-      <label>Full Name</label>
-      <input type="text" id="userFullname" placeholder="John Doe">
-      <label>Username</label>
-      <input type="text" id="userUsername" placeholder="username123">
-      <label>Role</label>
-      <select id="userRole">
-        <option value="student">Student</option>
-        <option value="faculty">Faculty</option>
-        <option value="moderator">Moderator</option>
-        <option value="tester">Tester</option>
-      </select>
-      <div id="facultyPassContainer" style="display:none">
-        <label>Password (for faculty)</label>
-        <input type="text" id="facultyPassword" placeholder="********">
-      </div>
-      <button class="btn btn-primary" id="addUserBtn">Add User</button>
-      <div class="import-export">
-        <button class="btn btn-ghost" id="importUsersBtn">Import CSV</button>
-        <button class="btn btn-ghost" id="exportUsersBtn">Export CSV</button>
-      </div>
-    </div>
-
-    <!-- Users list -->
-    <div class="card">
-      <h3>Users List</h3>
-      <div id="usersList" class="list"></div>
-    </div>
-  </div>
-</div>
-
-<script>
-let state = {};
-const STORAGE_KEY='sa_state';
-function loadState(){ 
-  try{ state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; state.users = state.users||[]; } 
-  catch(e){ console.warn(e); state={users:[]}; }
-}
-function saveState(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); renderUsers(); }
-function addLog(msg){ const t=new Date().toLocaleString(); state.logs=state.logs||[]; state.logs.unshift(`[${t}] ${msg}`); if(state.logs.length>200) state.logs.length=200; saveState(); }
-
-loadState();
-
-// show/hide password for faculty
-document.getElementById('userRole').addEventListener('change', (e)=>{
-  document.getElementById('facultyPassContainer').style.display = e.target.value==='faculty'?'block':'none';
-});
-
-// add user
-document.getElementById('addUserBtn').addEventListener('click', ()=>{
-  const name = document.getElementById('userFullname').value.trim();
-  const username = document.getElementById('userUsername').value.trim();
-  const role = document.getElementById('userRole').value;
-  const password = role==='faculty'?document.getElementById('facultyPassword').value.trim():'';
-  if(!name || !username) return alert('Enter name and username');
-  if(role==='faculty' && !password) return alert('Enter password for faculty');
-  if(state.users.some(u=>u.username===username)) return alert('Username exists');
-
-  const user = {name, username, role};
-  if(password) user.password = password;
-  state.users.push(user);
-  addLog(`Added ${role}: ${username}`);
-  saveState();
-
-  // reset form
-  document.getElementById('userFullname').value='';
-  document.getElementById('userUsername').value='';
-  if(role==='faculty') document.getElementById('facultyPassword').value='';
-});
-
-// render users
-function renderUsers(){
-  const c=document.getElementById('usersList');
-  if(!state.users.length){ c.innerHTML='<div class="small muted">No users yet</div>'; return; }
-  c.innerHTML = state.users.map((u,i)=>{
-    return `<div class="list-item">
-      <div>
-        <strong>${u.username}</strong> <span class="small">(${u.role})</span><div class="small muted">${u.name||''}</div>
-      </div>
-      <div class="top-actions">
-        <button class="btn btn-ghost" onclick="editUser(${i})">Edit</button>
-        <button class="btn btn-ghost" onclick="deleteUser(${i})">Delete</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// edit
-window.editUser = function(i){
-  const u = state.users[i]; if(!u) return;
-  const newName = prompt('Full Name', u.name||''); if(newName!==null) u.name=newName;
-  const newUsername = prompt('Username', u.username); if(newUsername!==null) u.username=newUsername;
-  const newRole = prompt('Role (student/faculty/moderator/tester)', u.role); if(newRole!==null) u.role=newRole;
-  if(newRole==='faculty'){
-    const newPass = prompt('Password (faculty only)', u.password||''); if(newPass!==null) u.password=newPass;
-  }
-  addLog(`Edited user: ${u.username}`);
-  saveState();
-}
-
-// delete
-window.deleteUser = function(i){
-  if(!confirm('Delete this user?')) return;
-  const u = state.users.splice(i,1)[0];
-  addLog(`Deleted user: ${u.username}`);
-  saveState();
-}
-
-// import CSV
-document.getElementById('importUsersBtn').addEventListener('click', ()=>{
-  const fileInput = document.createElement('input'); fileInput.type='file'; fileInput.accept='.csv';
-  fileInput.addEventListener('change', e=>{
-    const file = e.target.files[0]; if(!file) return;
-    const reader = new FileReader();
-    reader.onload = function(evt){
-      const text = evt.target.result;
-      const lines = text.split('\n').filter(Boolean);
-      lines.forEach(line=>{
-        const [name,username,role,password] = line.split(',');
-        if(!username || state.users.some(u=>u.username===username)) return;
-        const u = {name:name||'',username,role:role||'student'};
-        if(role==='faculty') u.password=password||'';
-        state.users.push(u);
-      });
-      addLog(`Imported users from CSV`);
-      saveState();
-    };
-    reader.readAsText(file);
-  });
-  fileInput.click();
-});
-
-// export CSV
-document.getElementById('exportUsersBtn').addEventListener('click', ()=>{
-  const csv = state.users.map(u=>[u.name,u.username,u.role,u.password||''].join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='users.csv'; a.click();
-  URL.revokeObjectURL(url);
-});
-
-renderUsers();
-</script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Student Assistant — Attendance</title>
-<style>
-  body{margin:0;font-family:Inter,system-ui,sans-serif;background:#0b1220;color:#E6EEF6;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:1000px;margin:28px auto;padding:20px}
-  h1{margin-bottom:10px}
-  .card{background:rgba(255,255,255,0.03);border-radius:12px;padding:16px;box-shadow:0 6px 24px rgba(3,7,18,0.6);margin-bottom:20px}
-  .list{max-height:400px;overflow:auto}
-  .list-item{display:flex;justify-content:space-between;align-items:center;padding:8px;margin-bottom:8px;border-radius:8px;background:rgba(255,255,255,0.01)}
-  select{padding:6px;border-radius:6px;border:0;background:rgba(255,255,255,0.05);color:#E6EEF6}
-  button{padding:6px 10px;border-radius:6px;border:0;cursor:pointer;font-weight:600;margin-left:4px}
-  .btn-primary{background:linear-gradient(90deg,#6d28d9,#3b82f6);color:white}
-  .btn-ghost{background:transparent;color:#3b82f6;border:1px solid rgba(255,255,255,0.06)}
-  canvas{background:#1a1f2c;border-radius:12px;margin-top:16px}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1>Attendance</h1>
+  <!-- ===== USER MANAGEMENT ===== -->
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div><strong>Date & Time:</strong> <span id="currentDateTime"></span></div>
-      <div class="import-export">
-        <button class="btn btn-ghost" id="importAttendanceBtn">Import CSV</button>
-        <button class="btn btn-ghost" id="exportAttendanceBtn">Export CSV</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>Mark Attendance</h3>
-    <div id="attendanceList" class="list"></div>
-    <button class="btn btn-primary" id="saveAttendanceBtn">Save Attendance</button>
-  </div>
-
-  <div class="card">
-    <h3>Attendance Summary</h3>
-    <canvas id="attendanceChart" height="200"></canvas>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-let state = {};
-const STORAGE_KEY='sa_state';
-function loadState(){ 
-  try{ state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; state.users=state.users||[]; state.attendance=state.attendance||[];} 
-  catch(e){ console.warn(e); state={users:[],attendance:[]}; }
-}
-function saveState(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); renderAttendance(); renderChart(); }
-
-loadState();
-
-// display current date & time
-function updateDateTime(){ document.getElementById('currentDateTime').innerText = new Date().toLocaleString(); }
-setInterval(updateDateTime,1000); updateDateTime();
-
-// render attendance list
-function renderAttendance(){
-  const c=document.getElementById('attendanceList');
-  const students = state.users.filter(u=>u.role==='student');
-  if(!students.length){ c.innerHTML='<div class="small muted">No students enrolled</div>'; return; }
-  c.innerHTML = students.map(s=>{
-    const existing = state.attendance.find(a=>a.username===s.username && a.date===new Date().toLocaleDateString());
-    const val = existing?existing.status:'';
-    return `<div class="list-item">
-      <div><strong>${s.username}</strong> (${s.name||''})</div>
-      <select data-username="${s.username}">
-        <option value="">--</option>
-        <option value="Present" ${val==='Present'?'selected':''}>Present</option>
-        <option value="Absent" ${val==='Absent'?'selected':''}>Absent</option>
-        <option value="Late" ${val==='Late'?'selected':''}>Late</option>
-        <option value="On Duty" ${val==='On Duty'?'selected':''}>On Duty</option>
-      </select>
-    </div>`;
-  }).join('');
-}
-
-// save attendance
-document.getElementById('saveAttendanceBtn').addEventListener('click', ()=>{
-  const date = new Date().toLocaleDateString();
-  document.querySelectorAll('#attendanceList select').forEach(sel=>{
-    const username = sel.dataset.username;
-    const status = sel.value;
-    if(!status) return;
-    const idx = state.attendance.findIndex(a=>a.username===username && a.date===date);
-    if(idx>=0) state.attendance[idx].status=status;
-    else state.attendance.push({username,status,date,time:new Date().toLocaleTimeString()});
-  });
-  saveState();
-  alert('Attendance saved!');
-});
-
-// import/export CSV
-document.getElementById('importAttendanceBtn').addEventListener('click', ()=>{
-  const input = document.createElement('input'); input.type='file'; input.accept='.csv';
-  input.onchange = e=>{
-    const file = e.target.files[0]; if(!file) return;
-    const reader = new FileReader();
-    reader.onload = evt=>{
-      const lines = evt.target.result.split('\n').filter(Boolean);
-      lines.forEach(l=>{
-        const [username,date,status,time] = l.split(',');
-        if(!username) return;
-        state.attendance.push({username,date,status,time});
-      });
-      saveState(); alert('Attendance imported');
-    };
-    reader.readAsText(file);
-  };
-  input.click();
-});
-
-document.getElementById('exportAttendanceBtn').addEventListener('click', ()=>{
-  const csv = state.attendance.map(a=>[a.username,a.date,a.status,a.time||''].join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='attendance.csv'; a.click();
-  URL.revokeObjectURL(url);
-});
-
-// render chart
-let attendanceChart=null;
-function renderChart(){
-  const ctx=document.getElementById('attendanceChart').getContext('2d');
-  const students = state.users.filter(u=>u.role==='student').map(u=>u.username);
-  const counts = students.map(s=>{
-    const att = state.attendance.filter(a=>a.username===s && a.status==='Present').length;
-    return att;
-  });
-  if(attendanceChart){
-    attendanceChart.data.labels=students;
-    attendanceChart.data.datasets[0].data=counts;
-    attendanceChart.update();
-  } else {
-    attendanceChart = new Chart(ctx,{
-      type:'bar',
-      data:{labels:students,datasets:[{label:'Days Present',data:counts,backgroundColor:'#3b82f6'}]},
-      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
-    });
-  }
-}
-
-renderAttendance(); renderChart();
-</script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Student Assistant — Test Creation</title>
-<link rel="stylesheet" href="admin.css">
-<style>
-  .wrap{max-width:1000px;margin:28px auto;padding:20px}
-  .card{background:rgba(255,255,255,0.03);border-radius:12px;padding:16px;margin-bottom:20px;box-shadow:0 6px 24px rgba(3,7,18,0.6);}
-  input,textarea,select{padding:6px;margin-top:4px;margin-bottom:12px;border-radius:6px;border:0;background:rgba(255,255,255,0.05);color:#E6EEF6;width:100%;}
-  button{padding:6px 10px;border-radius:6px;border:0;cursor:pointer;font-weight:600;margin-right:4px;}
-  .btn-primary{background:linear-gradient(90deg,#6d28d9,#3b82f6);color:white;}
-  .btn-ghost{background:transparent;color:#3b82f6;border:1px solid rgba(255,255,255,0.06);}
-  .list-item{padding:8px;margin-bottom:8px;border-radius:8px;background:rgba(255,255,255,0.01);}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1>Test Creation</h1>
-  <div class="card">
-    <form id="createTestForm">
-      <label>Test Type</label>
-      <select id="testTypeSelect">
-        <option value="mcq">MCQ</option>
-        <option value="short">Short Answer</option>
-      </select>
-      <label>Subject</label>
-      <input type="text" id="testSubjectInput" placeholder="Subject e.g. Math" required>
-      <label>Question</label>
-      <textarea id="testQuestionInput" placeholder="Enter the question..." required></textarea>
-
-      <div id="mcqOptionsContainer">
-        <label>Options</label>
-        <div id="mcqOptionInputs">
-          <input type="text" class="mcqOption" placeholder="Option 1">
-        </div>
-        <button type="button" id="addOptionBtn" class="btn btn-ghost">Add Option</button>
-        <label>Correct Answer</label>
-        <input type="text" id="mcqAnswerInput" placeholder="Correct option text">
-      </div>
-
-      <label>Assign to student (leave empty for all)</label>
-      <select id="testAssignStudent">
-        <option value="">All Students</option>
-      </select>
-
-      <div style="margin-top:10px;">
-        <button type="submit" class="btn btn-primary">Create Test</button>
-      </div>
-    </form>
-  </div>
-
-  <div class="card">
-    <h3>Created Tests</h3>
-    <div id="createdTestList"></div>
-  </div>
-</div>
-
-<script>
-let state={};
-const STORAGE_KEY='sa_state';
-
-function loadState(){
-  try{ state=JSON.parse(localStorage.getItem(STORAGE_KEY))||{}; state.createdTests=state.createdTests||[]; state.users=state.users||[];}
-  catch(e){ state={createdTests:[],users:[]}; }
-}
-function saveState(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); renderCreatedTests(); }
-
-loadState();
-
-// MCQ dynamic options
-const testTypeSelect = document.getElementById('testTypeSelect');
-const mcqContainer = document.getElementById('mcqOptionsContainer');
-testTypeSelect.addEventListener('change',()=>{ mcqContainer.style.display = testTypeSelect.value==='mcq'?'block':'none'; });
-
-const addOptionBtn=document.getElementById('addOptionBtn');
-addOptionBtn.addEventListener('click',()=>{
-  const input=document.createElement('input');
-  input.type='text'; input.className='mcqOption'; input.placeholder='Option';
-  document.getElementById('mcqOptionInputs').appendChild(input);
-});
-
-// populate student select
-function populateStudentSelect(){
-  const sel=document.getElementById('testAssignStudent'); sel.innerHTML='<option value="">All Students</option>';
-  state.users.filter(u=>u.role==='student').forEach(s=>{
-    const opt=document.createElement('option'); opt.value=s.username; opt.text=s.username; sel.appendChild(opt);
-  });
-}
-populateStudentSelect();
-
-// create test
-document.getElementById('createTestForm').addEventListener('submit',e=>{
-  e.preventDefault();
-  const type=testTypeSelect.value;
-  const subject=document.getElementById('testSubjectInput').value.trim();
-  const question=document.getElementById('testQuestionInput').value.trim();
-  const student=document.getElementById('testAssignStudent').value||'';
-  if(!subject||!question) return alert('Enter subject & question');
-  let testItem={id:'test_'+Date.now(),type,subject,question,student,published:false};
-
-  if(type==='mcq'){
-    const options=Array.from(document.querySelectorAll('.mcqOption')).map(i=>i.value.trim()).filter(Boolean);
-    const answer=document.getElementById('mcqAnswerInput').value.trim();
-    if(options.length<2||!answer||!options.includes(answer)) return alert('Invalid MCQ options or answer');
-    testItem.options=options; testItem.answer=answer;
-  }
-
-  state.createdTests.unshift(testItem);
-  saveState(); document.getElementById('createTestForm').reset();
-});
-
-// render tests
-function renderCreatedTests(){
-  const c=document.getElementById('createdTestList'); c.innerHTML='';
-  state.createdTests.forEach(t=>{
-    const div=document.createElement('div'); div.className='list-item';
-    div.innerHTML=`<strong>[${t.type.toUpperCase()}]</strong> ${t.subject}<br>
-      ${t.question}<br>
-      ${t.type==='mcq'?'<div>Options: '+t.options.join(', ')+' | Answer: '+t.answer+'</div>':''}
-      <div>Assigned to: ${t.student||'All'}</div>
-      <button class="btn btn-ghost" onclick="publishTest('${t.id}')">${t.published?'Unpublish':'Publish'}</button>
-      <button class="btn btn-ghost" onclick="editTest('${t.id}')">Edit</button>
-      <button class="btn btn-ghost" onclick="deleteTest('${t.id}')">Delete</button>`;
-    c.appendChild(div);
-  });
-}
-
-// edit, delete, publish
-function editTest(id){
-  const t=state.createdTests.find(x=>x.id===id); if(!t) return;
-  const newQ=prompt('Question',t.question); if(newQ!==null) t.question=newQ;
-  if(t.type==='mcq'){
-    const newOpts=prompt('Options (comma separated)',t.options.join(',')); if(newOpts!==null) t.options=newOpts.split(',').map(o=>o.trim());
-    const newAns=prompt('Answer',t.answer); if(newAns!==null) t.answer=newAns;
-  }
-  saveState();
-}
-function deleteTest(id){ if(!confirm('Delete test?')) return; state.createdTests=state.createdTests.filter(x=>x.id!==id); saveState(); }
-function publishTest(id){ const t=state.createdTests.find(x=>x.id===id); if(!t) return; t.published=!t.published; saveState(); }
-
-renderCreatedTests();
-</script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Student Assistant — Add Users</title>
-<link rel="stylesheet" href="admin.css">
-<style>
-  .wrap{max-width:900px;margin:28px auto;padding:20px}
-  .card{background:rgba(255,255,255,0.03);border-radius:12px;padding:16px;margin-bottom:20px;box-shadow:0 6px 24px rgba(3,7,18,0.6);}
-  input,select{padding:6px;margin-top:4px;margin-bottom:12px;border-radius:6px;border:0;background:rgba(255,255,255,0.05);color:#E6EEF6;width:100%;}
-  button{padding:6px 10px;border-radius:6px;border:0;cursor:pointer;font-weight:600;margin-right:4px;}
-  .btn-primary{background:linear-gradient(90deg,#6d28d9,#3b82f6);color:white;}
-  .btn-ghost{background:transparent;color:#3b82f6;border:1px solid rgba(255,255,255,0.06);}
-  .list-item{padding:8px;margin-bottom:8px;border-radius:8px;background:rgba(255,255,255,0.01);}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1>Add Users</h1>
-  <div class="card">
+    <h2>User Management</h2>
     <form id="addUserForm">
+      <label>Username</label>
+      <input type="text" id="userName" placeholder="Enter username" required>
+      
       <label>Role</label>
       <select id="userRole">
-        <option value="admin">Admin</option>
+        <option value="student">Student</option>
         <option value="faculty">Faculty</option>
         <option value="moderator">Moderator</option>
         <option value="tester">Tester</option>
-        <option value="student">Student</option>
       </select>
-      <label>Username</label>
-      <input type="text" id="usernameInput" placeholder="Enter username" required>
-      <label id="facultyPassLabel" style="display:none">Password (Faculty Only)</label>
-      <input type="password" id="facultyPassword" placeholder="Password for Faculty" style="display:none">
-      <div style="margin-top:10px;">
-        <button type="submit" class="btn btn-primary">Add User</button>
-      </div>
+
+      <label>Password (for Faculty only)</label>
+      <input type="password" id="userPassword" placeholder="Enter password">
+
+      <button type="submit" class="btn btn-primary">Add User</button>
     </form>
+    
+    <div class="muted small">Current Users</div>
+    <div id="userList" class="list"></div>
   </div>
 
+  <!-- ===== BADGE MANAGEMENT ===== -->
   <div class="card">
-    <h3>Current Users</h3>
-    <div id="userList"></div>
-  </div>
-</div>
-
-<script>
-let state={};
-const STORAGE_KEY='sa_state_users';
-
-function loadState(){ try{ state=JSON.parse(localStorage.getItem(STORAGE_KEY))||{}; state.users=state.users||[];} catch(e){ state={users:[]}; } }
-function saveState(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); renderUsers(); }
-
-loadState();
-
-// show password for faculty only
-const userRole=document.getElementById('userRole');
-userRole.addEventListener('change',()=>{
-  const isFaculty=userRole.value==='faculty';
-  document.getElementById('facultyPassLabel').style.display=isFaculty?'block':'none';
-  document.getElementById('facultyPassword').style.display=isFaculty?'block':'none';
-});
-
-// add user
-document.getElementById('addUserForm').addEventListener('submit',e=>{
-  e.preventDefault();
-  const role=userRole.value;
-  const username=document.getElementById('usernameInput').value.trim();
-  if(!username) return alert('Enter username');
-  let pass=''; if(role==='faculty'){ pass=document.getElementById('facultyPassword').value.trim(); if(!pass) return alert('Enter password for faculty'); }
-  state.users.push({username,role,password:pass});
-  saveState(); document.getElementById('addUserForm').reset();
-});
-
-// render users
-function renderUsers(){
-  const c=document.getElementById('userList'); c.innerHTML='';
-  state.users.forEach((u,i)=>{
-    const div=document.createElement('div'); div.className='list-item';
-    div.innerHTML=`<strong>${u.username}</strong> [${u.role}] 
-      ${u.role==='faculty'?`<span> | Password: ${u.password}</span>`:''}
-      <button class="btn btn-ghost" onclick="editUser(${i})">Edit</button>
-      <button class="btn btn-ghost" onclick="deleteUser(${i})">Delete</button>`;
-    c.appendChild(div);
-  });
-}
-
-// edit/delete
-function editUser(i){
-  const u=state.users[i]; if(!u) return;
-  const newUsername=prompt('Username',u.username); if(newUsername!==null) u.username=newUsername;
-  if(u.role==='faculty'){ const newPass=prompt('Password',u.password); if(newPass!==null) u.password=newPass; }
-  saveState();
-}
-function deleteUser(i){ if(!confirm('Delete user?')) return; state.users.splice(i,1); saveState(); }
-
-renderUsers();
-</script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Student Assistant — Badges</title>
-<link rel="stylesheet" href="admin.css">
-<style>
-  .wrap{max-width:900px;margin:28px auto;padding:20px;}
-  .card{background:rgba(255,255,255,0.03);border-radius:12px;padding:16px;margin-bottom:20px;box-shadow:0 6px 24px rgba(3,7,18,0.6);}
-  input,select{padding:6px;margin-top:4px;margin-bottom:12px;border-radius:6px;border:0;background:rgba(255,255,255,0.05);color:#E6EEF6;width:100%;}
-  button{padding:6px 10px;border-radius:6px;border:0;cursor:pointer;font-weight:600;margin-right:4px;}
-  .btn-primary{background:linear-gradient(90deg,#6d28d9,#3b82f6);color:white;}
-  .btn-ghost{background:transparent;color:#3b82f6;border:1px solid rgba(255,255,255,0.06);}
-  .list-item{padding:8px;margin-bottom:8px;border-radius:8px;background:rgba(255,255,255,0.01);}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1>Create Badges</h1>
-  <div class="card">
+    <h2>Badge Management</h2>
     <form id="addBadgeForm">
       <label>Badge Name</label>
       <input type="text" id="badgeName" placeholder="Enter badge name" required>
+
+      <label>Description / Purpose</label>
+      <input type="text" id="badgeDesc" placeholder="Enter badge description">
+
+      <label>Special Access?</label>
+      <select id="badgeAccess">
+        <option value="none">No</option>
+        <option value="yes">Yes</option>
+      </select>
+
       <label>Effect</label>
       <select id="badgeEffect">
         <option value="none">None</option>
         <option value="glow">Glow</option>
-        <option value="rainbow">Rainbow</option>
         <option value="sparkle">Sparkle</option>
         <option value="bounce">Bounce</option>
       </select>
-      <div style="margin-top:10px;">
-        <button type="submit" class="btn btn-primary">Add Badge</button>
-      </div>
+
+      <button type="submit" class="btn btn-primary">Add Badge</button>
     </form>
+
+    <div class="muted small">Current Badges</div>
+    <div id="badgeList" class="list"></div>
   </div>
 
-  <div class="card">
-    <h3>Current Badges</h3>
-    <div id="badgeList"></div>
-  </div>
 </div>
 
+<script src="Main.js"></script>
 <script>
-let state={};
-const STORAGE_KEY='sa_state_badges';
-function loadState(){ try{ state=JSON.parse(localStorage.getItem(STORAGE_KEY))||{}; state.badges=state.badges||[]; } catch(e){ state={badges:[]}; } }
-function saveState(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); renderBadges(); }
-loadState();
+// ===== JavaScript for Part 1 =====
 
-// add badge
-document.getElementById('addBadgeForm').addEventListener('submit',e=>{
+let state = {
+  users: [],
+  badges: []
+};
+
+/* ---------- USER MANAGEMENT ---------- */
+document.getElementById('addUserForm').addEventListener('submit', e=>{
   e.preventDefault();
-  const name=document.getElementById('badgeName').value.trim();
-  const effect=document.getElementById('badgeEffect').value;
-  if(!name) return alert('Enter badge name');
-  state.badges.push({name,effect});
-  saveState(); document.getElementById('addBadgeForm').reset();
+  const name = document.getElementById('userName').value.trim();
+  const role = document.getElementById('userRole').value;
+  const password = document.getElementById('userPassword').value;
+
+  if(role==='faculty' && !password){ alert('Password required for Faculty'); return; }
+
+  state.users.push({username:name, role, password, badges:[]});
+  renderUsers();
+  document.getElementById('addUserForm').reset();
 });
 
-// render badges
-function renderBadges(){
-  const c=document.getElementById('badgeList'); c.innerHTML='';
-  state.badges.forEach((b,i)=>{
-    const div=document.createElement('div'); div.className='list-item';
-    div.innerHTML=`<strong>${b.name}</strong> | Effect: ${b.effect} 
-      <button class="btn btn-ghost" onclick="editBadge(${i})">Edit</button>
-      <button class="btn btn-ghost" onclick="deleteBadge(${i})">Delete</button>`;
+function renderUsers(){
+  const c=document.getElementById('userList');
+  c.innerHTML='';
+  state.users.forEach((u,i)=>{
+    const div=document.createElement('div');
+    div.style.padding='6px'; div.style.borderBottom='1px solid rgba(0,0,0,0.1)';
+    div.innerHTML=`
+      <strong>${u.username}</strong> | ${u.role} | Badges: ${u.badges.join(', ') || '-'}
+      <button class="btn tiny btn-ghost" onclick="editUser(${i})">Edit</button>
+      <button class="btn tiny btn-danger" onclick="deleteUser(${i})">Delete</button>
+    `;
     c.appendChild(div);
   });
 }
 
-// edit/delete
-function editBadge(i){
-  const b=state.badges[i]; if(!b) return;
-  const newName=prompt('Badge Name',b.name); if(newName!==null) b.name=newName;
-  const newEffect=prompt('Effect',b.effect); if(newEffect!==null) b.effect=newEffect;
-  saveState();
+function editUser(i){
+  const u=state.users[i];
+  const newName = prompt('Username', u.username); if(newName!==null) u.username=newName;
+  const newRole = prompt('Role', u.role); if(newRole!==null) u.role=newRole;
+  const newPass = prompt('Password', u.password||''); if(newPass!==null) u.password=newPass;
+  renderUsers();
 }
-function deleteBadge(i){ if(!confirm('Delete badge?')) return; state.badges.splice(i,1); saveState(); }
 
-renderBadges();
+function deleteUser(i){
+  if(!confirm('Delete this user?')) return;
+  state.users.splice(i,1);
+  renderUsers();
+}
+
+/* ---------- BADGE MANAGEMENT ---------- */
+document.getElementById('addBadgeForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const name = document.getElementById('badgeName').value.trim();
+  const desc = document.getElementById('badgeDesc').value.trim();
+  const access = document.getElementById('badgeAccess').value;
+  const effect = document.getElementById('badgeEffect').value;
+
+  state.badges.push({name, desc, specialAccess: access, effect});
+  renderBadges();
+  document.getElementById('addBadgeForm').reset();
+});
+
+function renderBadges(){
+  const c=document.getElementById('badgeList');
+  c.innerHTML='';
+  state.badges.forEach((b,i)=>{
+    const div=document.createElement('div');
+    div.style.padding='6px'; div.style.borderBottom='1px solid rgba(0,0,0,0.1)';
+    div.innerHTML=`
+      <strong>${b.name}</strong> | Access: ${b.specialAccess} | Effect: ${b.effect}
+      <button class="btn tiny btn-ghost" onclick="editBadge(${i})">Edit</button>
+      <button class="btn tiny btn-danger" onclick="deleteBadge(${i})">Delete</button>
+    `;
+    c.appendChild(div);
+  });
+}
+
+function editBadge(i){
+  const b=state.badges[i];
+  const newName=prompt('Badge Name', b.name); if(newName!==null) b.name=newName;
+  const newAccess=prompt('Special Access (yes/no)', b.specialAccess); if(newAccess!==null) b.specialAccess=newAccess;
+  const newEffect=prompt('Effect', b.effect); if(newEffect!==null) b.effect=newEffect;
+  renderBadges();
+}
+
+function deleteBadge(i){
+  if(!confirm('Delete this badge?')) return;
+  state.badges.splice(i,1);
+  renderBadges();
+}
+
 </script>
 </body>
 </html>
-<!-- NOTICES & PROFILE MANAGEMENT -->
+<!-- ===== ATTENDANCE SECTION ===== -->
 <div class="card">
-  <h2>Notices</h2>
-  <form id="noticeForm">
-    <label>Notice Title</label>
-    <input type="text" id="noticeTitleInput" placeholder="Enter notice title" required>
-    <label>Notice Content</label>
-    <textarea id="noticeContentInput" placeholder="Enter notice content" required></textarea>
-    <label>Assign to Student (optional)</label>
-    <select id="noticeAssignStudent">
-      <option value="">All Students</option>
-    </select>
-    <button type="submit" class="btn btn-primary" style="margin-top:10px;">Post Notice</button>
-    <button type="button" class="btn btn-ghost" onclick="renderNotices()">Refresh</button>
-  </form>
+  <h2>Attendance</h2>
+  <div id="currentDateTime" style="margin-bottom:10px; font-weight:bold;"></div>
 
-  <div class="space"></div>
-  <div class="muted small">Current Notices</div>
-  <div id="noticeList"></div>
-</div>
-
-<div class="card">
-  <h2>Profile Management</h2>
-  <form id="profileForm">
-    <label>Select User</label>
-    <select id="profileUserSelect"></select>
-    <label>Change Name</label>
-    <input type="text" id="profileNameInput" placeholder="New name">
-    <label>Change Password (if applicable)</label>
-    <input type="password" id="profilePasswordInput" placeholder="New password">
-    <button type="submit" class="btn btn-primary" style="margin-top:10px;">Update Profile</button>
+  <form id="attendanceForm">
+    <div id="attendanceList"></div>
+    <button type="submit" class="btn btn-primary">Submit Attendance</button>
+    <button type="button" class="btn btn-ghost" onclick="exportAttendance()">Export Attendance</button>
+    <button type="button" class="btn btn-secondary" onclick="importAttendance()">Import Attendance</button>
   </form>
 </div>
 
 <script>
-/* ---------- Notices ---------- */
-function renderNoticeStudentOptions(){
-  const sel = document.getElementById('noticeAssignStudent');
-  sel.innerHTML = '<option value="">All Students</option>';
+// ===== JavaScript for Attendance =====
+
+state.attendance = state.attendance || []; // initialize if not present
+
+function updateDateTime(){
+  const now = new Date();
+  document.getElementById('currentDateTime').innerText = 
+    now.toLocaleString('en-GB', {weekday:'short', day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+}
+setInterval(updateDateTime, 1000); // update every second
+updateDateTime();
+
+function renderAttendance(){
+  const c=document.getElementById('attendanceList');
+  c.innerHTML='';
+  const students = state.users.filter(u=>u.role==='student');
+  if(students.length===0){ c.innerHTML='<div>No students enrolled</div>'; return; }
+
+  students.forEach((s,i)=>{
+    const div=document.createElement('div');
+    div.style.marginBottom='6px';
+    div.innerHTML = `
+      <strong>${s.username}</strong>
+      <label><input type="radio" name="att_${i}" value="Present"> Present</label>
+      <label><input type="radio" name="att_${i}" value="Absent"> Absent</label>
+      <label><input type="radio" name="att_${i}" value="Late"> Late</label>
+      <label><input type="radio" name="att_${i}" value="On Duty"> On Duty</label>
+    `;
+    c.appendChild(div);
+  });
+}
+
+document.getElementById('attendanceForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const students = state.users.filter(u=>u.role==='student');
+  const now = new Date();
+  students.forEach((s,i)=>{
+    const selected = document.querySelector(`input[name="att_${i}"]:checked`);
+    const status = selected ? selected.value : 'Absent'; // default to absent if none selected
+    state.attendance.push({
+      student: s.username,
+      status: status,
+      datetime: now.toISOString()
+    });
+  });
+  alert('Attendance recorded!');
+  renderAttendance(); // reset form
+});
+
+function exportAttendance(){
+  const blob = new Blob([JSON.stringify(state.attendance, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='attendance.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importAttendance(){
+  const input = document.createElement('input'); input.type='file'; input.accept='application/json';
+  input.onchange = e=>{
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = evt=>{
+      try {
+        const data = JSON.parse(evt.target.result);
+        if(Array.isArray(data)){
+          state.attendance = data;
+          alert('Attendance imported!');
+        } else {
+          alert('Invalid format');
+        }
+      } catch(err){ alert('Invalid JSON'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+renderAttendance();
+    </script>
+    <!-- ===== TEST CREATION SECTION ===== -->
+<div class="card">
+  <h2>Create Test</h2>
+  <form id="createTestForm">
+    <label>Test Type</label>
+    <select id="testTypeSelect">
+      <option value="mcq">MCQ</option>
+      <option value="short">Short Answer</option>
+    </select>
+
+    <label>Subject</label>
+    <input type="text" id="testSubjectInput" placeholder="Subject e.g. Math" required>
+
+    <label>Question</label>
+    <textarea id="testQuestionInput" placeholder="Enter the question..." required></textarea>
+
+    <div id="mcqOptionsContainer" style="display:none;">
+      <label>Options (comma separated)</label>
+      <input type="text" id="mcqOptionsInput" placeholder="Option1, Option2, Option3, Option4">
+      <label>Correct Option</label>
+      <input type="text" id="mcqAnswerInput" placeholder="Correct option text">
+    </div>
+
+    <label>Assign to student (optional)</label>
+    <select id="testAssignStudent">
+      <option value="">All Students</option>
+    </select>
+
+    <div style="margin-top:10px; display:flex; gap:8px;">
+      <button type="submit" class="btn btn-primary">Create Test</button>
+      <button type="button" class="btn btn-ghost" onclick="renderCreatedTests()">Refresh</button>
+    </div>
+  </form>
+
+  <div class="space"></div>
+  <div class="muted small">Test List</div>
+  <div id="createdTestList" class="list"></div>
+</div>
+
+<script>
+// ===== JavaScript for Test Creation =====
+const testTypeSelect = document.getElementById('testTypeSelect');
+const mcqContainer = document.getElementById('mcqOptionsContainer');
+const assignStudentSelect = document.getElementById('testAssignStudent');
+
+testTypeSelect.addEventListener('change', ()=>{
+  mcqContainer.style.display = testTypeSelect.value==='mcq' ? 'block' : 'none';
+});
+
+function populateAssignStudents(){
+  assignStudentSelect.innerHTML='<option value="">All Students</option>';
   (state.users||[]).filter(u=>u.role==='student').forEach(s=>{
-    sel.insertAdjacentHTML('beforeend',`<option value="${s.username}">${s.username}</option>`);
+    assignStudentSelect.insertAdjacentHTML('beforeend', `<option value="${s.username}">${s.username}</option>`);
   });
 }
+populateAssignStudents();
 
-document.getElementById('noticeForm').addEventListener('submit', e=>{
+document.getElementById('createTestForm').addEventListener('submit', e=>{
   e.preventDefault();
-  const title = document.getElementById('noticeTitleInput').value.trim();
-  const content = document.getElementById('noticeContentInput').value.trim();
-  const student = document.getElementById('noticeAssignStudent').value||'';
-  if(!title||!content) return alert('Enter title and content');
+  const type = testTypeSelect.value;
+  const subject = document.getElementById('testSubjectInput').value.trim();
+  const question = document.getElementById('testQuestionInput').value.trim();
+  const student = assignStudentSelect.value || '';
 
-  state.notices = state.notices||[];
-  state.notices.unshift({title, content, student, timestamp: new Date().toISOString()});
-  addLog(`Posted notice: ${title}`);
-  saveStorage(); renderNotices();
-  document.getElementById('noticeForm').reset();
+  if(!subject||!question) return alert('Enter subject & question');
+
+  let testItem = {id:'test_'+Date.now(), type, subject, question, student, published:false};
+
+  if(type==='mcq'){
+    const options = document.getElementById('mcqOptionsInput').value.split(',').map(o=>o.trim()).filter(Boolean);
+    const answer = document.getElementById('mcqAnswerInput').value.trim();
+    if(options.length < 2 || !answer || !options.includes(answer)) return alert('Invalid MCQ options or answer');
+    testItem.options = options; testItem.answer = answer;
+  }
+
+  state.createdTests = state.createdTests||[];
+  state.createdTests.unshift(testItem);
+  addLog(`Created ${type} test for ${subject}`);
+  saveStorage(); renderCreatedTests();
+  document.getElementById('createTestForm').reset();
 });
 
-function renderNotices(){
-  renderNoticeStudentOptions();
-  const list = document.getElementById('noticeList');
-  list.innerHTML = '';
-  (state.notices||[]).forEach((n,i)=>{
+function renderCreatedTests(){
+  const c=document.getElementById('createdTestList'); c.innerHTML='';
+  (state.createdTests||[]).forEach(t=>{
+    const div=document.createElement('div');
+    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+    div.innerHTML = `
+      <strong>[${t.type.toUpperCase()}]</strong> ${t.subject} 
+      <div class="small">For: ${t.student||'All'}</div>
+      <div>${t.question}</div>
+      ${t.type==='mcq'?'<div>Options: '+t.options.join(', ')+' | Answer: '+t.answer+'</div>':''}
+      <div style="margin-top:6px;">
+        <button class="btn tiny btn-primary" onclick="publishTest('${t.id}')">Publish</button>
+        <button class="btn tiny btn-ghost" onclick="editCreatedTest('${t.id}')">Edit</button>
+        <button class="btn tiny btn-danger" onclick="deleteCreatedTest('${t.id}')">Delete</button>
+        <span class="small" style="margin-left:10px;">${t.published?'Published':'Not Published'}</span>
+      </div>
+    `;
+    c.appendChild(div);
+  });
+  populateAssignStudents();
+}
+
+function publishTest(id){
+  const t = state.createdTests.find(x=>x.id===id); if(!t) return;
+  t.published = true;
+  addLog(`Published test ${t.subject}`);
+  saveStorage(); renderCreatedTests();
+}
+
+function editCreatedTest(id){
+  const t = state.createdTests.find(x=>x.id===id); if(!t) return;
+  const newQ = prompt('Question', t.question); if(newQ!==null) t.question=newQ;
+  if(t.type==='mcq'){
+    const newOpts = prompt('Options (comma separated)', t.options.join(',')); if(newOpts!==null) t.options=newOpts.split(',').map(o=>o.trim());
+    const newAns = prompt('Answer', t.answer); if(newAns!==null) t.answer=newAns;
+  }
+  addLog(`Edited test ${t.subject}`);
+  saveStorage(); renderCreatedTests();
+}
+
+function deleteCreatedTest(id){
+  if(!confirm('Delete this test?')) return;
+  state.createdTests = state.createdTests.filter(x=>x.id!==id);
+  addLog(`Deleted test ${id}`);
+  saveStorage(); renderCreatedTests();
+}
+
+// Initial render
+renderCreatedTests();
+      </script>
+      <!-- ===== STUDENT TEST DASHBOARD ===== -->
+<div class="card">
+  <h2>Available Tests</h2>
+  <div id="studentTestList" class="list"></div>
+</div>
+
+<script>
+// ===== JavaScript for Student Test Interface =====
+function renderStudentTests(studentUsername){
+  const c = document.getElementById('studentTestList');
+  c.innerHTML = '';
+
+  // Only show published tests assigned to all or to this student
+  const availableTests = (state.createdTests||[]).filter(t => t.published && (!t.student || t.student === studentUsername));
+
+  if(availableTests.length === 0){
+    c.innerHTML = '<div class="small muted">No tests available</div>';
+    return;
+  }
+
+  availableTests.forEach(t=>{
     const div = document.createElement('div');
-    div.style.padding='6px'; div.style.borderBottom='1px solid rgba(0,0,0,0.05)';
-    div.innerHTML = `<strong>${n.title}</strong> (${n.student||'All'}) - ${new Date(n.timestamp).toLocaleString()}
-      <div>${n.content}</div>
-      <button class="btn tiny btn-danger" onclick="deleteNotice(${i})">Delete</button>`;
-    list.appendChild(div);
+    div.style.padding = '8px'; 
+    div.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
+
+    let testHtml = `<strong>[${t.type.toUpperCase()}]</strong> ${t.subject}<div>${t.question}</div>`;
+
+    if(t.type === 'mcq'){
+      testHtml += '<div>Options:</div>';
+      t.options.forEach(opt=>{
+        testHtml += `<label style="display:block;"><input type="radio" name="${t.id}" value="${opt}"> ${opt}</label>`;
+      });
+      testHtml += `<button class="btn tiny btn-primary" onclick="submitMCQ('${t.id}','${studentUsername}')">Submit</button>`;
+    } else {
+      testHtml += `<textarea id="short_${t.id}" placeholder="Your answer..."></textarea>
+                   <button class="btn tiny btn-primary" onclick="submitShort('${t.id}','${studentUsername}')">Submit</button>`;
+    }
+
+    div.innerHTML = testHtml;
+    c.appendChild(div);
   });
 }
 
-function deleteNotice(index){
-  if(!confirm('Delete this notice?')) return;
-  const n = state.notices.splice(index,1)[0];
-  addLog(`Deleted notice: ${n.title}`);
-  saveStorage(); renderNotices();
+// ===== Submit MCQ Test =====
+function submitMCQ(testId, studentUsername){
+  const t = state.createdTests.find(x=>x.id===testId);
+  if(!t) return;
+  const selected = document.querySelector(`input[name="${testId}"]:checked`);
+  if(!selected) return alert('Select an option');
+
+  const marks = selected.value === t.answer ? 100 : 0;
+
+  // Save marks
+  state.tests = state.tests||[];
+  const existing = state.tests.find(x=>x.testId===testId && x.student===studentUsername);
+  if(existing){
+    existing.marks = marks;
+  } else {
+    state.tests.push({testId, student: studentUsername, marks, subject: t.subject});
+  }
+  addLog(`Student ${studentUsername} submitted MCQ test ${t.subject} with marks ${marks}`);
+  saveStorage(); renderCharts();
+  alert(`Submitted! Marks: ${marks}`);
 }
 
-/* ---------- Profile Management ---------- */
-function renderProfileUserOptions(){
-  const sel = document.getElementById('profileUserSelect');
-  sel.innerHTML = '';
-  (state.users||[]).forEach(u=>{
-    sel.insertAdjacentHTML('beforeend',`<option value="${u.username}">${u.username} (${u.role})</option>`);
-  });
+// ===== Submit Short Answer Test (Simplified Scoring) =====
+function submitShort(testId, studentUsername){
+  const t = state.createdTests.find(x=>x.id===testId);
+  if(!t) return;
+  const ans = document.getElementById(`short_${testId}`).value.trim();
+  const marks = ans ? 50 : 0; // optional: teacher can grade later
+
+  state.tests = state.tests||[];
+  const existing = state.tests.find(x=>x.testId===testId && x.student===studentUsername);
+  if(existing){
+    existing.marks = marks;
+  } else {
+    state.tests.push({testId, student: studentUsername, marks, subject: t.subject});
+  }
+  addLog(`Student ${studentUsername} submitted short test ${t.subject} with marks ${marks}`);
+  saveStorage(); renderCharts();
+  alert(`Submitted! Marks: ${marks}`);
 }
 
-document.getElementById('profileForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const username = document.getElementById('profileUserSelect').value;
-  const name = document.getElementById('profileNameInput').value.trim();
-  const password = document.getElementById('profilePasswordInput').value.trim();
-
-  const user = (state.users||[]).find(u=>u.username===username);
-  if(!user) return alert('Select a valid user');
-  if(name) user.name = name;
-  if(password && (user.role==='faculty'||user.role==='admin')) user.password = password;
-
-  addLog(`Updated profile for: ${username}`);
-  saveStorage(); renderProfileUserOptions();
-});
-                                                    </script>
+// Example call: renderStudentTests('student1');
+</script>
