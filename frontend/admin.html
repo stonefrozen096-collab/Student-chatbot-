@@ -1,63 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Panel</title>
-<link rel="stylesheet" href="Admin.css">
-<link rel="stylesheet" href="Animation.css">
-<style>
-/* Basic Admin Dashboard Styles */
-body { font-family: 'Segoe UI', sans-serif; background:#1e1e2f; color:white; margin:0; }
-header { background:#2e2e4f; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; }
-header h1 { margin:0; font-size:1.6em; }
-nav button { margin-left:8px; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; background:#4f46e5; color:white; transition:0.3s; }
-nav button:hover { background:#6366f1; }
-.admin-section { display:none; padding:20px; animation:fadeIn 0.6s ease; }
-.list { margin-top:10px; max-height:400px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px; background:#292946; }
-.btn { padding:6px 12px; border:none; border-radius:6px; cursor:pointer; background:#4f46e5; color:white; transition:0.3s; }
-.btn:hover { background:#6366f1; }
-.tiny { padding:3px 8px; font-size:0.85em; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="animation.css">
 </head>
 <body>
-
-<header>
-  <h1>Admin Dashboard</h1>
-  <nav>
-    <button onclick="showSection('users')">Users</button>
-    <button onclick="showSection('badges')">Badges</button>
-    <button onclick="showSection('attendance')">Attendance</button>
-    <button onclick="showSection('tests')">Tests</button>
-    <button onclick="showSection('master')">Master Commands</button>
-    <button onclick="showSection('triggers')">Triggers</button>
-    <button onclick="showSection('notice')">Notices</button>
+  <!-- Sidebar Navigation -->
+  <nav id="sidebar">
+    <h1>Admin Panel</h1>
+    <ul>
+      <li><a href="#" data-section="users">User Management</a></li>
+      <li><a href="#" data-section="badges">Badge Management</a></li>
+      <li><a href="#" data-section="attendance">Attendance</a></li>
+      <li><a href="#" data-section="tests">Test Management</a></li>
+      <li><a href="#" data-section="notices">Notices</a></li>
+      <li><a href="#" data-section="profile">Profile Management</a></li>
+      <li><a href="#" data-section="triggers">Chatbot Triggers</a></li>
+      <li><a href="#" data-section="commands">Master Commands</a></li>
+      <li><a href="#" data-section="charts">Analytics</a></li>
+      <li><a href="#" data-section="importExport">Import / Export</a></li>
+    </ul>
   </nav>
-</header>
 
-<div id="content">
-  <!-- All sections will appear here -->
-</div>
+  <!-- Main Content -->
+  <main id="mainContent">
+    <h2>Welcome, Admin!</h2>
+    <p>Select a section from the sidebar to start managing.</p>
+  </main>
 
-<script>
-function showSection(id){
-  const sections = document.querySelectorAll('.admin-section');
-  sections.forEach(sec => sec.style.display='none');
-  const s = document.getElementById(id);
-  if(s) s.style.display='block';
-}
-</script>
-
+  <!-- JS References -->
+  <script src="main.js"></script>
+  <script src="admin.js"></script>
 </body>
 </html>
 <!-- USERS SECTION -->
-<div id="users" class="admin-section">
+<section id="users" class="admin-section" style="display:none;">
   <h2>User Management</h2>
-  <form id="addUserForm">
+  
+  <!-- Add User Form -->
+  <form id="addUserForm" class="card animated-card">
     <label>Name:</label>
     <input type="text" id="userName" required placeholder="Full Name">
+
     <label>Username:</label>
     <input type="text" id="userUsername" required placeholder="Username">
+
     <label>Role:</label>
     <select id="userRole">
       <option value="student">Student</option>
@@ -65,76 +55,24 @@ function showSection(id){
       <option value="moderator">Moderator</option>
       <option value="tester">Tester</option>
     </select>
-    <label id="passwordLabel" style="display:none">Password:</label>
-    <input type="password" id="userPassword" style="display:none;" placeholder="Set Password for Faculty">
-    <button type="submit">Add User</button>
+
+    <label id="passwordLabel" style="display:none;">Password (for Faculty):</label>
+    <input type="password" id="userPassword" style="display:none;" placeholder="Enter password">
+
+    <button type="submit" class="btn btn-primary">Add User</button>
   </form>
 
-  <div id="userList" class="list"></div>
-</div>
-
-<script>
-const users = JSON.parse(localStorage.getItem('users') || '[]');
-
-/* Show/Hide password field for Faculty */
-document.getElementById('userRole').addEventListener('change', e=>{
-  const pw = document.getElementById('userPassword');
-  const label = document.getElementById('passwordLabel');
-  if(e.target.value==='faculty'){
-    pw.style.display='block'; 
-    label.style.display='block';
-  } else {
-    pw.style.display='none'; 
-    label.style.display='none';
-  }
-});
-
-/* Render Users List */
-function renderUsers(){
-  const ul = document.getElementById('userList'); 
-  ul.innerHTML='';
-  users.forEach((u,i)=>{
-    const div = document.createElement('div');
-    div.innerHTML=`<strong>${u.name}</strong> (${u.username}) - ${u.role} 
-      <button class="btn tiny" onclick="deleteUser(${i})">Delete</button>`;
-    ul.appendChild(div);
-  });
-}
-
-/* Add User */
-document.getElementById('addUserForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const name = document.getElementById('userName').value.trim();
-  const username = document.getElementById('userUsername').value.trim();
-  const role = document.getElementById('userRole').value;
-  const password = document.getElementById('userPassword').value.trim();
-  const user = {name, username, role};
-  if(role==='faculty') user.password=password;
-  users.push(user);
-  localStorage.setItem('users', JSON.stringify(users));
-  renderUsers();
-  e.target.reset();
-});
-
-/* Delete User */
-function deleteUser(i){
-  if(!confirm('Delete user?')) return;
-  users.splice(i,1);
-  localStorage.setItem('users', JSON.stringify(users));
-  renderUsers();
-}
-
-/* Initialize */
-renderUsers();
-</script>
+  <!-- List of Users -->
+  <div id="userList" class="list animated-list"></div>
+</section>
 <!-- BADGES SECTION -->
-<div id="badges" class="admin-section">
+<section id="badges" class="admin-section" style="display:none;">
   <h2>Badge Management</h2>
 
-  <!-- Create Badge -->
-  <form id="addBadgeForm">
+  <!-- Create Badge Form -->
+  <form id="addBadgeForm" class="card animated-card">
     <label>Badge Name:</label>
-    <input type="text" id="badgeName" placeholder="Badge Name" required>
+    <input type="text" id="badgeName" required placeholder="Badge Name">
 
     <label>Effects:</label>
     <select id="badgeEffects" multiple>
@@ -144,385 +82,263 @@ renderUsers();
       <option value="glow">Glow</option>
     </select>
 
-    <button type="submit">Create Badge</button>
+    <button type="submit" class="btn btn-primary">Create Badge</button>
   </form>
 
-  <!-- Badge List -->
-  <div id="badgeList" class="list"></div>
+  <!-- List of Badges -->
+  <div id="badgeList" class="list animated-list"></div>
 
-  <!-- Assign Badge to Users -->
+  <!-- Assign Badge -->
   <h3>Assign Badge to User</h3>
-  <select id="assignBadgeUser"><option value="">Select User</option></select>
-  <select id="assignBadgeSelect"><option value="">Select Badge</option></select>
-  <button onclick="assignBadge()">Assign Badge</button>
-</div>
+  <div class="card animated-card" style="padding:12px;">
+    <label>Select User:</label>
+    <select id="assignBadgeUser"><option value="">Select User</option></select>
 
-<script>
-const badges = JSON.parse(localStorage.getItem('badges') || '[]');
+    <label>Select Badge:</label>
+    <select id="assignBadgeSelect"><option value="">Select Badge</option></select>
 
-/* Create Badge */
-document.getElementById('addBadgeForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const name = document.getElementById('badgeName').value.trim();
-  const effects = Array.from(document.getElementById('badgeEffects').selectedOptions).map(o=>o.value);
-  if(!name || effects.length===0){ alert('Enter badge name and select effects'); return; }
-  badges.push({name,effects});
-  localStorage.setItem('badges', JSON.stringify(badges));
-  renderBadges();
-  e.target.reset();
-});
+    <button class="btn btn-success" onclick="assignBadge()">Assign Badge</button>
+  </div>
+</section>
+<!-- MASTER COMMANDS & TRIGGERS SECTION -->
+<section id="commands-triggers" class="admin-section" style="display:none;">
+  <h2>Master Commands & Trigger Words</h2>
 
-/* Render Badge List */
-function renderBadges(){
-  const div = document.getElementById('badgeList'); 
-  div.innerHTML='';
-  badges.forEach((b,i)=>{
-    const d = document.createElement('div');
-    d.innerHTML=`<strong>${b.name}</strong> [${b.effects.join(', ')}] 
-      <button class="btn tiny" onclick="deleteBadge(${i})">Delete</button>`;
-    div.appendChild(d);
-  });
-  updateAssignBadgeSelect();
-}
+  <!-- Trigger Words -->
+  <div class="card animated-card">
+    <h3>Chatbot Trigger Words / Phrases</h3>
+    <form id="triggerForm">
+      <label>Trigger Word / Phrase</label>
+      <input type="text" id="triggerInput" placeholder="e.g. hello, need help" required>
 
-/* Delete Badge */
-function deleteBadge(i){
-  if(!confirm('Delete badge?')) return;
-  badges.splice(i,1);
-  localStorage.setItem('badges', JSON.stringify(badges));
-  renderBadges();
-}
+      <label>Response</label>
+      <input type="text" id="responseInput" placeholder="Response for this trigger" required>
 
-/* Update Assign Dropdowns */
-function updateAssignBadgeUser(){
-  const sel = document.getElementById('assignBadgeUser');
-  sel.innerHTML='<option value="">Select User</option>';
-  users.forEach(u=>{
-    sel.insertAdjacentHTML('beforeend',`<option value="${u.username}">${u.name} (${u.username})</option>`);
-  });
-}
-function updateAssignBadgeSelect(){
-  const sel = document.getElementById('assignBadgeSelect');
-  sel.innerHTML='<option value="">Select Badge</option>';
-  badges.forEach(b=>{
-    sel.insertAdjacentHTML('beforeend',`<option value="${b.name}">${b.name}</option>`);
-  });
-}
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button type="submit" class="btn btn-primary">Add Trigger</button>
+        <button type="button" class="btn btn-ghost" onclick="renderTriggers()">Refresh</button>
+      </div>
+    </form>
 
-/* Assign Badge */
-function assignBadge(){
-  const user = document.getElementById('assignBadgeUser').value;
-  const badge = document.getElementById('assignBadgeSelect').value;
-  if(!user || !badge){ alert('Select user & badge'); return; }
-  alert(`Badge "${badge}" assigned to ${user}`);
-}
+    <div class="space"></div>
+    <div class="muted small">Current Triggers</div>
+    <div id="triggerList" class="list animated-list"></div>
+  </div>
 
-/* Initialize */
-renderBadges();
-updateAssignBadgeUser();
-</script>
-<!-- BADGE ASSIGNMENT CONTINUED -->
-<h3>Assign Badge to User</h3>
-<select id="assignBadgeUser"><option value="">Select User</option></select>
-<select id="assignBadgeSelect"><option value="">Select Badge</option></select>
-<button onclick="assignBadgeToUser()">Assign Badge</button>
+  <!-- Master Commands -->
+  <div class="card animated-card" style="margin-top:20px;">
+    <h3>Master Command Tab</h3>
+    <form id="masterForm">
+      <label>Command Name</label>
+      <input type="text" id="commandName" placeholder="e.g. lockAll, deleteAll" required>
 
-<script>
-/* ---------- ASSIGN BADGE FUNCTION ---------- */
-function assignBadgeToUser(){
-  const username = document.getElementById('assignBadgeUser').value;
-  const badgeName = document.getElementById('assignBadgeSelect').value;
-  if(!username || !badgeName) return alert('Select both user and badge');
+      <label>Action / JS Code</label>
+      <textarea id="commandAction" placeholder="JavaScript code to execute" required></textarea>
 
-  // Find user and badge
-  const user = users.find(u => u.username === username);
-  const badge = badges.find(b => b.name === badgeName);
-  if(!user || !badge) return alert('Invalid selection');
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button type="submit" class="btn btn-primary">Add Command</button>
+        <button type="button" class="btn btn-ghost" onclick="renderMasterCommands()">Refresh</button>
+      </div>
+    </form>
 
-  // Assign badge to user (add effects as well)
-  user.badges = user.badges || [];
-  const alreadyAssigned = user.badges.find(b => b.name === badgeName);
-  if(alreadyAssigned){
-    alert('User already has this badge');
-    return;
-  }
-  user.badges.push({name: badge.name, effects: badge.effects});
-  
-  // Save users to JSON (or localStorage for testing)
-  saveUsers();
-  alert(`Badge "${badgeName}" assigned to ${user.name}`);
-  renderUsers();
-}
-
-/* Update assign user & badge selects dynamically */
-function updateAssignBadgeUser(){
-  const sel = document.getElementById('assignBadgeUser');
-  sel.innerHTML = '<option value="">Select User</option>';
-  users.forEach(u => sel.insertAdjacentHTML('beforeend', `<option value="${u.username}">${u.name} (${u.role})</option>`));
-}
-
-function updateAssignBadgeSelect(){
-  const sel = document.getElementById('assignBadgeSelect');
-  sel.innerHTML = '<option value="">Select Badge</option>';
-  badges.forEach(b => sel.insertAdjacentHTML('beforeend', `<option value="${b.name}">${b.name}</option>`));
-}
-
-// Initial render
-renderUsers(); 
-renderBadges();
-updateAssignBadgeUser();
-updateAssignBadgeSelect();
-</script>
-<!-- TEST CREATION SECTION -->
-<div id="tests" class="admin-section" style="display:none;">
-  <h2>Create Test</h2>
-  <form id="createTestForm">
-    <label>Test Type:</label>
-    <select id="testTypeSelect">
-      <option value="mcq">MCQ</option>
-      <option value="short">Short Answer</option>
-    </select>
-    <label>Subject:</label>
-    <input type="text" id="testSubject" required>
-    <label>Question:</label>
-    <textarea id="testQuestion" required></textarea>
-
-    <!-- MCQ Options -->
-    <div id="mcqOptionsContainer" style="display:none;">
-      <label>Options:</label>
-      <div id="mcqOptionsList"></div>
-      <button type="button" onclick="addMCQOption()">Add Option</button>
-      <label>Correct Option:</label>
-      <select id="correctOptionSelect"></select>
-    </div>
-
-    <!-- Assign to student -->
-    <label>Assign to Student:</label>
-    <select id="assignTestStudent">
-      <option value="">All Students</option>
-    </select>
-
-    <button type="submit">Create & Publish Test</button>
-  </form>
-
-  <h3>Existing Tests</h3>
-  <div id="testList"></div>
-</div>
-
-<script>
-const createdTests = JSON.parse(localStorage.getItem('createdTests')||'[]');
-const testStudentsSelect = document.getElementById('assignTestStudent');
-const mcqContainer = document.getElementById('mcqOptionsContainer');
-const mcqOptionsList = document.getElementById('mcqOptionsList');
-const correctOptionSelect = document.getElementById('correctOptionSelect');
-
-// Toggle MCQ options
-document.getElementById('testTypeSelect').addEventListener('change', e => {
-  mcqContainer.style.display = e.target.value === 'mcq' ? 'block' : 'none';
-  mcqOptionsList.innerHTML = '';
-  correctOptionSelect.innerHTML = '';
-});
-
-// Populate student dropdown
-function updateTestStudentSelect() {
-  testStudentsSelect.innerHTML = '<option value="">All Students</option>';
-  users.filter(u=>u.role==='student').forEach(s => {
-    testStudentsSelect.insertAdjacentHTML('beforeend', `<option value="${s.username}">${s.name}</option>`);
-  });
-}
-
-// Add MCQ option
-function addMCQOption() {
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.placeholder = 'Option text';
-  input.oninput = updateCorrectOptions;
-  mcqOptionsList.appendChild(input);
-  updateCorrectOptions();
-}
-
-// Update correct option dropdown
-function updateCorrectOptions() {
-  correctOptionSelect.innerHTML = '';
-  Array.from(mcqOptionsList.children).forEach((opt, i) => {
-    if(opt.value.trim()) correctOptionSelect.insertAdjacentHTML('beforeend', `<option value="${opt.value.trim()}">${opt.value.trim()}</option>`);
-  });
-}
-
-// Render existing tests
-function renderTests() {
-  const list = document.getElementById('testList');
-  list.innerHTML = '';
-  createdTests.forEach((t, i) => {
-    const div = document.createElement('div');
-    div.innerHTML = `<strong>[${t.type.toUpperCase()}]</strong> ${t.subject} 
-      <div>Question: ${t.question}</div>
-      ${t.type==='mcq'?`<div>Options: ${t.options.join(', ')} | Answer: ${t.answer}</div>`:''}
-      <div>Assigned to: ${t.student || 'All'}</div>
-      <button onclick="deleteTest(${i})">Delete</button>`;
-    list.appendChild(div);
-  });
-}
-
-// Delete test
-function deleteTest(index) {
-  if(!confirm('Delete this test?')) return;
-  createdTests.splice(index,1);
-  localStorage.setItem('createdTests', JSON.stringify(createdTests));
-  renderTests();
-}
-
-// Handle form submission
-document.getElementById('createTestForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const type = document.getElementById('testTypeSelect').value;
-  const subject = document.getElementById('testSubject').value.trim();
-  const question = document.getElementById('testQuestion').value.trim();
-  const student = document.getElementById('assignTestStudent').value;
-
-  let test = {id:'test_'+Date.now(), type, subject, question, student};
-
-  if(type==='mcq'){
-    const options = Array.from(mcqOptionsList.children).map(o=>o.value.trim()).filter(Boolean);
-    const answer = correctOptionSelect.value;
-    if(options.length<2 || !answer) return alert('Add valid MCQ options and select correct answer');
-    test.options = options;
-    test.answer = answer;
-  }
-
-  createdTests.push(test);
-  localStorage.setItem('createdTests', JSON.stringify(createdTests));
-  renderTests();
-  e.target.reset();
-  mcqOptionsList.innerHTML = '';
-  correctOptionSelect.innerHTML = '';
-});
-
-updateTestStudentSelect();
-renderTests();
-</script>
+    <div class="space"></div>
+    <div class="muted small">Current Master Commands</div>
+    <div id="masterList" class="list animated-list"></div>
+  </div>
+</section>
 <!-- NOTICE SECTION -->
-<div id="notices" class="admin-section" style="display:none;">
-  <h2>Notice Management</h2>
-  <form id="addNoticeForm">
-    <label>Title:</label><input type="text" id="noticeTitle" required>
-    <label>Content:</label><textarea id="noticeContent" required></textarea>
-    <label>Assign To:</label>
-    <select id="noticeAssign">
-      <option value="">All Students</option>
-    </select>
-    <button type="submit">Post Notice</button>
-  </form>
+<section id="notices-section" class="admin-section" style="display:none;">
+  <h2>Notices & Announcements</h2>
+  
+  <div class="card animated-card">
+    <form id="noticeForm">
+      <label>Notice Title</label>
+      <input type="text" id="noticeTitle" placeholder="Title" required>
 
-  <h3>Existing Notices</h3>
-  <div id="noticeList"></div>
-</div>
+      <label>Notice Content</label>
+      <textarea id="noticeContent" placeholder="Write your notice..." required></textarea>
+
+      <label>Assign to</label>
+      <select id="noticeAssign">
+        <option value="all">All Students</option>
+      </select>
+
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button type="submit" class="btn btn-primary">Post Notice</button>
+        <button type="button" class="btn btn-ghost" onclick="renderNotices()">Refresh</button>
+      </div>
+    </form>
+
+    <div class="space"></div>
+    <div class="muted small">All Notices</div>
+    <div id="noticeList" class="list animated-list"></div>
+  </div>
+</section>
 
 <!-- PROFILE MANAGEMENT SECTION -->
-<div id="profiles" class="admin-section" style="display:none;">
+<section id="profile-section" class="admin-section" style="display:none;">
   <h2>Profile Management</h2>
-  <label>Search User:</label>
-  <input type="text" id="searchProfile" placeholder="Enter name or username">
-  <div id="profileList"></div>
+  
+  <div class="card animated-card">
+    <form id="profileSearchForm">
+      <label>Search User</label>
+      <input type="text" id="profileSearchInput" placeholder="Enter username or name">
+
+      <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+
+    <div class="space"></div>
+    <div id="profileResult" class="list animated-list"></div>
+  </div>
+</section>
+<!-- ATTENDANCE SECTION -->
+<section id="attendance-section" class="admin-section" style="display:none;">
+  <h2>Attendance Management</h2>
+  
+  <div class="card animated-card">
+    <div class="attendance-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <div id="attendanceDateTime"></div>
+      <button class="btn btn-primary" onclick="saveAttendance()">Save Attendance</button>
+    </div>
+
+    <div class="space"></div>
+
+    <table class="attendance-table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Present</th>
+          <th>Absent</th>
+          <th>Late</th>
+          <th>On Duty</th>
+        </tr>
+      </thead>
+      <tbody id="attendanceList"></tbody>
+    </table>
+
+    <div class="space"></div>
+    <div class="muted small">Attendance is automatically saved to <code>Attendance.json</code></div>
+  </div>
+</section>
+<!-- TEST CREATION SECTION -->
+<section id="test-section" class="admin-section" style="display:none;">
+  <h2>Test Creation</h2>
+
+  <div class="card animated-card">
+    <form id="createTestForm">
+      <label>Test Type</label>
+      <select id="testTypeSelect">
+        <option value="mcq">MCQ</option>
+        <option value="short">Short Answer</option>
+      </select>
+
+      <label>Subject</label>
+      <input type="text" id="testSubjectInput" placeholder="Subject e.g. Math" required>
+
+      <label>Question</label>
+      <textarea id="testQuestionInput" placeholder="Enter the question..." required></textarea>
+
+      <!-- MCQ Options -->
+      <div id="mcqOptionsContainer" style="display:none;">
+        <label>Options</label>
+        <div id="mcqOptionsList"></div>
+        <button type="button" class="btn btn-ghost" onclick="addMCQOption()">Add Option</button>
+
+        <label>Correct Answer</label>
+        <select id="mcqAnswerSelect"><option value="">Select correct answer</option></select>
+      </div>
+
+      <label>Assign to student</label>
+      <select id="testAssignStudent"><option value="">All Students</option></select>
+
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button type="submit" class="btn btn-primary">Add Test</button>
+        <button type="button" class="btn btn-ghost" onclick="renderCreatedTests()">Refresh</button>
+      </div>
+    </form>
+
+    <div class="space"></div>
+    <div class="muted small">Created Tests</div>
+    <div id="createdTestList" class="list"></div>
+  </div>
+</section>
+<!-- PROFILE MANAGEMENT SECTION -->
+<div id="profileSection" class="admin-section" style="display:none;">
+  <h2>Profile Management</h2>
+
+  <!-- Admin Own Profile -->
+  <div class="card">
+    <h3>Edit Your Profile</h3>
+    <form id="editAdminProfileForm">
+      <label>Name:</label><input type="text" id="adminName" required>
+      <label>Username:</label><input type="text" id="adminUsername" required>
+      <label>Password:</label><input type="password" id="adminPassword">
+      <button type="submit">Update Profile</button>
+    </form>
+  </div>
+
+  <hr>
+
+  <!-- Search and View Other Users -->
+  <div class="card">
+    <h3>Search Users</h3>
+    <input type="text" id="searchUserInput" placeholder="Enter username or name">
+    <button onclick="searchUser()">Search</button>
+    <div id="searchResults" class="list"></div>
+  </div>
 </div>
+// Example data objects (replace with your JSON fetching logic)
+let users = []; 
+let badges = []; 
+let attendance = [];
+let tests = [];
 
-<script>
-const notices = JSON.parse(localStorage.getItem('notices')||'[]');
+// ----- IMPORT FUNCTION -----
+function importData() {
+  const fileInput = document.getElementById('importFile');
+  const type = document.getElementById('importSelect').value;
 
-// Populate student dropdown for notice assign
-function updateNoticeAssign() {
-  const sel = document.getElementById('noticeAssign');
-  sel.innerHTML = '<option value="">All Students</option>';
-  users.filter(u=>u.role==='student').forEach(s => {
-    sel.insertAdjacentHTML('beforeend', `<option value="${s.username}">${s.name}</option>`);
-  });
+  if (!fileInput.files.length) return alert('Select a JSON file');
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw 'Invalid JSON format';
+
+      switch(type){
+        case 'users': users = data; break;
+        case 'badges': badges = data; break;
+        case 'attendance': attendance = data; break;
+        case 'tests': tests = data; break;
+      }
+      alert(`${type} imported successfully`);
+      renderAll(); // optional: refresh UI if needed
+    } catch(err) {
+      alert('Failed to import JSON: ' + err);
+    }
+  };
+  reader.readAsText(file);
 }
 
-// Render existing notices
-function renderNotices() {
-  const list = document.getElementById('noticeList');
-  list.innerHTML = '';
-  notices.forEach((n, i)=>{
-    const div = document.createElement('div');
-    div.innerHTML = `<strong>${n.title}</strong> - ${n.content}<div>Assigned to: ${n.student || 'All'}</div>
-      <button onclick="deleteNotice(${i})">Delete</button>`;
-    list.appendChild(div);
-  });
-}
-
-// Delete notice
-function deleteNotice(i){
-  if(!confirm('Delete this notice?')) return;
-  notices.splice(i,1);
-  localStorage.setItem('notices', JSON.stringify(notices));
-  renderNotices();
-}
-
-// Add notice
-document.getElementById('addNoticeForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const title = document.getElementById('noticeTitle').value.trim();
-  const content = document.getElementById('noticeContent').value.trim();
-  const student = document.getElementById('noticeAssign').value;
-  if(!title || !content) return alert('Enter both title and content');
-  notices.push({title, content, student});
-  localStorage.setItem('notices', JSON.stringify(notices));
-  renderNotices();
-  e.target.reset();
-});
-
-// ---------- PROFILE MANAGEMENT ----------
-function renderProfiles() {
-  const list = document.getElementById('profileList');
-  const query = document.getElementById('searchProfile').value.trim().toLowerCase();
-  list.innerHTML = '';
-  users.filter(u => u.name.toLowerCase().includes(query) || u.username.toLowerCase().includes(query))
-       .forEach(u=>{
-         const div = document.createElement('div');
-         div.innerHTML = `<strong>${u.name} (${u.username})</strong> - ${u.role} 
-           <button onclick="editProfile('${u.username}')">Edit</button>`;
-         list.appendChild(div);
-       });
-}
-
-// Edit profile
-function editProfile(username){
-  const user = users.find(u=>u.username===username);
-  if(!user) return;
-  const newName = prompt('Name', user.name);
-  if(newName!==null) user.name=newName;
-  if(user.role==='faculty'){
-    const newPw = prompt('Password', user.password||'');
-    if(newPw!==null) user.password=newPw;
+// ----- EXPORT FUNCTION -----
+function exportData() {
+  const type = document.getElementById('exportSelect').value;
+  let data;
+  switch(type){
+    case 'users': data = users; break;
+    case 'badges': data = badges; break;
+    case 'attendance': data = attendance; break;
+    case 'tests': data = tests; break;
   }
-  saveUsers(); renderProfiles();
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${type}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
-
-// Search event
-document.getElementById('searchProfile').addEventListener('input', renderProfiles);
-
-updateNoticeAssign();
-renderNotices();
-renderProfiles();
-</script>
-<!-- MASTER COMMANDS SECTION -->
-<div id="masterCommandsSection" class="admin-section animated-card">
-  <h2>Master Commands</h2>
-  <form id="masterCommandForm" class="form-card">
-    <input type="text" id="masterCommandName" placeholder="Command Name e.g. Lock All" required>
-    <textarea id="masterCommandAction" placeholder="JS Code to execute" required></textarea>
-    <button type="submit" class="btn btn-primary">Add Command</button>
-  </form>
-  <div id="masterCommandsList" class="list animated-list"></div>
-</div>
-
-<!-- TRIGGERS SECTION -->
-<div id="triggersSection" class="admin-section animated-card">
-  <h2>Chatbot Triggers</h2>
-  <form id="triggerForm" class="form-card">
-    <input type="text" id="triggerInput" placeholder="Trigger Word/Phrase" required>
-    <input type="text" id="triggerResponse" placeholder="Response for trigger" required>
-    <button type="submit" class="btn btn-primary">Add Trigger</button>
-  </form>
-  <div id="triggersList" class="list animated-list"></div>
-</div>
