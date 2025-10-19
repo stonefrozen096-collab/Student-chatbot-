@@ -2,32 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard</title>
+<title>User Management</title>
 <link rel="stylesheet" href="Admin.css">
-<link rel="stylesheet" href="Animation.css">
-<link rel="stylesheet" href="Common.css">
 <style>
-  /* Extra inline tweaks if needed */
-  .card { padding:16px; margin:12px 0; border-radius:12px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.08);}
-  .btn { padding:6px 12px; border:none; border-radius:6px; cursor:pointer;}
-  .btn-primary { background:#4f46e5; color:white;}
-  .btn-danger { background:#ef4444; color:white;}
-  .btn-ghost { background:transparent; border:1px solid #ccc;}
-  .list { margin-top:10px; max-height:300px; overflow-y:auto; }
-  input, select, textarea { width:100%; padding:6px; margin:4px 0 10px 0; border-radius:6px; border:1px solid #ccc;}
+  body{background:#f3f4f6; font-family:Arial,sans-serif;}
+  .container{max-width:1000px;margin:20px auto;}
+  .card{background:white;padding:20px;margin-bottom:20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+  .list div{padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;}
+  .btn{padding:5px 10px;margin-left:5px;border:none;border-radius:5px;cursor:pointer;}
+  .btn-primary{background:#4f46e5;color:white;}
+  .btn-danger{background:#ef4444;color:white;}
+  .btn-ghost{background:#e5e7eb;color:black;}
+  .space{height:15px;}
 </style>
 </head>
 <body>
 <div class="container">
-
-  <!-- ===== USER MANAGEMENT ===== -->
   <div class="card">
-    <h2>User Management</h2>
-    <form id="addUserForm">
+    <h3>Add New User</h3>
+    <form id="userForm">
+      <label>Name</label>
+      <input type="text" id="userName" placeholder="Enter full name" required>
       <label>Username</label>
-      <input type="text" id="userName" placeholder="Enter username" required>
-      
+      <input type="text" id="userUsername" placeholder="Unique username" required>
       <label>Role</label>
       <select id="userRole">
         <option value="student">Student</option>
@@ -35,304 +32,358 @@
         <option value="moderator">Moderator</option>
         <option value="tester">Tester</option>
       </select>
-
-      <label>Password (for Faculty only)</label>
-      <input type="password" id="userPassword" placeholder="Enter password">
-
-      <button type="submit" class="btn btn-primary">Add User</button>
+      <div id="facultyPasswordDiv" style="display:none;">
+        <label>Password</label>
+        <input type="password" id="facultyPassword" placeholder="Enter password">
+      </div>
+      <div style="margin-top:10px;">
+        <button type="submit" class="btn btn-primary">Add User</button>
+        <button type="button" class="btn btn-ghost" onclick="renderUsers()">Refresh List</button>
+      </div>
     </form>
-    
-    <div class="muted small">Current Users</div>
+  </div>
+
+  <div class="card">
+    <h3>Current Users</h3>
     <div id="userList" class="list"></div>
   </div>
-
-  <!-- ===== BADGE MANAGEMENT ===== -->
-  <div class="card">
-    <h2>Badge Management</h2>
-    <form id="addBadgeForm">
-      <label>Badge Name</label>
-      <input type="text" id="badgeName" placeholder="Enter badge name" required>
-
-      <label>Description / Purpose</label>
-      <input type="text" id="badgeDesc" placeholder="Enter badge description">
-
-      <label>Special Access?</label>
-      <select id="badgeAccess">
-        <option value="none">No</option>
-        <option value="yes">Yes</option>
-      </select>
-
-      <label>Effect</label>
-      <select id="badgeEffect">
-        <option value="none">None</option>
-        <option value="glow">Glow</option>
-        <option value="sparkle">Sparkle</option>
-        <option value="bounce">Bounce</option>
-      </select>
-
-      <button type="submit" class="btn btn-primary">Add Badge</button>
-    </form>
-
-    <div class="muted small">Current Badges</div>
-    <div id="badgeList" class="list"></div>
-  </div>
-
 </div>
 
-<script src="Main.js"></script>
 <script>
-// ===== JavaScript for Part 1 =====
+let state = {users: []};
 
-let state = {
-  users: [],
-  badges: []
-};
+// Show password field for faculty
+document.getElementById('userRole').addEventListener('change', e=>{
+  document.getElementById('facultyPasswordDiv').style.display = e.target.value==='faculty'?'block':'none';
+});
 
-/* ---------- USER MANAGEMENT ---------- */
-document.getElementById('addUserForm').addEventListener('submit', e=>{
+// Add User
+document.getElementById('userForm').addEventListener('submit', e=>{
   e.preventDefault();
   const name = document.getElementById('userName').value.trim();
+  const username = document.getElementById('userUsername').value.trim();
   const role = document.getElementById('userRole').value;
-  const password = document.getElementById('userPassword').value;
+  const password = role==='faculty'?document.getElementById('facultyPassword').value.trim():'';
+  if(!name || !username) return alert('Name and Username required');
+  if(role==='faculty' && !password) return alert('Faculty password required');
 
-  if(role==='faculty' && !password){ alert('Password required for Faculty'); return; }
+  // Check unique username
+  if(state.users.some(u=>u.username===username)) return alert('Username already exists');
 
-  state.users.push({username:name, role, password, badges:[]});
+  const user = {name, username, role, password};
+  state.users.push(user);
   renderUsers();
-  document.getElementById('addUserForm').reset();
+  document.getElementById('userForm').reset();
+  document.getElementById('facultyPasswordDiv').style.display='none';
 });
 
+// Render Users
 function renderUsers(){
-  const c=document.getElementById('userList');
-  c.innerHTML='';
+  const c = document.getElementById('userList');
+  c.innerHTML = '';
   state.users.forEach((u,i)=>{
-    const div=document.createElement('div');
-    div.style.padding='6px'; div.style.borderBottom='1px solid rgba(0,0,0,0.1)';
-    div.innerHTML=`
-      <strong>${u.username}</strong> | ${u.role} | Badges: ${u.badges.join(', ') || '-'}
-      <button class="btn tiny btn-ghost" onclick="editUser(${i})">Edit</button>
-      <button class="btn tiny btn-danger" onclick="deleteUser(${i})">Delete</button>
-    `;
+    const div = document.createElement('div');
+    div.innerHTML = `<div>
+      <strong>${u.name}</strong> (${u.username}) - ${u.role}${u.role==='faculty'?` | Password: ${u.password}`:''}
+      </div>
+      <div>
+        <button class="btn btn-ghost" onclick="editUser(${i})">Edit</button>
+        <button class="btn btn-danger" onclick="deleteUser(${i})">Delete</button>
+      </div>`;
     c.appendChild(div);
   });
 }
 
-function editUser(i){
-  const u=state.users[i];
-  const newName = prompt('Username', u.username); if(newName!==null) u.username=newName;
-  const newRole = prompt('Role', u.role); if(newRole!==null) u.role=newRole;
-  const newPass = prompt('Password', u.password||''); if(newPass!==null) u.password=newPass;
+// Edit User
+function editUser(index){
+  const u = state.users[index];
+  const newName = prompt('Name', u.name); if(newName!==null) u.name=newName;
+  const newRole = prompt('Role (student/faculty/moderator/tester)', u.role); if(newRole!==null) u.role=newRole;
+  if(u.role==='faculty'){
+    const newPass = prompt('Password', u.password); if(newPass!==null) u.password=newPass;
+  } else { u.password = ''; }
   renderUsers();
 }
 
-function deleteUser(i){
+// Delete User
+function deleteUser(index){
   if(!confirm('Delete this user?')) return;
-  state.users.splice(i,1);
+  state.users.splice(index,1);
   renderUsers();
 }
 
-/* ---------- BADGE MANAGEMENT ---------- */
-document.getElementById('addBadgeForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const name = document.getElementById('badgeName').value.trim();
-  const desc = document.getElementById('badgeDesc').value.trim();
-  const access = document.getElementById('badgeAccess').value;
-  const effect = document.getElementById('badgeEffect').value;
-
-  state.badges.push({name, desc, specialAccess: access, effect});
-  renderBadges();
-  document.getElementById('addBadgeForm').reset();
-});
-
-function renderBadges(){
-  const c=document.getElementById('badgeList');
-  c.innerHTML='';
-  state.badges.forEach((b,i)=>{
-    const div=document.createElement('div');
-    div.style.padding='6px'; div.style.borderBottom='1px solid rgba(0,0,0,0.1)';
-    div.innerHTML=`
-      <strong>${b.name}</strong> | Access: ${b.specialAccess} | Effect: ${b.effect}
-      <button class="btn tiny btn-ghost" onclick="editBadge(${i})">Edit</button>
-      <button class="btn tiny btn-danger" onclick="deleteBadge(${i})">Delete</button>
-    `;
-    c.appendChild(div);
-  });
-}
-
-function editBadge(i){
-  const b=state.badges[i];
-  const newName=prompt('Badge Name', b.name); if(newName!==null) b.name=newName;
-  const newAccess=prompt('Special Access (yes/no)', b.specialAccess); if(newAccess!==null) b.specialAccess=newAccess;
-  const newEffect=prompt('Effect', b.effect); if(newEffect!==null) b.effect=newEffect;
-  renderBadges();
-}
-
-function deleteBadge(i){
-  if(!confirm('Delete this badge?')) return;
-  state.badges.splice(i,1);
-  renderBadges();
-}
-
+// Initial render
+renderUsers();
 </script>
 </body>
 </html>
-<!-- ===== ATTENDANCE SECTION ===== -->
-<div class="card">
-  <h2>Attendance</h2>
-  <div id="currentDateTime" style="margin-bottom:10px; font-weight:bold;"></div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Badge Management</title>
+<link rel="stylesheet" href="Admin.css">
+<style>
+  body{background:#f3f4f6;font-family:Arial,sans-serif;}
+  .container{max-width:900px;margin:20px auto;}
+  .card{background:white;padding:20px;margin-bottom:20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+  .list div{padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;}
+  .btn{padding:5px 10px;margin-left:5px;border:none;border-radius:5px;cursor:pointer;}
+  .btn-primary{background:#4f46e5;color:white;}
+  .btn-danger{background:#ef4444;color:white;}
+  .btn-ghost{background:#e5e7eb;color:black;}
+  select,input{margin:5px 0;width:100%;padding:5px;}
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Badge Creation -->
+  <div class="card">
+    <h3>Create New Badge</h3>
+    <form id="badgeForm">
+      <label>Badge Name</label>
+      <input type="text" id="badgeName" placeholder="Enter badge name" required>
+      <label>Special Access / Privileges</label>
+      <input type="text" id="badgeAccess" placeholder="Comma separated privileges">
+      <label>Effect</label>
+      <select id="badgeEffect">
+        <option value="glow">Glow</option>
+        <option value="sparkle">Sparkle</option>
+        <option value="shadow">Shadow</option>
+        <option value="rainbow">Rainbow</option>
+        <option value="pulse">Pulse</option>
+      </select>
+      <div style="margin-top:10px;">
+        <button type="submit" class="btn btn-primary">Add Badge</button>
+        <button type="button" class="btn btn-ghost" onclick="renderBadges()">Refresh List</button>
+      </div>
+    </form>
+  </div>
 
-  <form id="attendanceForm">
-    <div id="attendanceList"></div>
-    <button type="submit" class="btn btn-primary">Submit Attendance</button>
-    <button type="button" class="btn btn-ghost" onclick="exportAttendance()">Export Attendance</button>
-    <button type="button" class="btn btn-secondary" onclick="importAttendance()">Import Attendance</button>
-  </form>
+  <!-- Current Badges -->
+  <div class="card">
+    <h3>Current Badges</h3>
+    <div id="badgeList" class="list"></div>
+  </div>
+
+  <!-- Assign Badge -->
+  <div class="card">
+    <h3>Assign Badge to User</h3>
+    <label>Select User</label>
+    <select id="userSelect">
+      <option value="">--Select User--</option>
+    </select>
+    <label>Select Badge</label>
+    <select id="assignBadgeSelect">
+      <option value="">--Select Badge--</option>
+    </select>
+    <button class="btn btn-primary" onclick="assignBadge()">Assign Badge</button>
+    <div id="assignedBadges" style="margin-top:10px;"></div>
+  </div>
 </div>
 
 <script>
-// ===== JavaScript for Attendance =====
+let state = {
+  badges: [],
+  users: [
+    {username:'student1', role:'student', badges:[]},
+    {username:'student2', role:'student', badges:[]},
+    {username:'faculty1', role:'faculty', badges:[]},
+    {username:'moderator1', role:'moderator', badges:[]},
+    {username:'tester1', role:'tester', badges:[]}
+  ]
+};
 
-state.attendance = state.attendance || []; // initialize if not present
-
-function updateDateTime(){
-  const now = new Date();
-  document.getElementById('currentDateTime').innerText = 
-    now.toLocaleString('en-GB', {weekday:'short', day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
-}
-setInterval(updateDateTime, 1000); // update every second
-updateDateTime();
-
-function renderAttendance(){
-  const c=document.getElementById('attendanceList');
-  c.innerHTML='';
-  const students = state.users.filter(u=>u.role==='student');
-  if(students.length===0){ c.innerHTML='<div>No students enrolled</div>'; return; }
-
-  students.forEach((s,i)=>{
-    const div=document.createElement('div');
-    div.style.marginBottom='6px';
-    div.innerHTML = `
-      <strong>${s.username}</strong>
-      <label><input type="radio" name="att_${i}" value="Present"> Present</label>
-      <label><input type="radio" name="att_${i}" value="Absent"> Absent</label>
-      <label><input type="radio" name="att_${i}" value="Late"> Late</label>
-      <label><input type="radio" name="att_${i}" value="On Duty"> On Duty</label>
-    `;
-    c.appendChild(div);
-  });
-}
-
-document.getElementById('attendanceForm').addEventListener('submit', e=>{
+// ----- Badge CRUD ----- //
+document.getElementById('badgeForm').addEventListener('submit', e=>{
   e.preventDefault();
-  const students = state.users.filter(u=>u.role==='student');
-  const now = new Date();
-  students.forEach((s,i)=>{
-    const selected = document.querySelector(`input[name="att_${i}"]:checked`);
-    const status = selected ? selected.value : 'Absent'; // default to absent if none selected
-    state.attendance.push({
-      student: s.username,
-      status: status,
-      datetime: now.toISOString()
-    });
-  });
-  alert('Attendance recorded!');
-  renderAttendance(); // reset form
+  const name = document.getElementById('badgeName').value.trim();
+  const access = document.getElementById('badgeAccess').value.trim();
+  const effect = document.getElementById('badgeEffect').value;
+  if(!name) return alert('Badge name required');
+
+  state.badges.push({name, access, effect});
+  renderBadges();
+  document.getElementById('badgeForm').reset();
 });
 
-function exportAttendance(){
-  const blob = new Blob([JSON.stringify(state.attendance, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='attendance.json'; a.click();
-  URL.revokeObjectURL(url);
+// Render Badges
+function renderBadges(){
+  const c = document.getElementById('badgeList');
+  const selectBadge = document.getElementById('assignBadgeSelect');
+  c.innerHTML = '';
+  selectBadge.innerHTML = '<option value="">--Select Badge--</option>';
+
+  state.badges.forEach((b,i)=>{
+    const div = document.createElement('div');
+    div.innerHTML = `<div>
+      <strong>${b.name}</strong> | Access: ${b.access || 'None'} | Effect: ${b.effect}
+      </div>
+      <div>
+        <button class="btn btn-ghost" onclick="editBadge(${i})">Edit</button>
+        <button class="btn btn-danger" onclick="deleteBadge(${i})">Delete</button>
+      </div>`;
+    c.appendChild(div);
+    selectBadge.insertAdjacentHTML('beforeend',`<option value="${i}">${b.name}</option>`);
+  });
 }
 
-function importAttendance(){
-  const input = document.createElement('input'); input.type='file'; input.accept='application/json';
-  input.onchange = e=>{
-    const file = e.target.files[0]; if(!file) return;
-    const reader = new FileReader();
-    reader.onload = evt=>{
-      try {
-        const data = JSON.parse(evt.target.result);
-        if(Array.isArray(data)){
-          state.attendance = data;
-          alert('Attendance imported!');
-        } else {
-          alert('Invalid format');
-        }
-      } catch(err){ alert('Invalid JSON'); }
-    };
-    reader.readAsText(file);
-  };
-  input.click();
+// Edit Badge
+function editBadge(index){
+  const b = state.badges[index];
+  const newName = prompt('Badge Name', b.name); if(newName!==null) b.name=newName;
+  const newAccess = prompt('Special Access / Privileges', b.access); if(newAccess!==null) b.access=newAccess;
+  const newEffect = prompt('Effect (glow/sparkle/shadow/rainbow/pulse)', b.effect); if(newEffect!==null) b.effect=newEffect;
+  renderBadges();
 }
 
-renderAttendance();
-    </script>
-    <!-- ===== TEST CREATION SECTION ===== -->
-<div class="card">
-  <h2>Create Test</h2>
-  <form id="createTestForm">
-    <label>Test Type</label>
-    <select id="testTypeSelect">
-      <option value="mcq">MCQ</option>
-      <option value="short">Short Answer</option>
-    </select>
+// Delete Badge
+function deleteBadge(index){
+  if(!confirm('Delete this badge?')) return;
+  state.badges.splice(index,1);
+  renderBadges();
+}
 
-    <label>Subject</label>
-    <input type="text" id="testSubjectInput" placeholder="Subject e.g. Math" required>
+// ----- Assign Badge ----- //
+function renderUsers(){
+  const userSelect = document.getElementById('userSelect');
+  userSelect.innerHTML = '<option value="">--Select User--</option>';
+  state.users.forEach((u,i)=>{
+    userSelect.insertAdjacentHTML('beforeend',`<option value="${i}">${u.username} (${u.role})</option>`);
+  });
+}
+renderUsers();
 
-    <label>Question</label>
-    <textarea id="testQuestionInput" placeholder="Enter the question..." required></textarea>
+function assignBadge(){
+  const userIndex = document.getElementById('userSelect').value;
+  const badgeIndex = document.getElementById('assignBadgeSelect').value;
+  if(userIndex === "" || badgeIndex === "") return alert('Select both user and badge');
 
-    <div id="mcqOptionsContainer" style="display:none;">
-      <label>Options (comma separated)</label>
-      <input type="text" id="mcqOptionsInput" placeholder="Option1, Option2, Option3, Option4">
-      <label>Correct Option</label>
-      <input type="text" id="mcqAnswerInput" placeholder="Correct option text">
-    </div>
+  const user = state.users[userIndex];
+  const badge = state.badges[badgeIndex];
 
-    <label>Assign to student (optional)</label>
-    <select id="testAssignStudent">
-      <option value="">All Students</option>
-    </select>
+  if(!user.badges.includes(badge.name)) user.badges.push(badge.name);
 
-    <div style="margin-top:10px; display:flex; gap:8px;">
-      <button type="submit" class="btn btn-primary">Create Test</button>
-      <button type="button" class="btn btn-ghost" onclick="renderCreatedTests()">Refresh</button>
-    </div>
-  </form>
+  renderAssignedBadges();
+}
 
-  <div class="space"></div>
-  <div class="muted small">Test List</div>
-  <div id="createdTestList" class="list"></div>
+// Render Assigned Badges
+function renderAssignedBadges(){
+  const container = document.getElementById('assignedBadges');
+  container.innerHTML = '';
+  state.users.forEach(u=>{
+    if(u.badges.length){
+      const div = document.createElement('div');
+      div.innerHTML = `<strong>${u.username} (${u.role})</strong>: ${u.badges.join(', ')}`;
+      container.appendChild(div);
+    }
+  });
+}
+
+// Initial render
+renderBadges();
+renderAssignedBadges();
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Test Creation & Publish</title>
+<link rel="stylesheet" href="Admin.css">
+<style>
+  body{background:#f3f4f6;font-family:Arial,sans-serif;}
+  .container{max-width:900px;margin:20px auto;}
+  .card{background:white;padding:20px;margin-bottom:20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+  .list div{padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;}
+  .btn{padding:5px 10px;margin-left:5px;border:none;border-radius:5px;cursor:pointer;}
+  .btn-primary{background:#4f46e5;color:white;}
+  .btn-danger{background:#ef4444;color:white;}
+  .btn-ghost{background:#e5e7eb;color:black;}
+  input,textarea,select{margin:5px 0;width:100%;padding:5px;}
+  .small{font-size:12px;color:#555;}
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Create Test -->
+  <div class="card">
+    <h3>Create Test</h3>
+    <form id="createTestForm">
+      <label>Test Type</label>
+      <select id="testTypeSelect">
+        <option value="mcq">MCQ</option>
+        <option value="short">Short Answer</option>
+      </select>
+
+      <label>Subject</label>
+      <input type="text" id="testSubjectInput" placeholder="Subject e.g. Math" required>
+
+      <label>Question</label>
+      <textarea id="testQuestionInput" placeholder="Enter the question..." required></textarea>
+
+      <!-- MCQ Options -->
+      <div id="mcqOptionsContainer">
+        <label>Options (comma separated)</label>
+        <input type="text" id="mcqOptionsInput" placeholder="Option1,Option2,Option3,Option4">
+        <label>Correct Option</label>
+        <input type="text" id="mcqAnswerInput" placeholder="Correct option text">
+      </div>
+
+      <label>Assign to Student</label>
+      <select id="testAssignStudent">
+        <option value="">All Students</option>
+      </select>
+
+      <div style="margin-top:10px;">
+        <button type="submit" class="btn btn-primary">Create Test</button>
+        <button type="button" class="btn btn-ghost" onclick="renderCreatedTests()">Refresh List</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Created Tests -->
+  <div class="card">
+    <h3>Created Tests</h3>
+    <div id="createdTestList" class="list"></div>
+  </div>
 </div>
 
 <script>
-// ===== JavaScript for Test Creation =====
 const testTypeSelect = document.getElementById('testTypeSelect');
 const mcqContainer = document.getElementById('mcqOptionsContainer');
-const assignStudentSelect = document.getElementById('testAssignStudent');
 
 testTypeSelect.addEventListener('change', ()=>{
-  mcqContainer.style.display = testTypeSelect.value==='mcq' ? 'block' : 'none';
+  mcqContainer.style.display = testTypeSelect.value==='mcq'?'block':'none';
 });
 
-function populateAssignStudents(){
-  assignStudentSelect.innerHTML='<option value="">All Students</option>';
-  (state.users||[]).filter(u=>u.role==='student').forEach(s=>{
-    assignStudentSelect.insertAdjacentHTML('beforeend', `<option value="${s.username}">${s.username}</option>`);
+let state = {
+  users: [
+    {username:'student1', role:'student'},
+    {username:'student2', role:'student'},
+    {username:'student3', role:'student'}
+  ],
+  createdTests: []
+};
+
+// Populate student select
+function renderStudentSelect(){
+  const sel = document.getElementById('testAssignStudent');
+  sel.innerHTML='<option value="">All Students</option>';
+  state.users.filter(u=>u.role==='student').forEach(s=>{
+    sel.insertAdjacentHTML('beforeend',`<option value="${s.username}">${s.username}</option>`);
   });
 }
-populateAssignStudents();
+renderStudentSelect();
 
+// Create test
 document.getElementById('createTestForm').addEventListener('submit', e=>{
   e.preventDefault();
   const type = testTypeSelect.value;
   const subject = document.getElementById('testSubjectInput').value.trim();
   const question = document.getElementById('testQuestionInput').value.trim();
-  const student = assignStudentSelect.value || '';
-
+  const student = document.getElementById('testAssignStudent').value||'';
   if(!subject||!question) return alert('Enter subject & question');
 
   let testItem = {id:'test_'+Date.now(), type, subject, question, student, published:false};
@@ -340,150 +391,676 @@ document.getElementById('createTestForm').addEventListener('submit', e=>{
   if(type==='mcq'){
     const options = document.getElementById('mcqOptionsInput').value.split(',').map(o=>o.trim()).filter(Boolean);
     const answer = document.getElementById('mcqAnswerInput').value.trim();
-    if(options.length < 2 || !answer || !options.includes(answer)) return alert('Invalid MCQ options or answer');
+    if(options.length<2||!answer||!options.includes(answer)) return alert('Invalid MCQ options or answer');
     testItem.options = options; testItem.answer = answer;
   }
 
-  state.createdTests = state.createdTests||[];
   state.createdTests.unshift(testItem);
-  addLog(`Created ${type} test for ${subject}`);
-  saveStorage(); renderCreatedTests();
+  renderCreatedTests();
   document.getElementById('createTestForm').reset();
 });
 
+// Render created tests
 function renderCreatedTests(){
-  const c=document.getElementById('createdTestList'); c.innerHTML='';
-  (state.createdTests||[]).forEach(t=>{
-    const div=document.createElement('div');
-    div.style.padding='8px'; div.style.borderBottom='1px solid rgba(255,255,255,0.02)';
-    div.innerHTML = `
-      <strong>[${t.type.toUpperCase()}]</strong> ${t.subject} 
-      <div class="small">For: ${t.student||'All'}</div>
-      <div>${t.question}</div>
-      ${t.type==='mcq'?'<div>Options: '+t.options.join(', ')+' | Answer: '+t.answer+'</div>':''}
-      <div style="margin-top:6px;">
-        <button class="btn tiny btn-primary" onclick="publishTest('${t.id}')">Publish</button>
-        <button class="btn tiny btn-ghost" onclick="editCreatedTest('${t.id}')">Edit</button>
-        <button class="btn tiny btn-danger" onclick="deleteCreatedTest('${t.id}')">Delete</button>
-        <span class="small" style="margin-left:10px;">${t.published?'Published':'Not Published'}</span>
-      </div>
-    `;
+  const c = document.getElementById('createdTestList'); c.innerHTML='';
+  state.createdTests.forEach(t=>{
+    const div = document.createElement('div');
+    div.innerHTML = `<div>
+      <strong>[${t.type.toUpperCase()}]</strong> ${t.subject} | Assigned: ${t.student||'All'} | Status: ${t.published?'Published':'Draft'}
+      <div class="small">${t.question}</div>
+      ${t.type==='mcq'?'<div class="small">Options: '+t.options.join(', ')+' | Answer: '+t.answer+'</div>':''}
+      <button class="btn btn-primary" onclick="publishTest('${t.id}')">Publish</button>
+      <button class="btn btn-ghost" onclick="editTest('${t.id}')">Edit</button>
+      <button class="btn btn-danger" onclick="deleteTest('${t.id}')">Delete</button>
+    </div>`;
     c.appendChild(div);
   });
-  populateAssignStudents();
 }
 
+// Publish test
 function publishTest(id){
-  const t = state.createdTests.find(x=>x.id===id); if(!t) return;
-  t.published = true;
-  addLog(`Published test ${t.subject}`);
-  saveStorage(); renderCreatedTests();
+  const t = state.createdTests.find(x=>x.id===id);
+  if(t) t.published = true;
+  renderCreatedTests();
 }
 
-function editCreatedTest(id){
-  const t = state.createdTests.find(x=>x.id===id); if(!t) return;
+// Edit test
+function editTest(id){
+  const t = state.createdTests.find(x=>x.id===id);
+  if(!t) return;
   const newQ = prompt('Question', t.question); if(newQ!==null) t.question=newQ;
   if(t.type==='mcq'){
     const newOpts = prompt('Options (comma separated)', t.options.join(',')); if(newOpts!==null) t.options=newOpts.split(',').map(o=>o.trim());
     const newAns = prompt('Answer', t.answer); if(newAns!==null) t.answer=newAns;
   }
-  addLog(`Edited test ${t.subject}`);
-  saveStorage(); renderCreatedTests();
+  renderCreatedTests();
 }
 
-function deleteCreatedTest(id){
+// Delete test
+function deleteTest(id){
   if(!confirm('Delete this test?')) return;
   state.createdTests = state.createdTests.filter(x=>x.id!==id);
-  addLog(`Deleted test ${id}`);
-  saveStorage(); renderCreatedTests();
+  renderCreatedTests();
 }
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Attendance</title>
+<link rel="stylesheet" href="Admin.css">
+<style>
+  body{background:#f3f4f6;font-family:Arial,sans-serif;}
+  .container{max-width:900px;margin:20px auto;}
+  .card{background:white;padding:20px;margin-bottom:20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+  .list div{padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;}
+  .btn{padding:5px 10px;margin-left:5px;border:none;border-radius:5px;cursor:pointer;}
+  .btn-primary{background:#4f46e5;color:white;}
+  .btn-danger{background:#ef4444;color:white;}
+  .btn-ghost{background:#e5e7eb;color:black;}
+  select,input{margin:5px 0;padding:5px;}
+  .small{font-size:12px;color:#555;}
+  .attendance-options input{margin-right:5px;}
+</style>
+</head>
+<body>
 
-// Initial render
-renderCreatedTests();
-      </script>
-      <!-- ===== STUDENT TEST DASHBOARD ===== -->
-<div class="card">
-  <h2>Available Tests</h2>
-  <div id="studentTestList" class="list"></div>
+<div class="container">
+  <div class="card">
+    <h3>Attendance</h3>
+    <div>Date & Time: <span id="currentDateTime"></span></div>
+    <div id="attendanceList" class="list"></div>
+    <div style="margin-top:10px;">
+      <button class="btn btn-primary" onclick="exportAttendance()">Export Attendance</button>
+      <button class="btn btn-ghost" onclick="importAttendance()">Import Attendance</button>
+      <button class="btn btn-danger" onclick="clearAttendance()">Clear Attendance</button>
+    </div>
+  </div>
 </div>
 
 <script>
-// ===== JavaScript for Student Test Interface =====
-function renderStudentTests(studentUsername){
-  const c = document.getElementById('studentTestList');
-  c.innerHTML = '';
+let state = {
+  users: [
+    {username:'student1', role:'student'},
+    {username:'student2', role:'student'},
+    {username:'student3', role:'student'}
+  ],
+  attendance: [] // {username, status, datetime}
+};
 
-  // Only show published tests assigned to all or to this student
-  const availableTests = (state.createdTests||[]).filter(t => t.published && (!t.student || t.student === studentUsername));
+// Update current date & time
+function updateDateTime(){
+  const now = new Date();
+  document.getElementById('currentDateTime').innerText = now.toLocaleString();
+}
+setInterval(updateDateTime,1000);
+updateDateTime();
 
-  if(availableTests.length === 0){
-    c.innerHTML = '<div class="small muted">No tests available</div>';
-    return;
-  }
-
-  availableTests.forEach(t=>{
+// Render Attendance List
+function renderAttendance(){
+  const container = document.getElementById('attendanceList');
+  container.innerHTML='';
+  state.users.filter(u=>u.role==='student').forEach(s=>{
+    const existing = state.attendance.find(a=>a.username===s.username);
     const div = document.createElement('div');
-    div.style.padding = '8px'; 
-    div.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
+    div.innerHTML = `<span>${s.username}</span>
+      <span class="attendance-options">
+        <label><input type="radio" name="att_${s.username}" value="Present" ${existing?.status==='Present'?'checked':''} onchange="updateAttendance('${s.username}',this.value)">P</label>
+        <label><input type="radio" name="att_${s.username}" value="Absent" ${existing?.status==='Absent'?'checked':''} onchange="updateAttendance('${s.username}',this.value)">A</label>
+        <label><input type="radio" name="att_${s.username}" value="Late" ${existing?.status==='Late'?'checked':''} onchange="updateAttendance('${s.username}',this.value)">L</label>
+        <label><input type="radio" name="att_${s.username}" value="On Duty" ${existing?.status==='On Duty'?'checked':''} onchange="updateAttendance('${s.username}',this.value)">OD</label>
+      </span>
+      <span class="small">${existing?.datetime||''}</span>`;
+    container.appendChild(div);
+  });
+}
 
-    let testHtml = `<strong>[${t.type.toUpperCase()}]</strong> ${t.subject}<div>${t.question}</div>`;
+// Update Attendance
+function updateAttendance(username, status){
+  const now = new Date().toLocaleString();
+  const idx = state.attendance.findIndex(a=>a.username===username);
+  if(idx>=0){
+    state.attendance[idx].status = status;
+    state.attendance[idx].datetime = now;
+  } else {
+    state.attendance.push({username,status,datetime:now});
+  }
+  renderAttendance();
+}
 
-    if(t.type === 'mcq'){
-      testHtml += '<div>Options:</div>';
-      t.options.forEach(opt=>{
-        testHtml += `<label style="display:block;"><input type="radio" name="${t.id}" value="${opt}"> ${opt}</label>`;
-      });
-      testHtml += `<button class="btn tiny btn-primary" onclick="submitMCQ('${t.id}','${studentUsername}')">Submit</button>`;
-    } else {
-      testHtml += `<textarea id="short_${t.id}" placeholder="Your answer..."></textarea>
-                   <button class="btn tiny btn-primary" onclick="submitShort('${t.id}','${studentUsername}')">Submit</button>`;
+// Export Attendance
+function exportAttendance(){
+  const blob = new Blob([JSON.stringify(state.attendance,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='attendance.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Import Attendance
+function importAttendance(){
+  const input = document.createElement('input'); input.type='file'; input.accept='.json';
+  input.onchange = e=>{
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = evt=>{
+      try{
+        const data = JSON.parse(evt.target.result);
+        if(Array.isArray(data)) state.attendance = data;
+        renderAttendance();
+      }catch(err){ alert('Invalid JSON'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// Clear Attendance
+function clearAttendance(){
+  if(confirm('Clear all attendance?')){
+    state.attendance = [];
+    renderAttendance();
+  }
+}
+
+// Initial render
+renderAttendance();
+</script>
+</body>
+</html>
+<!-- Badge Assignment Section -->
+<div class="container">
+  <div class="col card">
+    <h3>Assign Badges</h3>
+    <label>Select User</label>
+    <select id="badgeUserSelect">
+      <option value="">-- Select User --</option>
+    </select>
+
+    <label>Select Badges</label>
+    <div id="badgeListContainer" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+
+    <div style="margin-top:10px;">
+      <button class="btn btn-primary" onclick="assignBadges()">Assign Badges</button>
+    </div>
+
+    <div class="space"></div>
+    <div class="muted small">Current Badge Assignments</div>
+    <div id="assignedBadgeList" class="list"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- Populate Users & Badges ---------- */
+function populateBadgeAssignment(){
+  const userSelect = document.getElementById('badgeUserSelect');
+  userSelect.innerHTML = '<option value="">-- Select User --</option>';
+  (state.users||[]).forEach(u=>{
+    userSelect.insertAdjacentHTML('beforeend',`<option value="${u.username}">${u.username} (${u.role})</option>`);
+  });
+
+  const badgeContainer = document.getElementById('badgeListContainer');
+  badgeContainer.innerHTML = '';
+  (state.badges||[]).forEach((b,i)=>{
+    const div = document.createElement('div');
+    div.innerHTML = `<input type="checkbox" id="badgeCheck${i}" value="${b.name}"> <label for="badgeCheck${i}">${b.name}</label>`;
+    badgeContainer.appendChild(div);
+  });
+
+  renderAssignedBadges();
+}
+
+/* ---------- Assign Badges ---------- */
+function assignBadges(){
+  const username = document.getElementById('badgeUserSelect').value;
+  if(!username) return alert('Select a user');
+  
+  const selectedBadges = [];
+  (state.badges||[]).forEach((b,i)=>{
+    if(document.getElementById(`badgeCheck${i}`).checked){
+      selectedBadges.push(b.name);
     }
+  });
 
-    div.innerHTML = testHtml;
+  state.assignedBadges = state.assignedBadges || {};
+  state.assignedBadges[username] = selectedBadges;
+
+  addLog(`Assigned badges to ${username}: ${selectedBadges.join(', ')}`);
+  saveStorage();
+  renderAssignedBadges();
+}
+
+/* ---------- Render Assigned Badges ---------- */
+function renderAssignedBadges(){
+  const c = document.getElementById('assignedBadgeList');
+  c.innerHTML = '';
+  const assigned = state.assignedBadges || {};
+  Object.keys(assigned).forEach(user=>{
+    const div = document.createElement('div');
+    div.style.padding = '6px';
+    div.style.borderBottom = '1px solid rgba(0,0,0,0.05)';
+    div.innerHTML = `<strong>${user}</strong> → ${assigned[user].join(', ')}`;
     c.appendChild(div);
   });
 }
 
-// ===== Submit MCQ Test =====
-function submitMCQ(testId, studentUsername){
-  const t = state.createdTests.find(x=>x.id===testId);
-  if(!t) return;
-  const selected = document.querySelector(`input[name="${testId}"]:checked`);
-  if(!selected) return alert('Select an option');
-
-  const marks = selected.value === t.answer ? 100 : 0;
-
-  // Save marks
-  state.tests = state.tests||[];
-  const existing = state.tests.find(x=>x.testId===testId && x.student===studentUsername);
-  if(existing){
-    existing.marks = marks;
-  } else {
-    state.tests.push({testId, student: studentUsername, marks, subject: t.subject});
-  }
-  addLog(`Student ${studentUsername} submitted MCQ test ${t.subject} with marks ${marks}`);
-  saveStorage(); renderCharts();
-  alert(`Submitted! Marks: ${marks}`);
-}
-
-// ===== Submit Short Answer Test (Simplified Scoring) =====
-function submitShort(testId, studentUsername){
-  const t = state.createdTests.find(x=>x.id===testId);
-  if(!t) return;
-  const ans = document.getElementById(`short_${testId}`).value.trim();
-  const marks = ans ? 50 : 0; // optional: teacher can grade later
-
-  state.tests = state.tests||[];
-  const existing = state.tests.find(x=>x.testId===testId && x.student===studentUsername);
-  if(existing){
-    existing.marks = marks;
-  } else {
-    state.tests.push({testId, student: studentUsername, marks, subject: t.subject});
-  }
-  addLog(`Student ${studentUsername} submitted short test ${t.subject} with marks ${marks}`);
-  saveStorage(); renderCharts();
-  alert(`Submitted! Marks: ${marks}`);
-}
-
-// Example call: renderStudentTests('student1');
+/* ---------- Call on load ---------- */
+populateBadgeAssignment();
 </script>
+<!-- Admin Profile Management Section -->
+<div class="container">
+  <div class="col card">
+    <h3>Profile Management</h3>
+
+    <!-- Admin Profile -->
+    <div>
+      <h4>Your Profile</h4>
+      <label>Username</label>
+      <input type="text" id="adminUsername" readonly>
+      <label>Full Name</label>
+      <input type="text" id="adminFullName">
+      <label>Email</label>
+      <input type="email" id="adminEmail">
+      <label>Password</label>
+      <input type="password" id="adminPassword">
+      <button class="btn btn-primary" onclick="updateAdminProfile()">Update Profile</button>
+    </div>
+
+    <div class="space"></div>
+
+    <!-- Search Users -->
+    <div>
+      <h4>Search Users</h4>
+      <input type="text" id="searchUserInput" placeholder="Search by username, role, or name" oninput="searchUsers()">
+      <div id="searchResults" class="list" style="margin-top:10px;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- Load Admin Profile ---------- */
+function loadAdminProfile(){
+  const admin = state.currentAdmin || {username:'admin', fullName:'Admin', email:'admin@example.com'};
+  document.getElementById('adminUsername').value = admin.username;
+  document.getElementById('adminFullName').value = admin.fullName;
+  document.getElementById('adminEmail').value = admin.email;
+  document.getElementById('adminPassword').value = admin.password || '';
+}
+
+/* ---------- Update Admin Profile ---------- */
+function updateAdminProfile(){
+  const admin = state.currentAdmin || {};
+  admin.fullName = document.getElementById('adminFullName').value.trim();
+  admin.email = document.getElementById('adminEmail').value.trim();
+  admin.password = document.getElementById('adminPassword').value;
+  state.currentAdmin = admin;
+  saveStorage();
+  addLog('Admin profile updated');
+  alert('Profile updated successfully!');
+}
+
+/* ---------- Search Users ---------- */
+function searchUsers(){
+  const query = document.getElementById('searchUserInput').value.toLowerCase();
+  const resultsContainer = document.getElementById('searchResults');
+  resultsContainer.innerHTML = '';
+  (state.users||[]).filter(u=>{
+    return u.username.toLowerCase().includes(query) ||
+           (u.fullName && u.fullName.toLowerCase().includes(query)) ||
+           (u.role && u.role.toLowerCase().includes(query));
+  }).forEach(u=>{
+    const div = document.createElement('div');
+    div.style.padding='6px'; div.style.borderBottom='1px solid rgba(0,0,0,0.05)';
+    div.innerHTML = `<strong>${u.username}</strong> (${u.role}) - ${u.fullName || '-'} 
+                     <button class="btn tiny btn-ghost" onclick="viewUserProfile('${u.username}')">View</button>`;
+    resultsContainer.appendChild(div);
+  });
+}
+
+/* ---------- View/Edit User Profile ---------- */
+function viewUserProfile(username){
+  const user = (state.users||[]).find(u=>u.username===username);
+  if(!user) return alert('User not found');
+
+  const newFullName = prompt('Full Name', user.fullName || '');
+  if(newFullName!==null) user.fullName = newFullName;
+
+  if(user.role==='faculty'){
+    const newPassword = prompt('Password', user.password || '');
+    if(newPassword!==null) user.password = newPassword;
+  }
+
+  saveStorage();
+  addLog(`Updated profile of ${username}`);
+  alert(`${username}'s profile updated`);
+  searchUsers(); // refresh search results
+}
+
+/* ---------- Call on load ---------- */
+loadAdminProfile();
+searchUsers();
+</script>
+<!-- Notice Management Section -->
+<div class="container">
+  <div class="col card">
+    <h3>Notice Management</h3>
+
+    <!-- Create Notice -->
+    <div class="notice-create">
+      <label>Title</label>
+      <input type="text" id="noticeTitle" placeholder="Enter notice title">
+
+      <label>Message</label>
+      <textarea id="noticeMessage" rows="3" placeholder="Enter notice content"></textarea>
+
+      <label>Target Audience</label>
+      <select id="noticeTarget">
+        <option value="all">All Users</option>
+        <option value="students">Students</option>
+        <option value="faculty">Faculty</option>
+        <option value="moderators">Moderators</option>
+        <option value="testers">Testers</option>
+      </select>
+
+      <label>Expiry Date</label>
+      <input type="date" id="noticeExpiry">
+
+      <button class="btn btn-primary" onclick="createNotice()">Post Notice</button>
+    </div>
+
+    <div class="space"></div>
+
+    <!-- Display Notices -->
+    <h4>All Notices</h4>
+    <div id="noticeList" class="list"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- Load Notices ---------- */
+function loadNotices(){
+  const list = document.getElementById('noticeList');
+  list.innerHTML = '';
+
+  const today = new Date().toISOString().split('T')[0];
+  state.notices = (state.notices || []).filter(n => !n.expiry || n.expiry >= today);
+
+  if(state.notices.length === 0){
+    list.innerHTML = `<div class="empty">No notices available</div>`;
+    return;
+  }
+
+  state.notices.forEach((n, i)=>{
+    const div = document.createElement('div');
+    div.className = 'notice-card';
+    div.style.borderBottom = '1px solid rgba(0,0,0,0.05)';
+    div.style.padding = '10px';
+    div.style.marginBottom = '5px';
+    div.innerHTML = `
+      <h5>${n.title}</h5>
+      <p>${n.message}</p>
+      <small>Target: ${n.target} | Expiry: ${n.expiry || 'No limit'}</small><br>
+      <button class="btn tiny btn-secondary" onclick="editNotice(${i})">Edit</button>
+      <button class="btn tiny btn-danger" onclick="deleteNotice(${i})">Delete</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+/* ---------- Create Notice ---------- */
+function createNotice(){
+  const title = document.getElementById('noticeTitle').value.trim();
+  const message = document.getElementById('noticeMessage').value.trim();
+  const target = document.getElementById('noticeTarget').value;
+  const expiry = document.getElementById('noticeExpiry').value;
+
+  if(!title || !message){
+    alert('Please enter both title and message.');
+    return;
+  }
+
+  const notice = { title, message, target, expiry, date: new Date().toLocaleString() };
+  state.notices = state.notices || [];
+  state.notices.push(notice);
+  saveStorage();
+  addLog(`Notice created: ${title}`);
+  alert('Notice posted successfully!');
+  
+  document.getElementById('noticeTitle').value = '';
+  document.getElementById('noticeMessage').value = '';
+  document.getElementById('noticeExpiry').value = '';
+  
+  loadNotices();
+}
+
+/* ---------- Edit Notice ---------- */
+function editNotice(index){
+  const n = state.notices[index];
+  const newTitle = prompt('Edit Title', n.title);
+  if(newTitle===null) return;
+  const newMessage = prompt('Edit Message', n.message);
+  if(newMessage===null) return;
+  n.title = newTitle;
+  n.message = newMessage;
+  saveStorage();
+  addLog(`Notice edited: ${newTitle}`);
+  alert('Notice updated successfully!');
+  loadNotices();
+}
+
+/* ---------- Delete Notice ---------- */
+function deleteNotice(index){
+  if(!confirm('Are you sure you want to delete this notice?')) return;
+  const removed = state.notices.splice(index,1);
+  saveStorage();
+  addLog(`Notice deleted: ${removed[0].title}`);
+  loadNotices();
+}
+
+/* ---------- Auto Load ---------- */
+loadNotices();
+</script>
+<!-- 🔹 Trigger & Master Command Management Section -->
+<div class="container">
+  <div class="col card">
+    <h3>Trigger & Master Command Management</h3>
+
+    <!-- 🔸 Add Trigger -->
+    <div class="trigger-create">
+      <h4>Create Chatbot Trigger</h4>
+      <label>Trigger Word/Phrase</label>
+      <input type="text" id="triggerWord" placeholder="Example: hi, help, how are you">
+
+      <label>Chatbot Response</label>
+      <input type="text" id="triggerResponse" placeholder="Example: Hello! How can I help you?">
+
+      <button class="btn btn-primary" onclick="addTrigger()">Add Trigger</button>
+    </div>
+
+    <hr>
+
+    <!-- 🔸 Add Master Command -->
+    <div class="master-command-create">
+      <h4>Create Master Command</h4>
+      <label>Command Name</label>
+      <input type="text" id="masterCommand" placeholder="Example: Lock All">
+
+      <label>Command Description / Action</label>
+      <textarea id="masterAction" rows="2" placeholder="Example: Locks all users temporarily"></textarea>
+
+      <button class="btn btn-primary" onclick="addMasterCommand()">Add Master Command</button>
+    </div>
+
+    <hr>
+
+    <!-- 🔸 Predefined Command Actions -->
+    <h4>Available Master Commands</h4>
+    <div id="masterList" class="list"></div>
+
+    <h4>Chatbot Triggers</h4>
+    <div id="triggerList" class="list"></div>
+  </div>
+</div>
+
+<script>
+/* --------------------------------
+   INITIALIZE DEFAULT COMMANDS
+-------------------------------- */
+function initializeDefaults(){
+  if(!state.masterCommands || state.masterCommands.length === 0){
+    state.masterCommands = [
+      { command: "Lock All", action: "Temporarily locks every user account until unlocked." },
+      { command: "Unlock All", action: "Unlocks every user account." },
+      { command: "Lock User", action: "Locks a specific user by Reg. No or ID." },
+      { command: "Unlock User", action: "Unlocks a specific user by Reg. No or ID." },
+      { command: "Delete All Users", action: "Deletes all registered users permanently." },
+      { command: "Delete All Tests", action: "Clears all test data from the system." },
+      { command: "Reset Attendance", action: "Resets attendance for all users." },
+      { command: "Send Global Message", action: "Sends a broadcast message to all users." },
+      { command: "Freeze System", action: "Disables all non-admin logins temporarily." },
+      { command: "Unfreeze System", action: "Re-enables normal logins after freeze." },
+      { command: "Generate Backup", action: "Creates a downloadable backup of user and test data." },
+      { command: "Restore Backup", action: "Restores data from a selected backup file." },
+      { command: "Clear Chatbot Logs", action: "Deletes all chatbot interaction history." },
+      { command: "Reset System", action: "Completely resets the system (requires confirmation)." },
+    ];
+    saveStorage();
+  }
+}
+
+/* --------------------------------
+   TRIGGER MANAGEMENT
+-------------------------------- */
+function loadTriggers(){
+  const list = document.getElementById('triggerList');
+  list.innerHTML = '';
+
+  if(!state.triggers || state.triggers.length === 0){
+    list.innerHTML = `<div class="empty">No triggers found.</div>`;
+    return;
+  }
+
+  state.triggers.forEach((t, i)=>{
+    const div = document.createElement('div');
+    div.className = 'card-item';
+    div.innerHTML = `
+      <b>${t.word}</b> → <i>${t.response}</i><br>
+      <button class="btn tiny btn-secondary" onclick="editTrigger(${i})">Edit</button>
+      <button class="btn tiny btn-danger" onclick="deleteTrigger(${i})">Delete</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function addTrigger(){
+  const word = document.getElementById('triggerWord').value.trim();
+  const response = document.getElementById('triggerResponse').value.trim();
+  if(!word || !response){ alert('Please fill both fields.'); return; }
+  state.triggers = state.triggers || [];
+  state.triggers.push({ word, response });
+  saveStorage();
+  addLog(`Trigger added: ${word}`);
+  alert('Trigger added successfully.');
+  document.getElementById('triggerWord').value = '';
+  document.getElementById('triggerResponse').value = '';
+  loadTriggers();
+}
+
+function editTrigger(index){
+  const t = state.triggers[index];
+  const newWord = prompt('Edit trigger word:', t.word);
+  if(newWord===null) return;
+  const newResponse = prompt('Edit response:', t.response);
+  if(newResponse===null) return;
+  t.word = newWord;
+  t.response = newResponse;
+  saveStorage();
+  addLog(`Trigger edited: ${newWord}`);
+  loadTriggers();
+}
+
+function deleteTrigger(index){
+  if(!confirm('Delete this trigger?')) return;
+  const removed = state.triggers.splice(index, 1);
+  saveStorage();
+  addLog(`Trigger deleted: ${removed[0].word}`);
+  loadTriggers();
+}
+
+/* --------------------------------
+   MASTER COMMAND MANAGEMENT
+-------------------------------- */
+function loadMasterCommands(){
+  const list = document.getElementById('masterList');
+  list.innerHTML = '';
+
+  if(!state.masterCommands || state.masterCommands.length === 0){
+    list.innerHTML = `<div class="empty">No master commands found.</div>`;
+    return;
+  }
+
+  state.masterCommands.forEach((m, i)=>{
+    const div = document.createElement('div');
+    div.className = 'card-item';
+    div.innerHTML = `
+      <b>${m.command}</b><br>
+      <i>${m.action}</i><br>
+      <button class="btn tiny btn-success" onclick="runMasterCommand('${m.command}')">Run</button>
+      <button class="btn tiny btn-secondary" onclick="editMasterCommand(${i})">Edit</button>
+      <button class="btn tiny btn-danger" onclick="deleteMasterCommand(${i})">Delete</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function addMasterCommand(){
+  const command = document.getElementById('masterCommand').value.trim();
+  const action = document.getElementById('masterAction').value.trim();
+  if(!command || !action){ alert('Please fill both fields.'); return; }
+  state.masterCommands.push({ command, action });
+  saveStorage();
+  addLog(`Master Command added: ${command}`);
+  alert('Master command added successfully.');
+  document.getElementById('masterCommand').value = '';
+  document.getElementById('masterAction').value = '';
+  loadMasterCommands();
+}
+
+function editMasterCommand(index){
+  const m = state.masterCommands[index];
+  const newCmd = prompt('Edit command:', m.command);
+  if(newCmd===null) return;
+  const newAct = prompt('Edit action:', m.action);
+  if(newAct===null) return;
+  m.command = newCmd;
+  m.action = newAct;
+  saveStorage();
+  addLog(`Master Command edited: ${newCmd}`);
+  loadMasterCommands();
+}
+
+function deleteMasterCommand(index){
+  if(!confirm('Delete this master command?')) return;
+  const removed = state.masterCommands.splice(index,1);
+  saveStorage();
+  addLog(`Master Command deleted: ${removed[0].command}`);
+  loadMasterCommands();
+}
+
+/* --------------------------------
+   RUN COMMANDS (Simulated)
+-------------------------------- */
+function runMasterCommand(cmd){
+  alert(`Executing: ${cmd}`);
+  addLog(`Master Command executed: ${cmd}`);
+}
+
+/* --------------------------------
+   AUTO LOAD ON PAGE OPEN
+-------------------------------- */
+initializeDefaults();
+loadMasterCommands();
+loadTriggers();
+    </script>
