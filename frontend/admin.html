@@ -299,3 +299,37 @@
 
 <!-- Link to Master Command JS -->
 <script src="masterCommandManagement.js"></script>
+<!-- ===========================
+     Chatbot Admin Management
+=========================== -->
+<div id="chatbotAdminSection" class="admin-section" style="display:none;">
+  <h2>🤖 Chatbot Trigger Management</h2>
+
+  <!-- Add New Trigger -->
+  <div class="addCommandBar">
+    <button onclick="promptAddTrigger()">➕ Add New Trigger</button>
+  </div>
+
+  <!-- Trigger List -->
+  <div id="triggerList">
+    <!-- Triggers will be dynamically rendered here -->
+  </div>
+</div>
+
+<!-- Chatbot Lock / Alert Overlay -->
+<div id="chatbotOverlay">
+  <div id="chatbotMessage">Chatbot Locked</div>
+</div>
+
+<!-- Student Chatbot Container (Optional for preview/testing in admin) -->
+<div class="chatbot-container" id="studentChatbot" style="display:none;">
+  <div class="chatbot-header">Student Chatbot</div>
+  <div class="chatbot-messages" id="studentMessages"></div>
+  <div class="chatbot-input-area">
+    <input type="text" id="studentInput" placeholder="Type your message...">
+    <button onclick="studentSendMessage(document.getElementById('studentInput').value)">Send</button>
+  </div>
+</div>
+
+<!-- Link Chatbot JS -->
+<script src="chatbotManagement.js"></script>
