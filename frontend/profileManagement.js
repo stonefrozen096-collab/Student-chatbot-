@@ -1,15 +1,13 @@
-// ---------- Profile Management (JSON-based) ----------
+// ---------- Profile Management (API Version) ----------
 let users = [];
 
-// ---------- Fetch Users from JSON ----------
+// ---------- Fetch Users from API ----------
 async function loadUsers() {
   try {
-    const res = await fetch('data/users.json'); // Replace with your JSON path
-    if (!res.ok) throw 'Failed to fetch users.json';
-    users = await res.json();
+    users = await fetchUsers(); // API: returns all users
     renderProfiles(users);
   } catch (err) {
-    console.error(err);
+    console.error('Failed to fetch users from API', err);
     const tbody = document.querySelector('#profileTable tbody');
     tbody.innerHTML = '<tr><td colspan="9">Error loading users.</td></tr>';
   }
@@ -41,8 +39,8 @@ function renderProfiles(list = users) {
       <td>${accessHtml || 'None'}</td>
       <td>${user.locked ? '🔒 Locked' : '✅ Active'}</td>
       <td>
-        <button onclick="editUserProfile(${index}, this)">✏️ Edit</button>
-        <button onclick="deleteUser(${index}, this)">🗑️ Delete</button>
+        <button onclick="editUserProfileAPI('${user.id}')">✏️ Edit</button>
+        <button onclick="deleteUserAPI('${user.id}')">🗑️ Delete</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -61,8 +59,10 @@ document.getElementById('profileSearch').addEventListener('input', e => {
 });
 
 // ---------- Edit Profile ----------
-async function editUserProfile(index, btn) {
-  const user = users[index];
+async function editUserProfileAPI(id) {
+  const user = users.find(u => u.id === id);
+  if (!user) return alert('User not found');
+
   const newName = prompt('Edit Name:', user.name);
   const newEmail = prompt('Edit Email:', user.email);
   const newPic = prompt('Profile Picture URL:', user.profilePic || '');
@@ -71,38 +71,30 @@ async function editUserProfile(index, btn) {
   if (newEmail) user.email = newEmail;
   if (newPic) user.profilePic = newPic;
 
-  await saveUsers();
-  showNotification('✅ Profile updated.');
-
-  const row = btn.closest('tr');
-  row.classList.add('updated');
-  setTimeout(() => row.classList.remove('updated'), 1200);
-
-  renderProfiles();
-}
-
-// ---------- Delete User ----------
-async function deleteUser(index, btn) {
-  if (confirm(`Delete user ${users[index].username}?`)) {
-    users.splice(index, 1);
-    await saveUsers();
-    showNotification('🗑️ User deleted.');
-
-    const row = btn.closest('tr');
-    row.classList.add('updated');
-    setTimeout(() => row.classList.remove('updated'), 1200);
-
+  try {
+    const updatedUser = await updateUser(id, user); // API call
+    const idx = users.findIndex(u => u.id === id);
+    users[idx] = updatedUser;
     renderProfiles();
+    showNotification('✅ Profile updated.');
+  } catch (err) {
+    console.error('Failed to update user', err);
+    alert('Failed to update profile!');
   }
 }
 
-// ---------- Save Users to JSON (simulate POST) ----------
-async function saveUsers() {
-  await fetch('api/saveUsers', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(users)
-  });
+// ---------- Delete User ----------
+async function deleteUserAPI(id) {
+  if (!confirm('Delete this user?')) return;
+  try {
+    await deleteUser(id); // API call
+    users = users.filter(u => u.id !== id);
+    renderProfiles();
+    showNotification('🗑️ User deleted.');
+  } catch (err) {
+    console.error('Failed to delete user', err);
+    alert('Failed to delete user!');
+  }
 }
 
 // ---------- Floating Notification ----------
