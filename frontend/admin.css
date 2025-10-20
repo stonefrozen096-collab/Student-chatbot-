@@ -291,21 +291,120 @@ h2 {
   0% { opacity: 0; transform: translateY(-20px); }
   100% { opacity: 1; transform: translateY(0); }
 }
+/* ===== Profile Management ===== */
+#profileSection {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background: #f5f6fa;
+  border-radius: 10px;
+}
+
+#profileSection h2 {
+  margin-bottom: 15px;
+  color: #2c3e50;
+  font-size: 1.8rem;
+}
+
+#profileSection label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #34495e;
+}
+
+#profileSearch {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+#profileTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+#profileTable th, #profileTable td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #e1e1e1;
+  font-size: 0.95rem;
+}
+
+#profileTable th {
+  background: #3498db;
+  color: #fff;
+  font-weight: 600;
+}
+
+#profileTable tr:hover {
+  background: #f1faff;
+}
+
 .profileAvatar {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid #3498db;
 }
 
 .badge {
-  background: #ffcc00;
-  padding: 3px 8px;
-  border-radius: 5px;
-  margin-right: 2px;
-  font-size: 0.85rem;
   display: inline-block;
+  background: #e67e22;
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  margin-right: 4px;
 }
 
+button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-right: 4px;
+  transition: all 0.2s;
+}
 
+button:hover {
+  opacity: 0.85;
+}
 
+button:nth-child(1) {
+  background-color: #2ecc71; /* Edit */
+  color: #fff;
+}
+
+button:nth-child(2) {
+  background-color: #e74c3c; /* Delete */
+  color: #fff;
+}
+
+/* Floating success notification */
+.floatingNotification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(90deg,#2ecc71,#27ae60);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  z-index: 9999;
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
