@@ -382,3 +382,29 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <!-- Analytics script -->
 <script src="js/analytics.js"></script>
+<!-- =========================
+     Import & Export Management
+========================= -->
+<div id="importExportSection" class="admin-section" style="display:none;">
+  <h2>🔄 Import & Export Management</h2>
+
+  <div class="importExportContainer">
+    <!-- Export -->
+    <div class="exportBox">
+      <h3>📤 Export Data</h3>
+      <button class="btn btn-primary" onclick="exportAllData()">Export All JSON</button>
+    </div>
+
+    <!-- Import -->
+    <div class="importBox">
+      <h3>📥 Import Data</h3>
+      <input type="file" id="importFile" accept=".json">
+      <button class="btn btn-success" onclick="importAllData()">Import JSON</button>
+    </div>
+  </div>
+
+  <div id="importExportLog" class="logBox"></div>
+</div>
+
+<script src="js/importExport.js"></script>
+
