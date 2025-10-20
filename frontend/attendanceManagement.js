@@ -1,8 +1,25 @@
-// JSON storage simulation
-let students = JSON.parse(localStorage.getItem('users') || '[]');
-let attendanceRecords = JSON.parse(localStorage.getItem('attendance') || '[]');
+// ---------- Attendance Management (JSON Version) ----------
 
-// Render attendance table dynamically
+let students = [];
+let attendanceRecords = [];
+
+// ---------- Load JSON Data ----------
+async function loadAttendanceData() {
+  try {
+    const resUsers = await fetch('data/users.json');
+    students = await resUsers.json();
+
+    const resAttendance = await fetch('data/attendance.json');
+    attendanceRecords = await resAttendance.json();
+  } catch (err) {
+    console.error('Error loading JSON:', err);
+    students = [];
+    attendanceRecords = [];
+  }
+  renderAttendance();
+}
+
+// ---------- Render Attendance Table ----------
 function renderAttendance() {
   const tbody = document.querySelector('#attendanceTable tbody');
   tbody.innerHTML = '';
@@ -23,25 +40,35 @@ function renderAttendance() {
   });
 }
 
-// Save attendance to JSON
-function saveAttendance() {
+// ---------- Save Attendance to JSON ----------
+async function saveAttendance() {
   const date = document.getElementById('attendanceDate').value || new Date().toISOString().split('T')[0];
 
   students.filter(s => s.role === 'student').forEach(student => {
     const radios = document.getElementsByName(`att-${student.username}`);
-    let selected = Array.from(radios).find(r => r.checked)?.value || null;
+    const selected = Array.from(radios).find(r => r.checked)?.value || null;
 
-    let existing = attendanceRecords.find(a => a.username === student.username && a.date === date);
+    const existing = attendanceRecords.find(a => a.username === student.username && a.date === date);
     if (existing) existing.status = selected;
     else attendanceRecords.push({ username: student.username, date, status: selected });
   });
 
-  localStorage.setItem('attendance', JSON.stringify(attendanceRecords));
-  renderAttendance();
-  showAttendanceMsg();
+  // Save to JSON file via backend API
+  try {
+    await fetch('api/saveAttendance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(attendanceRecords)
+    });
+    renderAttendance();
+    showAttendanceMsg();
+  } catch (err) {
+    console.error('Error saving attendance:', err);
+    alert('Failed to save attendance!');
+  }
 }
 
-// Optional buttons
+// ---------- Optional Buttons ----------
 function markAllPresent() {
   document.querySelectorAll('input[type=radio][value=present]').forEach(r => r.checked = true);
 }
@@ -49,7 +76,7 @@ function markAllAbsent() {
   document.querySelectorAll('input[type=radio][value=absent]').forEach(r => r.checked = true);
 }
 
-// Success animation
+// ---------- Success Animation ----------
 function showAttendanceMsg() {
   const msg = document.createElement('div');
   msg.className = 'successMsg';
@@ -58,5 +85,5 @@ function showAttendanceMsg() {
   setTimeout(() => msg.remove(), 2000);
 }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', renderAttendance);
+// ---------- Initialize ----------
+document.addEventListener('DOMContentLoaded', loadAttendanceData);
