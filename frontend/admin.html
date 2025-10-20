@@ -111,3 +111,96 @@
 
 <!-- Link external JS file -->
 <script src="attendanceManagement.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Test Management</title>
+  <link rel="stylesheet" href="admin.css">
+  <style>
+    /* Floating success notification */
+    .floatingNotification {
+      position: fixed;
+      top: 20px; right: 20px;
+      background: #28a745; color: #fff;
+      padding: 12px 20px; border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      z-index: 9999;
+      font-weight: bold;
+      animation: slideIn 0.5s ease, fadeOut 0.5s 2.5s ease forwards;
+    }
+    @keyframes slideIn { from {transform: translateX(100%);} to {transform: translateX(0);} }
+    @keyframes fadeOut { to {opacity: 0; transform: translateX(100%);} }
+
+    /* Confetti container */
+    .confetti {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 9998;
+    }
+    .confetti-piece {
+      position: absolute; width: 10px; height: 10px; background-color: red;
+      opacity: 0.8; transform: rotate(45deg);
+      animation: fall 3s linear forwards;
+    }
+    @keyframes fall {
+      to { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <h2>📚 Test Management</h2>
+
+  <!-- Create Test -->
+  <form id="createTestForm">
+    <label>Test Title:</label>
+    <input type="text" id="testTitle" required>
+
+    <label>Subject:</label>
+    <input type="text" id="testSubject" required>
+
+    <label>Type:</label>
+    <select id="testType">
+      <option value="mcq">MCQ</option>
+      <option value="short">Short Answer</option>
+    </select>
+
+    <div id="mcqSection" style="display:none;">
+      <h4>MCQ Options</h4>
+      <div id="optionContainer"></div>
+      <button type="button" id="addOptionBtn">Add Option</button>
+      <label>Correct Answer:</label>
+      <select id="correctAnswerSelect"></select>
+    </div>
+
+    <label>Publish To:</label>
+    <select id="publishSelect">
+      <option value="all">All Students</option>
+      <option value="specific">Specific Students</option>
+    </select>
+    <div id="studentSelectContainer" style="display:none;">
+      <label>Select Students:</label>
+      <select id="studentSelect" multiple></select>
+    </div>
+
+    <button type="submit">Create & Publish Test</button>
+  </form>
+
+  <h3>Existing Tests</h3>
+  <table id="testTable">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Subject</th>
+        <th>Type</th>
+        <th>Published To</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="confetti" id="confettiContainer"></div>
+  
+  <script src="testManagement.js"></script>
+</body>
+</html>
