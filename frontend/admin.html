@@ -204,3 +204,44 @@
   <script src="testManagement.js"></script>
 </body>
 </html>
+<div id="noticeSection" class="admin-section" style="display:none;">
+  <h2>📢 Notice Management</h2>
+
+  <form id="addNoticeForm">
+    <label>Title:</label>
+    <input type="text" id="noticeTitle" required>
+
+    <label>Message:</label>
+    <textarea id="noticeMessage" required></textarea>
+
+    <label>Publish To:</label>
+    <select id="noticePublishSelect">
+      <option value="all">All Students</option>
+      <option value="specific">Specific Students</option>
+    </select>
+
+    <div id="noticeStudentContainer" style="display:none;">
+      <label>Select Students:</label>
+      <select id="noticeStudentSelect" multiple></select>
+    </div>
+
+    <button type="submit">Publish Notice</button>
+  </form>
+
+  <h3>Existing Notices</h3>
+  <table id="noticeTable">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Message</th>
+        <th>Published To</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div id="floatingContainer"></div>
+
+<script src="noticeManagement.js"></script>
