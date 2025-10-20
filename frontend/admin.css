@@ -291,34 +291,29 @@ h2 {
   0% { opacity: 0; transform: translateY(-20px); }
   100% { opacity: 1; transform: translateY(0); }
 }
-/* ===== Profile Management ===== */
+/* ===== PROFILE MANAGEMENT SECTION ===== */
 #profileSection {
+  background: #f9fafc;
+  border-radius: 14px;
   padding: 20px;
-  font-family: Arial, sans-serif;
-  background: #f5f6fa;
-  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  animation: fadeIn 0.5s ease;
 }
 
 #profileSection h2 {
+  color: #333;
+  text-align: center;
   margin-bottom: 15px;
-  color: #2c3e50;
-  font-size: 1.8rem;
-}
-
-#profileSection label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #34495e;
 }
 
 #profileSearch {
-  width: 100%;
-  padding: 8px 12px;
-  margin-bottom: 20px;
-  border-radius: 6px;
+  display: block;
+  margin: 0 auto 20px auto;
+  width: 60%;
+  padding: 10px;
   border: 1px solid #ccc;
-  font-size: 1rem;
+  border-radius: 6px;
+  font-size: 15px;
 }
 
 #profileTable {
@@ -327,84 +322,99 @@ h2 {
   background: #fff;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  animation: fadeInUp 0.4s ease;
 }
 
 #profileTable th, #profileTable td {
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 1px solid #e1e1e1;
-  font-size: 0.95rem;
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
 }
 
 #profileTable th {
-  background: #3498db;
+  background: #004aad;
   color: #fff;
-  font-weight: 600;
 }
 
 #profileTable tr:hover {
-  background: #f1faff;
+  background: #f1f6ff;
+  transition: background 0.2s;
 }
 
+/* Avatar styling */
 .profileAvatar {
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #3498db;
+  border: 2px solid #004aad;
 }
 
+/* Badge styling */
 .badge {
   display: inline-block;
-  background: #e67e22;
-  color: #fff;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  margin-right: 4px;
+  padding: 4px 10px;
+  margin: 2px;
+  background: linear-gradient(45deg, #4facfe, #00f2fe);
+  color: white;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
-button {
-  padding: 5px 10px;
+/* Buttons */
+#profileTable button {
+  background: #004aad;
+  color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
+  padding: 6px 10px;
   cursor: pointer;
-  font-size: 0.85rem;
-  margin-right: 4px;
+  font-size: 14px;
   transition: all 0.2s;
 }
 
-button:hover {
-  opacity: 0.85;
+#profileTable button:hover {
+  background: #006bff;
+  transform: scale(1.05);
 }
 
-button:nth-child(1) {
-  background-color: #2ecc71; /* Edit */
-  color: #fff;
+/* ✅ Edit/Delete highlight animation */
+@keyframes highlightFlash {
+  0% { background-color: #d1ffd6; }
+  50% { background-color: #b0fcbf; }
+  100% { background-color: transparent; }
 }
 
-button:nth-child(2) {
-  background-color: #e74c3c; /* Delete */
-  color: #fff;
+tr.updated {
+  animation: highlightFlash 1.2s ease;
 }
 
-/* Floating success notification */
+/* ✅ Floating notification effect */
 .floatingNotification {
   position: fixed;
-  bottom: 20px;
+  top: 20px;
   right: 20px;
-  background: linear-gradient(90deg,#2ecc71,#27ae60);
+  background: #004aad;
   color: #fff;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-weight: bold;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-  z-index: 9999;
-  animation: slideUp 0.5s ease-out;
+  padding: 12px 18px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: slideIn 0.5s ease;
+  z-index: 1000;
 }
 
-@keyframes slideUp {
-  0% { transform: translateY(20px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
