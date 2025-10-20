@@ -156,3 +156,15 @@ h2 {
   50% { transform: scale(1.1); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
 }
+#attendanceSection { padding: 20px; background: #f9f9f9; border-radius: 8px; }
+#attendanceTable { width: 100%; border-collapse: collapse; margin-top: 10px; }
+#attendanceTable th, #attendanceTable td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+#attendanceTable th { background-color: #4CAF50; color: white; }
+.successMsg {
+  position: fixed; top: 20px; right: 20px; background: #28a745;
+  color: white; padding: 10px 20px; border-radius: 5px;
+  font-weight: bold; animation: fadeInOut 2s forwards;
+}
+@keyframes fadeInOut { 0% {opacity:0;} 10% {opacity:1;} 90% {opacity:1;} 100% {opacity:0;} }
+
+
