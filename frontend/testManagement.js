@@ -1,11 +1,9 @@
-// ======= Test Management JS =======
-
-// Load data from JSON (replace with your JSON fetching logic if needed)
-let tests = JSON.parse(localStorage.getItem('tests') || '[]');
-let users = JSON.parse(localStorage.getItem('users') || '[]'); // For student selection
+// ---------- Test Management (JSON-based) ----------
+let tests = [];
+let users = [];
 let options = [];
 
-// ======= Elements =======
+// ---------- Elements ----------
 const form = document.getElementById('createTestForm');
 const typeSelect = document.getElementById('testType');
 const mcqSection = document.getElementById('mcqSection');
@@ -19,14 +17,31 @@ const studentSelect = document.getElementById('studentSelect');
 const testTable = document.querySelector('#testTable tbody');
 const confettiContainer = document.getElementById('confettiContainer');
 
-// ======= MCQ Section Toggle =======
+// ---------- Load JSON Data ----------
+async function loadData() {
+  try {
+    const resUsers = await fetch('data/users.json');
+    users = await resUsers.json();
+  } catch(e){ console.error('Failed to load users', e); }
+
+  try {
+    const resTests = await fetch('data/tests.json');
+    tests = await resTests.json();
+  } catch(e){ console.error('Failed to load tests', e); }
+
+  renderOptions();
+  renderStudentOptions();
+  renderTestTable();
+}
+
+// ---------- MCQ Section Toggle ----------
 typeSelect.addEventListener('change', () => {
   mcqSection.style.display = typeSelect.value === 'mcq' ? 'block' : 'none';
   options = [];
   renderOptions();
 });
 
-// ======= Add Option =======
+// ---------- Add Option ----------
 addOptionBtn.addEventListener('click', () => {
   const optionText = prompt('Enter option text:');
   if(optionText) {
@@ -35,7 +50,7 @@ addOptionBtn.addEventListener('click', () => {
   }
 });
 
-// ======= Render Options =======
+// ---------- Render Options ----------
 function renderOptions() {
   optionContainer.innerHTML = '';
   correctAnswerSelect.innerHTML = '';
@@ -52,7 +67,7 @@ function renderOptions() {
   });
 }
 
-// ======= Publish Select Toggle =======
+// ---------- Publish Select Toggle ----------
 publishSelect.addEventListener('change', () => {
   if(publishSelect.value === 'specific') {
     studentSelectContainer.style.display = 'block';
@@ -62,7 +77,7 @@ publishSelect.addEventListener('change', () => {
   }
 });
 
-// ======= Render Student Options =======
+// ---------- Render Student Options ----------
 function renderStudentOptions() {
   studentSelect.innerHTML = '';
   users.filter(u => u.role === 'student').forEach(s => {
@@ -73,8 +88,17 @@ function renderStudentOptions() {
   });
 }
 
-// ======= Create & Publish Test =======
-form.addEventListener('submit', e => {
+// ---------- Save Tests JSON ----------
+async function saveTests() {
+  await fetch('api/saveTests', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(tests)
+  });
+}
+
+// ---------- Create & Publish Test ----------
+form.addEventListener('submit', async e => {
   e.preventDefault();
 
   const title = document.getElementById('testTitle').value.trim();
@@ -86,22 +110,22 @@ form.addEventListener('submit', e => {
 
   let assignedStudents = [];
   if(publishTo === 'all') {
-    assignedStudents = users.filter(u => u.role === 'student').map(s => s.username);
+    assignedStudents = users.filter(u => u.role==='student').map(s => s.username);
   } else {
     assignedStudents = Array.from(studentSelect.selectedOptions).map(o => o.value);
   }
 
-  const test = { 
-    title, 
-    subject, 
-    type, 
-    options: [...options], 
-    correct: correctAnswerSelect.value, 
-    assignedStudents 
+  const test = {
+    title,
+    subject,
+    type,
+    options: [...options],
+    correct: correctAnswerSelect.value,
+    assignedStudents
   };
 
   tests.push(test);
-  localStorage.setItem('tests', JSON.stringify(tests));
+  await saveTests();
 
   showSuccessNotification('✅ Test created & published!');
   showConfetti();
@@ -113,7 +137,7 @@ form.addEventListener('submit', e => {
   renderTestTable();
 });
 
-// ======= Render Test Table =======
+// ---------- Render Test Table ----------
 function renderTestTable() {
   testTable.innerHTML = '';
   tests.forEach((t, index) => {
@@ -135,16 +159,16 @@ function renderTestTable() {
   });
 }
 
-// ======= Delete Test =======
-function deleteTest(index) {
+// ---------- Delete Test ----------
+async function deleteTest(index) {
   if(confirm('Delete this test?')) {
     tests.splice(index,1);
-    localStorage.setItem('tests', JSON.stringify(tests));
+    await saveTests();
     renderTestTable();
   }
 }
 
-// ======= Floating Success Notification =======
+// ---------- Floating Success Notification ----------
 function showSuccessNotification(msg) {
   const notif = document.createElement('div');
   notif.className = 'floatingNotification';
@@ -153,7 +177,7 @@ function showSuccessNotification(msg) {
   setTimeout(()=>notif.remove(), 3000);
 }
 
-// ======= Confetti Animation =======
+// ---------- Confetti Animation ----------
 function showConfetti() {
   for(let i=0;i<50;i++){
     const confetti = document.createElement('div');
@@ -172,9 +196,5 @@ function showConfetti() {
   }
 }
 
-// ======= Initialize =======
-document.addEventListener('DOMContentLoaded', () => {
-  renderOptions();
-  renderStudentOptions();
-  renderTestTable();
-});
+// ---------- Initialize ----------
+document.addEventListener('DOMContentLoaded', loadData);
