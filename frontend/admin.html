@@ -1,124 +1,16 @@
-<!-- USER MANAGEMENT SECTION -->
-<div id="userManagementSection" class="admin-section" style="display:none;">
-  <h2>👤 User Management</h2>
-
-  <!-- Add User Form -->
-  <form id="addUserForm" class="user-form">
-    <input type="text" id="username" placeholder="Username" required>
-    <input type="email" id="email" placeholder="Email" required>
-    <select id="role">
-      <option value="student">Student</option>
-      <option value="moderator">Moderator</option>
-      <option value="admin">Admin</option>
-    </select>
-    <button type="submit">Add User</button>
-  </form>
-
-  <!-- User Table -->
-  <table id="userTable">
-    <thead>
-      <tr>
-        <th>Username</th>
-        <th>Email</th>
-        <th>Role</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-
-<!-- Link JS -->
-<script src="js/userManagement.js"></script>
-<!-- BADGE MANAGEMENT SECTION -->
-<div id="badgeSection" class="admin-section" style="display:none;">
-  <h2>🏅 Badge Management</h2>
-
-  <!-- Create Badge -->
-  <form id="addBadgeForm">
-    <label>Badge Name:</label>
-    <input type="text" id="badgeName" required>
-
-    <label>Effects (visual):</label>
-    <select id="badgeEffects" multiple>
-      <option value="glow">Glow</option>
-      <option value="spin">Spin</option>
-      <option value="rainbow">Rainbow</option>
-      <option value="bounce">Bounce</option>
-      <option value="shadow">Shadow</option>
-      <option value="pulse">Pulse</option>
-    </select>
-
-    <label>Special Access (permissions):</label>
-    <select id="badgeAccess" multiple>
-      <option value="editAttendance">Edit Attendance</option>
-      <option value="editTests">Edit Tests</option>
-      <option value="manageUsers">Manage Users</option>
-      <option value="accessMasterCommand">Master Command</option>
-      <option value="sendGlobalMessage">Send Global Messages</option>
-    </select>
-
-    <button type="submit">Create Badge</button>
-  </form>
-
-  <div id="badgeList" class="list"></div>
-
-  <!-- Assign Badge -->
-  <h3>Assign Badge to User</h3>
-  <select id="assignBadgeUser">
-    <option value="">Select User</option>
-  </select>
-  <select id="assignBadgeSelect">
-    <option value="">Select Badge</option>
-  </select>
-  <button id="assignBadgeBtn">Assign Badge</button>
-
-  <div id="badgeStatus" class="statusBox"></div>
-</div>
-
-<!-- Link JS -->
-<script src="badgeManagement.js"></script>
-<div id="attendanceSection" class="admin-section">
-  <h2>📋 Attendance Management</h2>
-
-  <div class="attendance-controls">
-    <label>Select Date:</label>
-    <input type="date" id="attendanceDate" />
-
-    <button onclick="markAllPresent()">Mark All Present</button>
-    <button onclick="markAllAbsent()">Mark All Absent</button>
-  </div>
-
-  <table id="attendanceTable">
-    <thead>
-      <tr>
-        <th>Student</th>
-        <th>Present</th>
-        <th>Absent</th>
-        <th>Late</th>
-        <th>On Duty</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- JS will populate -->
-    </tbody>
-  </table>
-
-  <button onclick="saveAttendance()">💾 Save Attendance</button>
-</div>
-
-<!-- Link external JS file -->
-<script src="attendanceManagement.js"></script>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Admin - Test Management</title>
+  <title>Admin Panel</title>
+  <!-- CSS Files -->
   <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="chatbot.css">
+  <link rel="stylesheet" href="importExport.css">
+  <!-- Chart.js for analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    /* Floating success notification */
+    /* Floating notification */
     .floatingNotification {
       position: fixed;
       top: 20px; right: 20px;
@@ -132,38 +24,115 @@
     @keyframes slideIn { from {transform: translateX(100%);} to {transform: translateX(0);} }
     @keyframes fadeOut { to {opacity: 0; transform: translateX(100%);} }
 
-    /* Confetti container */
-    .confetti {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 9998;
-    }
-    .confetti-piece {
-      position: absolute; width: 10px; height: 10px; background-color: red;
-      opacity: 0.8; transform: rotate(45deg);
-      animation: fall 3s linear forwards;
-    }
-    @keyframes fall {
-      to { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-    }
+    /* Confetti */
+    .confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9998; }
+    .confetti-piece { position: absolute; width: 10px; height: 10px; background-color: red; opacity: 0.8; transform: rotate(45deg); animation: fall 3s linear forwards; }
+    @keyframes fall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
   </style>
 </head>
 <body>
-  <h2>📚 Test Management</h2>
 
-  <!-- Create Test -->
+<!-- ===================== USER MANAGEMENT ===================== -->
+<div id="userManagementSection" class="admin-section" style="display:none;">
+  <h2>👤 User Management</h2>
+  <form id="addUserForm" class="user-form">
+    <input type="text" id="username" placeholder="Username" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <select id="role">
+      <option value="student">Student</option>
+      <option value="moderator">Moderator</option>
+      <option value="admin">Admin</option>
+    </select>
+    <button type="submit">Add User</button>
+  </form>
+  <table id="userTable">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+<script src="js/userManagement.js"></script>
+
+<!-- ===================== BADGE MANAGEMENT ===================== -->
+<div id="badgeSection" class="admin-section" style="display:none;">
+  <h2>🏅 Badge Management</h2>
+  <form id="addBadgeForm">
+    <label>Badge Name:</label>
+    <input type="text" id="badgeName" required>
+    <label>Effects (visual):</label>
+    <select id="badgeEffects" multiple>
+      <option value="glow">Glow</option>
+      <option value="spin">Spin</option>
+      <option value="rainbow">Rainbow</option>
+      <option value="bounce">Bounce</option>
+      <option value="shadow">Shadow</option>
+      <option value="pulse">Pulse</option>
+    </select>
+    <label>Special Access (permissions):</label>
+    <select id="badgeAccess" multiple>
+      <option value="editAttendance">Edit Attendance</option>
+      <option value="editTests">Edit Tests</option>
+      <option value="manageUsers">Manage Users</option>
+      <option value="accessMasterCommand">Master Command</option>
+      <option value="sendGlobalMessage">Send Global Messages</option>
+    </select>
+    <button type="submit">Create Badge</button>
+  </form>
+  <div id="badgeList" class="list"></div>
+  <h3>Assign Badge to User</h3>
+  <select id="assignBadgeUser"><option value="">Select User</option></select>
+  <select id="assignBadgeSelect"><option value="">Select Badge</option></select>
+  <button id="assignBadgeBtn">Assign Badge</button>
+  <div id="badgeStatus" class="statusBox"></div>
+</div>
+<script src="badgeManagement.js"></script>
+
+<!-- ===================== ATTENDANCE MANAGEMENT ===================== -->
+<div id="attendanceSection" class="admin-section">
+  <h2>📋 Attendance Management</h2>
+  <div class="attendance-controls">
+    <label>Select Date:</label>
+    <input type="date" id="attendanceDate" />
+    <button onclick="markAllPresent()">Mark All Present</button>
+    <button onclick="markAllAbsent()">Mark All Absent</button>
+  </div>
+  <table id="attendanceTable">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Present</th>
+        <th>Absent</th>
+        <th>Late</th>
+        <th>On Duty</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <button onclick="saveAttendance()">💾 Save Attendance</button>
+</div>
+<script src="attendanceManagement.js"></script>
+
+<!-- ===================== TEST MANAGEMENT ===================== -->
+<div id="testSection" class="admin-section" style="display:none;">
+  <h2>📚 Test Management</h2>
   <form id="createTestForm">
     <label>Test Title:</label>
     <input type="text" id="testTitle" required>
-
     <label>Subject:</label>
     <input type="text" id="testSubject" required>
-
     <label>Type:</label>
     <select id="testType">
       <option value="mcq">MCQ</option>
       <option value="short">Short Answer</option>
     </select>
-
     <div id="mcqSection" style="display:none;">
       <h4>MCQ Options</h4>
       <div id="optionContainer"></div>
@@ -171,7 +140,6 @@
       <label>Correct Answer:</label>
       <select id="correctAnswerSelect"></select>
     </div>
-
     <label>Publish To:</label>
     <select id="publishSelect">
       <option value="all">All Students</option>
@@ -181,10 +149,8 @@
       <label>Select Students:</label>
       <select id="studentSelect" multiple></select>
     </div>
-
     <button type="submit">Create & Publish Test</button>
   </form>
-
   <h3>Existing Tests</h3>
   <table id="testTable">
     <thead>
@@ -198,36 +164,29 @@
     </thead>
     <tbody></tbody>
   </table>
-
   <div class="confetti" id="confettiContainer"></div>
-  
-  <script src="testManagement.js"></script>
-</body>
-</html>
+</div>
+<script src="testManagement.js"></script>
+
+<!-- ===================== NOTICE MANAGEMENT ===================== -->
 <div id="noticeSection" class="admin-section" style="display:none;">
   <h2>📢 Notice Management</h2>
-
   <form id="addNoticeForm">
     <label>Title:</label>
     <input type="text" id="noticeTitle" required>
-
     <label>Message:</label>
     <textarea id="noticeMessage" required></textarea>
-
     <label>Publish To:</label>
     <select id="noticePublishSelect">
       <option value="all">All Students</option>
       <option value="specific">Specific Students</option>
     </select>
-
     <div id="noticeStudentContainer" style="display:none;">
       <label>Select Students:</label>
       <select id="noticeStudentSelect" multiple></select>
     </div>
-
     <button type="submit">Publish Notice</button>
   </form>
-
   <h3>Existing Notices</h3>
   <table id="noticeTable">
     <thead>
@@ -241,20 +200,15 @@
     <tbody></tbody>
   </table>
 </div>
-
-<div id="floatingContainer"></div>
-
 <script src="noticeManagement.js"></script>
+
+<!-- ===================== PROFILE MANAGEMENT ===================== -->
 <div id="profileSection" class="admin-section" style="display:none;">
   <h2>👤 Profile Management</h2>
-
-  <!-- Search Bar -->
   <div class="searchBar">
     <label for="profileSearch">Search Users:</label>
     <input type="text" id="profileSearch" placeholder="Search by name, email, or username">
   </div>
-
-  <!-- Profiles Table -->
   <table id="profileTable" class="styledTable">
     <thead>
       <tr>
@@ -272,56 +226,34 @@
     <tbody></tbody>
   </table>
 </div>
-
-<!-- Link JS -->
 <script src="profileManagement.js"></script>
-<!-- ---------- MASTER COMMAND SECTION ---------- -->
+
+<!-- ===================== MASTER COMMAND ===================== -->
 <div id="masterCommandSection" class="admin-section" style="display:none;">
   <h2>⚡ Master Command Management</h2>
-
-  <!-- Add New Command -->
   <div class="addCommandBar">
     <button onclick="promptAddCommand()">➕ Add New Command</button>
   </div>
-
-  <!-- Command List -->
-  <div class="commandList" id="masterList">
-    <!-- Commands will be dynamically rendered here -->
-  </div>
+  <div class="commandList" id="masterList"></div>
 </div>
-
-<!-- Global Lock / Broadcast Overlay -->
 <div id="globalLockOverlay" style="display:none;">
   <div class="lockIcon">🔒</div>
   <div id="lockMessage">All Users Locked</div>
   <div id="countdownTimer"></div>
 </div>
-
-<!-- Link to Master Command JS -->
 <script src="masterCommandManagement.js"></script>
-<!-- ===========================
-     Chatbot Admin Management
-=========================== -->
+
+<!-- ===================== CHATBOT MANAGEMENT ===================== -->
 <div id="chatbotAdminSection" class="admin-section" style="display:none;">
   <h2>🤖 Chatbot Trigger Management</h2>
-
-  <!-- Add New Trigger -->
   <div class="addCommandBar">
     <button onclick="promptAddTrigger()">➕ Add New Trigger</button>
   </div>
-
-  <!-- Trigger List -->
-  <div id="triggerList">
-    <!-- Triggers will be dynamically rendered here -->
-  </div>
+  <div id="triggerList"></div>
 </div>
-
-<!-- Chatbot Lock / Alert Overlay -->
 <div id="chatbotOverlay">
   <div id="chatbotMessage">Chatbot Locked</div>
 </div>
-
-<!-- Student Chatbot Container (Optional for preview/testing in admin) -->
 <div class="chatbot-container" id="studentChatbot" style="display:none;">
   <div class="chatbot-header">Student Chatbot</div>
   <div class="chatbot-messages" id="studentMessages"></div>
@@ -330,81 +262,48 @@
     <button onclick="studentSendMessage(document.getElementById('studentInput').value)">Send</button>
   </div>
 </div>
-
-<!-- Link Chatbot JS -->
 <script src="chatbotManagement.js"></script>
-<!-- 📊 Analytics Management Section -->
+
+<!-- ===================== ANALYTICS ===================== -->
 <div id="analyticsSection" class="admin-section" style="display:none;">
   <h2>📈 Analytics Management</h2>
-
   <div class="analytics-cards">
-    <div class="card">
-      <h3>Total Messages</h3>
-      <p id="totalMessages">0</p>
-    </div>
-    <div class="card">
-      <h3>Active Users</h3>
-      <p id="activeUsers">0</p>
-    </div>
-    <div class="card">
-      <h3>Chatbot Locks</h3>
-      <p id="lockCount">0</p>
-    </div>
-    <div class="card">
-      <h3>Total Lock Duration (mins)</h3>
-      <p id="lockDuration">0</p>
-    </div>
+    <div class="card"><h3>Total Messages</h3><p id="totalMessages">0</p></div>
+    <div class="card"><h3>Active Users</h3><p id="activeUsers">0</p></div>
+    <div class="card"><h3>Chatbot Locks</h3><p id="lockCount">0</p></div>
+    <div class="card"><h3>Total Lock Duration (mins)</h3><p id="lockDuration">0</p></div>
   </div>
 
   <div class="analytics-cards">
-    <div class="card">
-      <h3>Most Used Trigger</h3>
-      <p id="topTrigger">None</p>
-    </div>
-    <div class="card">
-      <h3>Urgent Alerts</h3>
-      <p id="urgentCount">0</p>
-    </div>
-    <div class="card">
-      <h3>Warnings</h3>
-      <p id="warningCount">0</p>
-    </div>
-    <div class="card">
-      <h3>Normal Messages</h3>
-      <p id="normalCount">0</p>
-    </div>
+    <div class="card"><h3>Most Used Trigger</h3><p id="topTrigger">None</p></div>
+    <div class="card"><h3>Urgent Alerts</h3><p id="urgentCount">0</p></div>
+    <div class="card"><h3>Warnings</h3><p id="warningCount">0</p></div>
+    <div class="card"><h3>Normal Messages</h3><p id="normalCount">0</p></div>
   </div>
 
   <canvas id="messagesChart"></canvas>
 </div>
-
-<!-- Chart.js library -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- Analytics script -->
 <script src="js/analytics.js"></script>
-<!-- =========================
-     Import & Export Management
-========================= -->
+
+<!-- ===================== IMPORT & EXPORT ===================== -->
 <div id="importExportSection" class="admin-section" style="display:none;">
   <h2>🔄 Import & Export Management</h2>
-
   <div class="importExportContainer">
-    <!-- Export -->
     <div class="exportBox">
       <h3>📤 Export Data</h3>
       <button class="btn btn-primary" onclick="exportAllData()">Export All JSON</button>
     </div>
-
-    <!-- Import -->
     <div class="importBox">
       <h3>📥 Import Data</h3>
       <input type="file" id="importFile" accept=".json">
       <button class="btn btn-success" onclick="importAllData()">Import JSON</button>
     </div>
   </div>
-
   <div id="importExportLog" class="logBox"></div>
 </div>
-
 <script src="js/importExport.js"></script>
 
+</body>
+</html>
+    
+    
