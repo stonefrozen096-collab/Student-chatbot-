@@ -291,5 +291,21 @@ h2 {
   0% { opacity: 0; transform: translateY(-20px); }
   100% { opacity: 1; transform: translateY(0); }
 }
+.profileAvatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.badge {
+  background: #ffcc00;
+  padding: 3px 8px;
+  border-radius: 5px;
+  margin-right: 2px;
+  font-size: 0.85rem;
+  display: inline-block;
+}
+
 
 
