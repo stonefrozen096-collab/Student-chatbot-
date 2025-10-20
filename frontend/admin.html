@@ -333,3 +333,52 @@
 
 <!-- Link Chatbot JS -->
 <script src="chatbotManagement.js"></script>
+<!-- 📊 Analytics Management Section -->
+<div id="analyticsSection" class="admin-section" style="display:none;">
+  <h2>📈 Analytics Management</h2>
+
+  <div class="analytics-cards">
+    <div class="card">
+      <h3>Total Messages</h3>
+      <p id="totalMessages">0</p>
+    </div>
+    <div class="card">
+      <h3>Active Users</h3>
+      <p id="activeUsers">0</p>
+    </div>
+    <div class="card">
+      <h3>Chatbot Locks</h3>
+      <p id="lockCount">0</p>
+    </div>
+    <div class="card">
+      <h3>Total Lock Duration (mins)</h3>
+      <p id="lockDuration">0</p>
+    </div>
+  </div>
+
+  <div class="analytics-cards">
+    <div class="card">
+      <h3>Most Used Trigger</h3>
+      <p id="topTrigger">None</p>
+    </div>
+    <div class="card">
+      <h3>Urgent Alerts</h3>
+      <p id="urgentCount">0</p>
+    </div>
+    <div class="card">
+      <h3>Warnings</h3>
+      <p id="warningCount">0</p>
+    </div>
+    <div class="card">
+      <h3>Normal Messages</h3>
+      <p id="normalCount">0</p>
+    </div>
+  </div>
+
+  <canvas id="messagesChart"></canvas>
+</div>
+
+<!-- Chart.js library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Analytics script -->
+<script src="js/analytics.js"></script>
