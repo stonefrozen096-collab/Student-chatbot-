@@ -195,5 +195,101 @@ h2 {
   pointer-events: none;
   z-index: 9999;
 }
+/* ---------- Notice Section ---------- */
+.admin-section h2 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-size: 1.8rem;
+}
+
+#addNoticeForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+#addNoticeForm input,
+#addNoticeForm textarea,
+#addNoticeForm select {
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+#addNoticeForm button {
+  width: 150px;
+  padding: 8px 10px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+#addNoticeForm button:hover {
+  background: #2980b9;
+}
+
+#noticeTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+#noticeTable th,
+#noticeTable td {
+  border: 1px solid #ccc;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+#noticeTable th {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+#noticeTable tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+#noticeTable button {
+  padding: 5px 8px;
+  margin-right: 5px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+#noticeTable button:hover {
+  opacity: 0.8;
+}
+
+#noticeTable button:nth-child(1) { background: #f1c40f; color: #fff; }
+#noticeTable button:nth-child(2) { background: #e74c3c; color: #fff; }
+
+/* ---------- Floating Notification ---------- */
+.floatingNotification {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: #2ecc71;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  font-weight: bold;
+  z-index: 9999;
+  animation: floatIn 0.5s ease forwards;
+}
+
+@keyframes floatIn {
+  0% { opacity: 0; transform: translateY(-20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
 
 
