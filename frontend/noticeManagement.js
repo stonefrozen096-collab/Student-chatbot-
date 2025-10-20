@@ -1,19 +1,15 @@
-// ---------- Notice Management (JSON-based) ----------
-let notices = [];  // Will be fetched from JSON
-let users = [];    // Will be fetched from JSON for student selection
+// ---------- Notice Management (API Version) ----------
+let notices = [];  // Fetched from server via API
+let users = [];    // Fetched from server for student selection
 
-// ---------- Fetch JSON Data ----------
+// ---------- Fetch Data from API ----------
 async function loadNoticeData() {
   try {
-    const resUsers = await fetch('data/users.json');
-    users = await resUsers.json();
-
-    const resNotices = await fetch('data/notices.json');
-    notices = await resNotices.json();
-
+    users = await fetchUsers();       // API: returns all users
+    notices = await fetchNotices();   // API: returns all notices
     renderNoticeTable();
   } catch (err) {
-    console.error(err);
+    console.error('Failed to load notices/users from API', err);
   }
 }
 
@@ -61,13 +57,18 @@ form.addEventListener('submit', async e => {
   }
 
   const notice = { title, message, assignedStudents };
-  notices.push(notice);
-  await saveNotices();
 
-  form.reset();
-  studentContainer.style.display = 'none';
-  renderNoticeTable();
-  showFloatingNotification('Notice published successfully!');
+  try {
+    const savedNotice = await addNotice(notice); // API call
+    notices.push(savedNotice);
+    form.reset();
+    studentContainer.style.display = 'none';
+    renderNoticeTable();
+    showFloatingNotification('Notice published successfully!');
+  } catch (err) {
+    console.error('Failed to save notice', err);
+    alert('Failed to publish notice!');
+  }
 });
 
 // ---------- Render Notice Table ----------
@@ -84,8 +85,8 @@ function renderNoticeTable() {
       <td>${n.message}</td>
       <td>${publishedToText}</td>
       <td>
-        <button onclick="editNotice(${index})">✏️ Edit</button>
-        <button onclick="deleteNotice(${index})">🗑️ Delete</button>
+        <button onclick="editNoticeAPI('${n.id}')">✏️ Edit</button>
+        <button onclick="deleteNoticeAPI('${n.id}')">🗑️ Delete</button>
       </td>
     `;
     tableBody.appendChild(row);
@@ -93,36 +94,37 @@ function renderNoticeTable() {
 }
 
 // ---------- Edit Notice ----------
-async function editNotice(index) {
-  const n = notices[index];
+async function editNoticeAPI(id) {
+  const n = notices.find(n => n.id === id);
+  if (!n) return;
   const newTitle = prompt('Edit Title:', n.title);
   const newMessage = prompt('Edit Message:', n.message);
   if (newTitle && newMessage) {
-    n.title = newTitle;
-    n.message = newMessage;
-    await saveNotices();
-    renderNoticeTable();
-    showFloatingNotification('Notice updated successfully!');
+    try {
+      const updated = await editNotice(id, { title: newTitle, message: newMessage }); // API
+      const idx = notices.findIndex(n => n.id === id);
+      notices[idx] = updated;
+      renderNoticeTable();
+      showFloatingNotification('Notice updated successfully!');
+    } catch (err) {
+      console.error('Failed to update notice', err);
+      alert('Failed to update notice!');
+    }
   }
 }
 
 // ---------- Delete Notice ----------
-async function deleteNotice(index) {
-  if (confirm('Delete this notice?')) {
-    notices.splice(index, 1);
-    await saveNotices();
+async function deleteNoticeAPI(id) {
+  if (!confirm('Delete this notice?')) return;
+  try {
+    await deleteNotice(id); // API call
+    notices = notices.filter(n => n.id !== id);
     renderNoticeTable();
     showFloatingNotification('Notice deleted!');
+  } catch (err) {
+    console.error('Failed to delete notice', err);
+    alert('Failed to delete notice!');
   }
-}
-
-// ---------- Save Notices to JSON (simulate POST to server) ----------
-async function saveNotices() {
-  await fetch('api/saveNotices', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(notices)
-  });
 }
 
 // ---------- Floating Notification ----------
