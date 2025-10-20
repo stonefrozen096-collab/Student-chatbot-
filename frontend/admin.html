@@ -79,3 +79,35 @@
 
 <!-- Link JS -->
 <script src="badgeManagement.js"></script>
+<div id="attendanceSection" class="admin-section">
+  <h2>📋 Attendance Management</h2>
+
+  <div class="attendance-controls">
+    <label>Select Date:</label>
+    <input type="date" id="attendanceDate" />
+
+    <button onclick="markAllPresent()">Mark All Present</button>
+    <button onclick="markAllAbsent()">Mark All Absent</button>
+  </div>
+
+  <table id="attendanceTable">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Present</th>
+        <th>Absent</th>
+        <th>Late</th>
+        <th>On Duty</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- JS will populate -->
+    </tbody>
+  </table>
+
+  <button onclick="saveAttendance()">💾 Save Attendance</button>
+</div>
+
+<!-- Link external JS file -->
+<script src="attendanceManagement.js"></script>
