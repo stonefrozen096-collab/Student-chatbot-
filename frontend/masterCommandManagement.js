@@ -1,10 +1,11 @@
-/* ---------- MASTER COMMAND SYSTEM (JSON VERSION) ---------- */
+// ---------- Master Command System (API Version) ----------
+
 let masterCommands = [];
 let warnings = {};
 let globalLock = { active: false, unlockTime: null };
 let countdownInterval = null;
 
-// Preloaded commands
+// Preloaded commands (fallback)
 const preCommands = [
   {name:'Lock All Temporary', action:'lockAllUsersPrompt()', permission:'admin'},
   {name:'Lock All Permanent', action:'lockAllUsers(0,true)', permission:'admin'},
@@ -15,19 +16,17 @@ const preCommands = [
   {name:'Sample Test Command', action:'console.log("Sample Test Run")', permission:'all'}
 ];
 
-/* ---------- LOAD FROM JSON ---------- */
+// ---------- Load from API ----------
 async function loadMasterCommands(){
   try { 
-    const resCmds = await fetch('/data/masterCommands.json');
-    masterCommands = resCmds.ok ? await resCmds.json() : [...preCommands];
+    masterCommands = await getMasterCommands(); // API call from api.js
   } catch(e){ 
-    console.error('Failed to load commands JSON', e); 
+    console.error('Failed to load master commands from API', e); 
     masterCommands = [...preCommands]; 
   }
 
   try { 
-    const resWarn = await fetch('/data/masterWarnings.json'); 
-    warnings = resWarn.ok ? await resWarn.json() : {}; 
+    warnings = {}; // Could extend to API if needed
   } catch(e){ 
     warnings={}; 
   }
@@ -35,77 +34,74 @@ async function loadMasterCommands(){
   renderMasterCommands();
 }
 
-/* ---------- SAVE TO JSON ---------- */
-async function saveMasterCommands() {
-  try {
-    await fetch('/api/saveMasterCommands', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(masterCommands)
-    });
-    console.log('Master commands saved.');
-  } catch(e){ console.error('Failed to save master commands', e); }
-}
-
-async function saveWarnings() {
-  try {
-    await fetch('/api/saveMasterWarnings', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(warnings)
-    });
-    console.log('Warnings saved.');
-  } catch(e){ console.error('Failed to save warnings', e); }
-}
-
-/* ---------- RENDER COMMANDS ---------- */
+// ---------- Render Commands ----------
 function renderMasterCommands(){
-  const c=document.getElementById('masterList'); if(!c) return; 
-  c.innerHTML='';
-  if(masterCommands.length===0){
-    const ph=document.createElement('div'); ph.className='placeholder'; ph.innerText='No commands yet.'; c.appendChild(ph); return;
+  const c = document.getElementById('masterList'); if(!c) return; 
+  c.innerHTML = '';
+  if(masterCommands.length === 0){
+    const ph = document.createElement('div'); ph.className = 'placeholder'; ph.innerText = 'No commands yet.'; c.appendChild(ph); return;
   }
-  masterCommands.forEach((cmd,i)=>{
-    const div=document.createElement('div'); div.className='commandItem';
+  masterCommands.forEach((cmd) => {
+    const div = document.createElement('div'); div.className = 'commandItem';
     div.innerHTML=`<strong>${cmd.name}</strong> | Permission: ${cmd.permission || 'all'}
-      <button class="btn btn-ghost" onclick="editMaster(${i})">Edit</button>
-      <button class="btn btn-danger" onclick="deleteMaster(${i})">Delete</button>
-      <button class="btn btn-primary" onclick="executeMaster(${i})">Execute</button>`;
+      <button class="btn btn-ghost" onclick="editMasterAPI('${cmd.id}')">Edit</button>
+      <button class="btn btn-danger" onclick="deleteMasterAPI('${cmd.id}')">Delete</button>
+      <button class="btn btn-primary" onclick="executeMasterById('${cmd.id}')">Execute</button>`;
     c.appendChild(div);
     setTimeout(()=>div.classList.add('fadeIn'),50);
   });
 }
 
-/* ---------- ADD / EDIT / DELETE ---------- */
-function promptAddCommand(){
+// ---------- Add/Edit/Delete via API ----------
+async function promptAddCommand(){
   const name = prompt('Command Name'); if(!name) return;
   const action = prompt('JS Action'); if(!action) return;
   const permission = prompt('Permission (all, badge, or dynamic special access)', 'all');
-  addMasterCommand(name, action, permission);
-}
-function addMasterCommand(name, action, permission='all'){ 
-  masterCommands.push({name, action, permission}); 
-  saveMasterCommands(); 
-  renderMasterCommands(); 
-}
-function editMaster(index){
-  const cmd=masterCommands[index]; if(!cmd) return;
-  const n=prompt('Command Name',cmd.name); if(n!==null) cmd.name=n;
-  const a=prompt('JS Action',cmd.action); if(a!==null) cmd.action=a;
-  const p=prompt('Permission (all, badge, or dynamic special access)',cmd.permission||'all'); if(p!==null) cmd.permission=p;
-  saveMasterCommands(); 
-  renderMasterCommands();
-}
-function deleteMaster(index){ 
-  if(!confirm('Delete this command?')) return; 
-  masterCommands.splice(index,1); 
-  saveMasterCommands(); 
-  renderMasterCommands(); 
+  await addMasterCommandAPI(name, action, permission);
 }
 
-/* ---------- EXECUTE ---------- */
-async function executeMaster(index, user={username:'admin', badges:[], specialAccess:[]}) {
-  const cmd = masterCommands[index]; 
+async function addMasterCommandAPI(name, action, permission='all'){
+  try{
+    const newCmd = await addMasterCommand(name, action, permission); // api.js
+    masterCommands.push(newCmd);
+    renderMasterCommands();
+  } catch(e){
+    console.error('Failed to add master command', e);
+    alert('Failed to add command!');
+  }
+}
+
+async function editMasterAPI(id){
+  const cmd = masterCommands.find(c=>c.id===id); if(!cmd) return;
+  const n = prompt('Command Name', cmd.name); if(n!==null) cmd.name = n;
+  const a = prompt('JS Action', cmd.action); if(a!==null) cmd.action = a;
+  const p = prompt('Permission', cmd.permission||'all'); if(p!==null) cmd.permission = p;
+
+  try{
+    const updated = await editMasterCommand(id, cmd.name, cmd.action, cmd.permission); // api.js
+    const idx = masterCommands.findIndex(c=>c.id===id); masterCommands[idx] = updated;
+    renderMasterCommands();
+  } catch(e){
+    console.error('Failed to edit master command', e);
+    alert('Failed to edit command!');
+  }
+}
+
+async function deleteMasterAPI(id){
+  if(!confirm('Delete this command?')) return;
+  try{
+    await deleteMasterCommand(id); // api.js
+    masterCommands = masterCommands.filter(c=>c.id!==id);
+    renderMasterCommands();
+  } catch(e){
+    console.error('Failed to delete master command', e);
+    alert('Failed to delete command!');
+  }
+}
+
+// ---------- Execute ----------
+async function executeMasterById(id, user={username:'admin', badges:[], specialAccess:[]}){
+  const cmd = masterCommands.find(c=>c.id===id);
   if(!cmd) return alert('Command not found');
 
   const hasPermission = cmd.permission === 'all' || 
@@ -113,20 +109,19 @@ async function executeMaster(index, user={username:'admin', badges:[], specialAc
                         (user.specialAccess?.includes(cmd.permission));
 
   if(!hasPermission){
-    warnings[user.username] = (warnings[user.username]||0)+1; 
-    await saveWarnings();
-    const attempts = warnings[user.username]; 
-    alert(`Access denied! Warning ${attempts}/5`);
-    if(attempts>=6) lockUserTemporarily(user.username, attempts*10); 
+    warnings[user.username] = (warnings[user.username]||0)+1;
+    // Optional: save warnings via API if implemented
+    alert(`Access denied! Warning ${warnings[user.username]}/5`);
+    if(warnings[user.username]>=6) lockUserTemporarily(user.username, warnings[user.username]*10);
     return;
   }
 
   showCommandOverlay(cmd.name,user.username);
-  try{ eval(cmd.action); addLog(`Executed ${cmd.name} by ${user.username}`); }
+  try { eval(cmd.action); addLog(`Executed ${cmd.name} by ${user.username}`); }
   catch(e){ console.error('Master command failed', e); }
 }
 
-/* ---------- ANIMATED OVERLAY ---------- */
+// ---------- Overlay ----------
 function showCommandOverlay(name,user){
   const overlay=document.createElement('div'); overlay.id='commandOverlay';
   overlay.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;color:white;font-size:2em;flex-direction:column;z-index:9999;';
@@ -136,13 +131,12 @@ function showCommandOverlay(name,user){
   setTimeout(()=>overlay.animate([{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(0.9)'}],{duration:400,fill:'forwards'}).onfinish=()=>overlay.remove(),1500);
 }
 
-/* ---------- TEMP LOCK ---------- */
+// ---------- Temp lock ----------
 function lockUserTemporarily(user,sec){
-  addLog(`${user} locked ${sec}s due to misuse`);
   alert(`User ${user} locked for ${sec} seconds!`);
 }
 
-/* ---------- LOCK ALL USERS ---------- */
+// ---------- Lock All Users ----------
 function lockAllUsersPrompt(){
   const durations = {'1 min':60,'2 min':120,'5 min':300};
   let choice = prompt('Enter lock duration: 1 min / 2 min / 5 min','1 min');
@@ -175,7 +169,7 @@ function removeGlobalLockAnimation(){
   document.getElementById('countdownTimer').innerText='';
 }
 
-/* ---------- GLOBAL MESSAGE ---------- */
+// ---------- Global Message ----------
 function showGlobalMessage(msg){
   const overlay=document.getElementById('globalLockOverlay'); overlay.style.display='flex';
   document.getElementById('lockMessage').innerHTML=msg;
@@ -183,7 +177,7 @@ function showGlobalMessage(msg){
   setTimeout(()=>overlay.style.display='none',3000);
 }
 
-/* ---------- RESTORE LAST DELETED TEST ---------- */
+// ---------- Restore Last Deleted Test ----------
 let lastDeletedTest = null;
 function deleteTestForMaster(id){
   const index = state.createdTests.findIndex(t=>t.id===id);
@@ -195,14 +189,16 @@ function restoreLastDeletedTest(){
   if(lastDeletedTest) { state.createdTests.push(lastDeletedTest); renderCreatedTests(); lastDeletedTest=null; }
 }
 
-/* ---------- LOG ---------- */
-function addLog(msg){
-  const logs=JSON.parse(await fetch('/data/logs.json').then(r=>r.json()).catch(()=>'[]'));
-  logs.unshift({msg,time:new Date().toLocaleString()});
-  await fetch('/api/saveLogs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logs)});
+// ---------- Log ----------
+async function addLog(msg){
+  try{
+    const logs = await fetchLogs(); // API call
+    logs.unshift({msg,time:new Date().toLocaleString()});
+    await saveLogs(logs); // API call
+  } catch(e){
+    console.error('Failed to log message', e);
+  }
 }
 
-/* ---------- INITIAL LOAD ---------- */
-document.addEventListener('DOMContentLoaded', () => {
-  loadMasterCommands();
-});
+// ---------- Initialize ----------
+document.addEventListener('DOMContentLoaded', loadMasterCommands);
