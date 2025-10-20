@@ -1,4 +1,6 @@
-// ---------- Test Management (JSON-based) ----------
+// ---------- Test Management (API-based) ----------
+import { getTests, createTest, deleteTest, getUsers } from './api.js';
+
 let tests = [];
 let users = [];
 let options = [];
@@ -17,17 +19,19 @@ const studentSelect = document.getElementById('studentSelect');
 const testTable = document.querySelector('#testTable tbody');
 const confettiContainer = document.getElementById('confettiContainer');
 
-// ---------- Load JSON Data ----------
+// ---------- Load Data from API ----------
 async function loadData() {
   try {
-    const resUsers = await fetch('data/users.json');
-    users = await resUsers.json();
-  } catch(e){ console.error('Failed to load users', e); }
+    users = await getUsers();
+  } catch (e) {
+    console.error('Failed to load users', e);
+  }
 
   try {
-    const resTests = await fetch('data/tests.json');
-    tests = await resTests.json();
-  } catch(e){ console.error('Failed to load tests', e); }
+    tests = await getTests();
+  } catch (e) {
+    console.error('Failed to load tests', e);
+  }
 
   renderOptions();
   renderStudentOptions();
@@ -44,7 +48,7 @@ typeSelect.addEventListener('change', () => {
 // ---------- Add Option ----------
 addOptionBtn.addEventListener('click', () => {
   const optionText = prompt('Enter option text:');
-  if(optionText) {
+  if (optionText) {
     options.push(optionText);
     renderOptions();
   }
@@ -69,7 +73,7 @@ function renderOptions() {
 
 // ---------- Publish Select Toggle ----------
 publishSelect.addEventListener('change', () => {
-  if(publishSelect.value === 'specific') {
+  if (publishSelect.value === 'specific') {
     studentSelectContainer.style.display = 'block';
     renderStudentOptions();
   } else {
@@ -80,25 +84,18 @@ publishSelect.addEventListener('change', () => {
 // ---------- Render Student Options ----------
 function renderStudentOptions() {
   studentSelect.innerHTML = '';
-  users.filter(u => u.role === 'student').forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.username;
-    opt.textContent = `${s.username} (${s.email})`;
-    studentSelect.appendChild(opt);
-  });
-}
-
-// ---------- Save Tests JSON ----------
-async function saveTests() {
-  await fetch('api/saveTests', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(tests)
-  });
+  users
+    .filter((u) => u.role === 'student')
+    .forEach((s) => {
+      const opt = document.createElement('option');
+      opt.value = s.username;
+      opt.textContent = `${s.username} (${s.email})`;
+      studentSelect.appendChild(opt);
+    });
 }
 
 // ---------- Create & Publish Test ----------
-form.addEventListener('submit', async e => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const title = document.getElementById('testTitle').value.trim();
@@ -106,13 +103,17 @@ form.addEventListener('submit', async e => {
   const type = typeSelect.value;
   const publishTo = publishSelect.value;
 
-  if(!title || !subject) return alert('All fields required.');
+  if (!title || !subject) return alert('All fields required.');
 
   let assignedStudents = [];
-  if(publishTo === 'all') {
-    assignedStudents = users.filter(u => u.role==='student').map(s => s.username);
+  if (publishTo === 'all') {
+    assignedStudents = users
+      .filter((u) => u.role === 'student')
+      .map((s) => s.username);
   } else {
-    assignedStudents = Array.from(studentSelect.selectedOptions).map(o => o.value);
+    assignedStudents = Array.from(studentSelect.selectedOptions).map(
+      (o) => o.value
+    );
   }
 
   const test = {
@@ -121,29 +122,44 @@ form.addEventListener('submit', async e => {
     type,
     options: [...options],
     correct: correctAnswerSelect.value,
-    assignedStudents
+    assignedStudents,
   };
 
-  tests.push(test);
-  await saveTests();
-
-  showSuccessNotification('✅ Test created & published!');
-  showConfetti();
+  try {
+    await createTest(test);
+    showSuccessNotification('✅ Test created & published!');
+    showConfetti();
+  } catch (err) {
+    console.error('Failed to create test:', err);
+    alert('Error creating test.');
+  }
 
   form.reset();
   options = [];
   studentSelectContainer.style.display = 'none';
   renderOptions();
-  renderTestTable();
+  await refreshTests();
 });
+
+// ---------- Refresh Test Table ----------
+async function refreshTests() {
+  try {
+    tests = await getTests();
+  } catch (e) {
+    console.error('Failed to refresh tests', e);
+  }
+  renderTestTable();
+}
 
 // ---------- Render Test Table ----------
 function renderTestTable() {
   testTable.innerHTML = '';
   tests.forEach((t, index) => {
-    const publishedToText = t.assignedStudents.length === users.filter(u => u.role==='student').length
-                            ? 'All Students'
-                            : t.assignedStudents.join(', ');
+    const publishedToText =
+      t.assignedStudents?.length ===
+      users.filter((u) => u.role === 'student').length
+        ? 'All Students'
+        : (t.assignedStudents || []).join(', ');
 
     const row = document.createElement('tr');
     row.innerHTML = `
@@ -151,20 +167,23 @@ function renderTestTable() {
       <td>${t.subject}</td>
       <td>${t.type}</td>
       <td>${publishedToText}</td>
-      <td>
-        <button onclick="deleteTest(${index})">🗑️ Delete</button>
-      </td>
+      <td><button onclick="deleteTestEntry('${t._id || index}')">🗑️ Delete</button></td>
     `;
     testTable.appendChild(row);
   });
 }
 
 // ---------- Delete Test ----------
-async function deleteTest(index) {
-  if(confirm('Delete this test?')) {
-    tests.splice(index,1);
-    await saveTests();
-    renderTestTable();
+async function deleteTestEntry(id) {
+  if (confirm('Delete this test?')) {
+    try {
+      await deleteTest(id);
+      await refreshTests();
+      showSuccessNotification('🗑️ Test deleted.');
+    } catch (err) {
+      console.error('Failed to delete test:', err);
+      alert('Error deleting test.');
+    }
   }
 }
 
@@ -174,23 +193,29 @@ function showSuccessNotification(msg) {
   notif.className = 'floatingNotification';
   notif.innerText = msg;
   document.body.appendChild(notif);
-  setTimeout(()=>notif.remove(), 3000);
+  setTimeout(() => notif.remove(), 3000);
 }
 
 // ---------- Confetti Animation ----------
 function showConfetti() {
-  for(let i=0;i<50;i++){
+  for (let i = 0; i < 50; i++) {
     const confetti = document.createElement('div');
     confetti.className = 'confetti-piece';
-    confetti.style.left = Math.random()*100 + '%';
-    confetti.style.backgroundColor = `hsl(${Math.random()*360}, 80%, 60%)`;
+    confetti.style.left = Math.random() * 100 + '%';
+    confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 80%, 60%)`;
     confettiContainer.appendChild(confetti);
 
-    const fallDuration = 2000 + Math.random()*2000;
-    confetti.animate([
-      { transform: `translateY(0px) rotate(0deg)`, opacity: 1 },
-      { transform: `translateY(300px) rotate(${Math.random()*360}deg)`, opacity: 0 }
-    ], { duration: fallDuration, iterations: 1, easing: 'ease-out' });
+    const fallDuration = 2000 + Math.random() * 2000;
+    confetti.animate(
+      [
+        { transform: `translateY(0px) rotate(0deg)`, opacity: 1 },
+        {
+          transform: `translateY(300px) rotate(${Math.random() * 360}deg)`,
+          opacity: 0,
+        },
+      ],
+      { duration: fallDuration, iterations: 1, easing: 'ease-out' }
+    );
 
     setTimeout(() => confetti.remove(), fallDuration);
   }
