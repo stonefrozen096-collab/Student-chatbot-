@@ -248,10 +248,14 @@
 <div id="profileSection" class="admin-section" style="display:none;">
   <h2>👤 Profile Management</h2>
 
-  <label>Search Users:</label>
-  <input type="text" id="profileSearch" placeholder="Search by name, email, or username">
+  <!-- Search Bar -->
+  <div class="searchBar">
+    <label for="profileSearch">Search Users:</label>
+    <input type="text" id="profileSearch" placeholder="Search by name, email, or username">
+  </div>
 
-  <table id="profileTable">
+  <!-- Profiles Table -->
+  <table id="profileTable" class="styledTable">
     <thead>
       <tr>
         <th>Profile Picture</th>
@@ -269,5 +273,5 @@
   </table>
 </div>
 
-<!-- Link to separate JS file -->
+<!-- Link JS -->
 <script src="profileManagement.js"></script>
