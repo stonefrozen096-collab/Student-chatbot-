@@ -1,1 +1,102 @@
+/* ===========================
+   Import & Export Management
+=========================== */
+#importExportSection {
+  background: #f9fafc;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  animation: fadeIn 0.5s ease forwards;
+  margin-bottom: 20px;
+}
 
+#importExportSection h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.6rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.importExportContainer {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.importExportContainer > div {
+  flex: 1;
+  min-width: 250px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.importExportContainer > div:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+}
+
+.importExportContainer h3 {
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  color: #004aad;
+}
+
+.importExportContainer button {
+  background: #004aad;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.importExportContainer button:hover {
+  background: #006bff;
+  transform: scale(1.05);
+}
+
+#importFile {
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* Log Box */
+.logBox {
+  margin-top: 15px;
+  max-height: 160px;
+  overflow-y: auto;
+  background: #f1f6ff;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #333;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.05);
+}
+
+/* Scrollbar for log box */
+.logBox::-webkit-scrollbar {
+  width: 6px;
+}
+
+.logBox::-webkit-scrollbar-thumb {
+  background: #004aad;
+  border-radius: 3px;
+}
+
+.logBox::-webkit-scrollbar-track {
+  background: #e6f0ff;
+  border-radius: 3px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
