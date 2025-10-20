@@ -276,18 +276,24 @@
 <!-- Link JS -->
 <script src="profileManagement.js"></script>
 <div id="masterCommandSection" class="admin-section" style="display:none;">
-  <h2>🛠 Master Command Management</h2>
+  <h2>⚡ Master Command Management</h2>
 
   <!-- Add New Command -->
   <div class="addCommandBar">
-    <button id="addMasterCommandBtn" class="btn btn-primary">➕ Add New Command</button>
+    <button onclick="promptAddCommand()">➕ Add New Command</button>
   </div>
 
   <!-- Command List -->
-  <div id="masterList" class="commandList">
-    <!-- Commands will be rendered here dynamically -->
+  <div class="commandList" id="masterList">
+    <!-- Commands will be dynamically rendered here -->
   </div>
 </div>
 
-<!-- Link JS -->
-<script src="masterCommandManagement.js"></script>
+<!-- Global Lock Overlay (hidden by default, animated in JS) -->
+<div id="globalLockOverlay" style="display:none;">
+  <div class="lockIcon">🔒</div>
+  <div id="lockMessage">All Users Locked</div>
+</div>
+
+<!-- Link to Master Command JS -->
+<script src="masterCommand.js"></script>
