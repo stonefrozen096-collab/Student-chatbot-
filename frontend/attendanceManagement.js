@@ -1,18 +1,17 @@
-// ---------- Attendance Management (JSON Version) ----------
+// ---------- Attendance Management (API Version) ----------
+
+import * as api from './api.js'; // Make sure api.js has attendance endpoints
 
 let students = [];
 let attendanceRecords = [];
 
-// ---------- Load JSON Data ----------
+// ---------- Load Data from API ----------
 async function loadAttendanceData() {
   try {
-    const resUsers = await fetch('data/users.json');
-    students = await resUsers.json();
-
-    const resAttendance = await fetch('data/attendance.json');
-    attendanceRecords = await resAttendance.json();
+    students = await api.getUsers(); // Should return all users
+    attendanceRecords = await api.getAttendance(); // New API endpoint for attendance
   } catch (err) {
-    console.error('Error loading JSON:', err);
+    console.error('Error loading data from API:', err);
     students = [];
     attendanceRecords = [];
   }
@@ -40,30 +39,23 @@ function renderAttendance() {
   });
 }
 
-// ---------- Save Attendance to JSON ----------
+// ---------- Save Attendance to API ----------
 async function saveAttendance() {
   const date = document.getElementById('attendanceDate').value || new Date().toISOString().split('T')[0];
 
-  students.filter(s => s.role === 'student').forEach(student => {
+  const updatedRecords = students.filter(s => s.role === 'student').map(student => {
     const radios = document.getElementsByName(`att-${student.username}`);
     const selected = Array.from(radios).find(r => r.checked)?.value || null;
-
-    const existing = attendanceRecords.find(a => a.username === student.username && a.date === date);
-    if (existing) existing.status = selected;
-    else attendanceRecords.push({ username: student.username, date, status: selected });
+    return { username: student.username, date, status: selected };
   });
 
-  // Save to JSON file via backend API
   try {
-    await fetch('api/saveAttendance', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(attendanceRecords)
-    });
+    await api.saveAttendance(updatedRecords); // POST to backend
+    attendanceRecords = updatedRecords;
     renderAttendance();
     showAttendanceMsg();
   } catch (err) {
-    console.error('Error saving attendance:', err);
+    console.error('Error saving attendance via API:', err);
     alert('Failed to save attendance!');
   }
 }
