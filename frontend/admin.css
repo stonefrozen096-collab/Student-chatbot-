@@ -522,7 +522,7 @@ tr.updated {
   transform: scale(1.05);
 }
 
-/* Global Lock Overlay */
+/* Global Lock / Broadcast Overlay */
 #globalLockOverlay {
   position: fixed;
   top:0; left:0;
@@ -543,6 +543,12 @@ tr.updated {
   font-size: 4em;
   margin-bottom: 15px;
   animation: pulse 1s infinite;
+}
+
+/* Countdown Timer */
+#countdownTimer {
+  font-size: 1.2em;
+  margin-top: 15px;
 }
 
 /* Animations */
