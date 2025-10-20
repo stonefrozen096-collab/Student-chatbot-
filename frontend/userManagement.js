@@ -1,12 +1,12 @@
-// ---------- User Management (JSON-based) ----------
-let users = []; // Fetched from JSON
+// ---------- User Management (API Integrated) ----------
+let users = [];
 const rolesWithPassword = ['faculty', 'moderator', 'tester'];
 
-// 🔹 Fetch users from JSON
+// 🔹 Fetch users from API
 async function fetchUsers() {
   try {
-    const res = await fetch('data/users.json');
-    if (!res.ok) throw 'Failed to fetch users.json';
+    const res = await fetch('/api/users');
+    if (!res.ok) throw new Error('Failed to fetch users');
     users = await res.json();
     renderUsers();
   } catch (err) {
@@ -16,13 +16,19 @@ async function fetchUsers() {
   }
 }
 
-// 🔹 Save users to JSON (adapt to your backend API)
+// 🔹 Save users via API
 async function saveUsers() {
-  await fetch('api/saveUsers', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(users)
-  });
+  try {
+    const res = await fetch('/api/users/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(users)
+    });
+    if (!res.ok) throw new Error('Failed to save users');
+  } catch (err) {
+    console.error('Error saving users:', err);
+    showNotification('Error saving users', 'error');
+  }
 }
 
 // 🎯 Render Users Table
@@ -65,12 +71,22 @@ document.getElementById('addUserForm').addEventListener('submit', async e => {
     return showNotification('All required fields must be filled', 'error');
 
   const newUser = { username, email, role, password: password || '', locked: false };
-  users.push(newUser);
-  await saveUsers();
 
-  e.target.reset();
-  renderUsers();
-  showNotification('User added successfully!', 'success');
+  try {
+    const res = await fetch('/api/users/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newUser)
+    });
+    if (!res.ok) throw new Error('Failed to add user');
+    users.push(newUser);
+    renderUsers();
+    e.target.reset();
+    showNotification('User added successfully!', 'success');
+  } catch (err) {
+    console.error(err);
+    showNotification('Error adding user', 'error');
+  }
 });
 
 // ✏️ Edit User
@@ -85,25 +101,50 @@ function editUser(index) {
   if (newEmail) user.email = newEmail;
   if (rolesWithPassword.includes(user.role) && newPassword) user.password = newPassword;
 
-  saveUsers().then(renderUsers);
-  showNotification(`User ${user.username} updated`, 'success');
+  fetch('/api/users/update', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(user)
+  })
+    .then(res => res.ok ? renderUsers() : showNotification('Update failed', 'error'))
+    .then(() => showNotification(`User ${user.username} updated`, 'success'))
+    .catch(() => showNotification('Error updating user', 'error'));
 }
 
 // 🗑️ Delete User
 function deleteUser(index) {
   if (confirm(`Delete user ${users[index].username}?`)) {
-    const deletedUser = users.splice(index, 1)[0];
-    saveUsers().then(renderUsers);
-    showNotification(`User ${deletedUser.username} deleted`, 'success');
+    const deletedUser = users[index];
+    fetch(`/api/users/delete`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: deletedUser.email })
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Delete failed');
+        users.splice(index, 1);
+        renderUsers();
+        showNotification(`User ${deletedUser.username} deleted`, 'success');
+      })
+      .catch(() => showNotification('Error deleting user', 'error'));
   }
 }
 
 // 🔒 Lock / Unlock User
 function toggleLock(index) {
-  users[index].locked = !users[index].locked;
-  saveUsers().then(renderUsers);
-  const status = users[index].locked ? 'locked' : 'unlocked';
-  showNotification(`User ${users[index].username} ${status}`, 'info');
+  const user = users[index];
+  user.locked = !user.locked;
+  fetch('/api/users/lock-toggle', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: user.email, locked: user.locked })
+  })
+    .then(res => {
+      if (!res.ok) throw new Error('Toggle lock failed');
+      renderUsers();
+      showNotification(`User ${user.username} ${user.locked ? 'locked' : 'unlocked'}`, 'info');
+    })
+    .catch(() => showNotification('Error changing lock status', 'error'));
 }
 
 // 🔔 Notifications
