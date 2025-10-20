@@ -1,17 +1,18 @@
-// importExport.js — JSON-based Import/Export
+// importExport.js — API-based Import/Export
 
 // ---------------- Export All Data ----------------
 async function exportAllData() {
   try {
-    // Fetch current data from server (or use in-memory variables)
-    const resMaster = await fetch('/data/masterCommands.json');
-    const masterCommands = resMaster.ok ? await resMaster.json() : [];
-    
-    const resChatbot = await fetch('/data/chatbotTriggers.json');
-    const chatbotTriggers = resChatbot.ok ? await resChatbot.json() : [];
-    
-    const resAnalytics = await fetch('/data/analyticsData.json');
-    const analyticsData = resAnalytics.ok ? await resAnalytics.json() : [];
+    // Fetch current data from server via APIs
+    const [masterRes, chatbotRes, analyticsRes] = await Promise.all([
+      fetch('/api/getMasterCommands'),
+      fetch('/api/getChatbotTriggers'),
+      fetch('/api/getAnalytics')
+    ]);
+
+    const masterCommands = masterRes.ok ? await masterRes.json() : [];
+    const chatbotTriggers = chatbotRes.ok ? await chatbotRes.json() : [];
+    const analyticsData = analyticsRes.ok ? await analyticsRes.json() : [];
 
     const data = { masterCommands, chatbotTriggers, analyticsData };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -36,15 +37,15 @@ async function exportAllData() {
 function importAllData() {
   const fileInput = document.getElementById("importFile");
   if (!fileInput.files.length) return alert("Select a JSON file to import.");
-  
+
   const file = fileInput.files[0];
   const reader = new FileReader();
-  
+
   reader.onload = async e => {
     try {
       const imported = JSON.parse(e.target.result);
 
-      // Save imported data to server
+      // Save imported data via APIs
       if (imported.masterCommands) {
         await fetch('/api/saveMasterCommands', {
           method: 'POST',
@@ -67,6 +68,7 @@ function importAllData() {
         });
       }
 
+      // Optionally refresh UI if render functions exist
       renderMasterCommands?.();
       renderTriggers?.();
       renderAnalytics?.();
@@ -81,21 +83,12 @@ function importAllData() {
   reader.readAsText(file);
 }
 
-// ---------------- Log Import/Export ----------------
+// ---------------- Import/Export Logs ----------------
 function logImportExport(msg) {
-  const logContainer = document.getElementById("importExportLog");
-  if (!logContainer) return;
-
+  const container = document.getElementById("importExportLog");
+  if (!container) return;
   const div = document.createElement("div");
-  div.innerText = `${new Date().toLocaleTimeString()} - ${msg}`;
-  logContainer.prepend(div);
+  div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  container.appendChild(div);
+  div.scrollIntoView({ behavior: "smooth" });
 }
-
-// ---------------- Initialize ----------------
-document.addEventListener('DOMContentLoaded', () => {
-  const exportBtn = document.getElementById('exportBtn');
-  const importBtn = document.getElementById('importBtn');
-
-  exportBtn?.addEventListener('click', exportAllData);
-  importBtn?.addEventListener('click', importAllData);
-});
