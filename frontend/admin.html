@@ -31,3 +31,51 @@
 
 <!-- Link JS -->
 <script src="js/userManagement.js"></script>
+<!-- BADGE MANAGEMENT SECTION -->
+<div id="badgeSection" class="admin-section" style="display:none;">
+  <h2>🏅 Badge Management</h2>
+
+  <!-- Create Badge -->
+  <form id="addBadgeForm">
+    <label>Badge Name:</label>
+    <input type="text" id="badgeName" required>
+
+    <label>Effects (visual):</label>
+    <select id="badgeEffects" multiple>
+      <option value="glow">Glow</option>
+      <option value="spin">Spin</option>
+      <option value="rainbow">Rainbow</option>
+      <option value="bounce">Bounce</option>
+      <option value="shadow">Shadow</option>
+      <option value="pulse">Pulse</option>
+    </select>
+
+    <label>Special Access (permissions):</label>
+    <select id="badgeAccess" multiple>
+      <option value="editAttendance">Edit Attendance</option>
+      <option value="editTests">Edit Tests</option>
+      <option value="manageUsers">Manage Users</option>
+      <option value="accessMasterCommand">Master Command</option>
+      <option value="sendGlobalMessage">Send Global Messages</option>
+    </select>
+
+    <button type="submit">Create Badge</button>
+  </form>
+
+  <div id="badgeList" class="list"></div>
+
+  <!-- Assign Badge -->
+  <h3>Assign Badge to User</h3>
+  <select id="assignBadgeUser">
+    <option value="">Select User</option>
+  </select>
+  <select id="assignBadgeSelect">
+    <option value="">Select Badge</option>
+  </select>
+  <button id="assignBadgeBtn">Assign Badge</button>
+
+  <div id="badgeStatus" class="statusBox"></div>
+</div>
+
+<!-- Link JS -->
+<script src="badgeManagement.js"></script>
