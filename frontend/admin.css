@@ -1,210 +1,158 @@
-/* ===========================
-   Admin Dashboard Styles
-=========================== */
-
-/* General Reset */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* ====== GENERAL ====== */
+.admin-section {
+  padding: 20px;
+  background: #f4f4f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  margin: 20px auto;
+  max-width: 1000px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-body {
-  background-color: #f4f6f9;
+h2 {
   color: #333;
-  min-height: 100vh;
+  margin-bottom: 15px;
+  text-align: center;
 }
 
-/* Container */
-.container {
-  width: 95%;
-  max-width: 1200px;
-  margin: 20px auto;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  animation: fadeIn 0.6s ease-in-out;
-}
-
-/* Header */
-header {
+/* ====== FORM ====== */
+#addUserForm {
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
 }
 
-header h1 {
-  font-size: 1.8rem;
-  color: #2c3e50;
-}
-
-header .greeting {
-  font-size: 1.1rem;
-  color: #555;
-}
-
-/* Buttons */
-button {
-  padding: 10px 18px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-/* Button Variants */
-.btn-primary { background-color: #3498db; color: #fff; }
-.btn-danger { background-color: #e74c3c; color: #fff; }
-.btn-success { background-color: #2ecc71; color: #fff; }
-.btn-warning { background-color: #f39c12; color: #fff; }
-
-/* Forms */
-form {
-  margin-bottom: 30px;
-}
-
-form input, form select, form textarea {
-  width: 100%;
-  padding: 10px 12px;
-  margin: 6px 0 15px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  transition: border-color 0.3s ease;
-}
-
-form input:focus, form select:focus, form textarea:focus {
-  border-color: #3498db;
-  outline: none;
-}
-
-/* Tables */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 30px;
-}
-
-table th, table td {
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-table th {
-  background-color: #3498db;
-  color: #fff;
+#addUserForm label {
+  flex: 1 0 100px;
+  align-self: center;
   font-weight: 600;
 }
 
-table tr:hover {
-  background-color: #f1faff;
-}
-
-/* Notifications */
-.notification {
-  padding: 12px 18px;
+#addUserForm input, #addUserForm select, #addUserForm button {
+  flex: 2 0 200px;
+  padding: 8px 10px;
   border-radius: 6px;
-  margin-bottom: 20px;
-  opacity: 0;
-  animation: slideIn 0.5s forwards;
+  border: 1px solid #ccc;
+  font-size: 0.95rem;
 }
 
-.notification.success { background-color: #2ecc71; color: #fff; }
-.notification.error { background-color: #e74c3c; color: #fff; }
-.notification.warning { background-color: #f39c12; color: #fff; }
-
-/* Collapsible Sections */
-.collapsible {
-  background-color: #3498db;
-  color: white;
-  cursor: pointer;
-  padding: 10px 15px;
-  width: 100%;
+#addUserForm button {
+  background: #4CAF50;
+  color: #fff;
   border: none;
-  border-radius: 6px;
-  text-align: left;
-  outline: none;
-  font-size: 1rem;
-  margin-bottom: 10px;
-  transition: background-color 0.3s ease;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
-.collapsible:hover { background-color: #2980b9; }
+#addUserForm button:hover {
+  background: #45a049;
+}
 
-.collapsible:after {
-  content: '\002B';
-  float: right;
+/* ====== TABLE ====== */
+#userTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+#userTable th, #userTable td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: center;
+}
+
+#userTable th {
+  background-color: #4CAF50;
+  color: white;
+}
+
+#userTable tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+#userTable tr:hover {
+  background-color: #f1f1f1;
+}
+
+/* ====== BUTTONS ====== */
+#userTable button {
+  padding: 5px 10px;
+  margin: 2px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: 0.2s;
+}
+
+#userTable button:hover {
+  opacity: 0.8;
+}
+
+#userTable button:nth-child(1) { background-color: #2196F3; color: white; } /* Edit */
+#userTable button:nth-child(2) { background-color: #f44336; color: white; } /* Delete */
+#userTable button:nth-child(3) { background-color: #FF9800; color: white; } /* Lock/Unlock */
+
+/* ====== STATUS ====== */
+.lockedStatus {
+  color: #f44336;
   font-weight: bold;
 }
 
-.collapsible.active:after { content: "\2212"; }
-
-.content {
-  padding: 0 15px;
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-  background-color: #f4f6f9;
-  border-radius: 0 0 6px 6px;
-  margin-bottom: 15px;
+.activeStatus {
+  color: #4CAF50;
+  font-weight: bold;
 }
 
-/* Dark/Light Mode Toggle */
-body.dark-mode {
-  background-color: #1e1e1e;
-  color: #ddd;
-}
-
-body.dark-mode .container {
-  background-color: #2c2c2c;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-}
-
-body.dark-mode table th { background-color: #34495e; }
-body.dark-mode table tr:hover { background-color: #3a3a3a; }
-
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ====== ANIMATION ====== */
+.userAddedAnimation {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #4CAF50;
+  color: #fff;
+  padding: 15px 25px;
+  border-radius: 10px;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  animation: slideIn 0.6s ease forwards;
+  z-index: 9999;
 }
 
 @keyframes slideIn {
-  from { opacity: 0; transform: translateX(-30px); }
-  to { opacity: 1; transform: translateX(0); }
+  0% { transform: translateX(300px); opacity: 0; }
+  50% { transform: translateX(-10px); opacity: 1; }
+  100% { transform: translateX(0); }
 }
 
-/* Badge Animations */
-.badge {
-  display: inline-block;
-  padding: 5px 10px;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin: 3px;
-  transition: transform 0.3s ease, background-color 0.3s ease;
+.userAddedAnimation.hide {
+  animation: slideOut 0.6s ease forwards;
 }
 
-.badge.admin { background-color: #e67e22; color: #fff; }
-.badge.faculty { background-color: #3498db; color: #fff; }
-.badge.student { background-color: #2ecc71; color: #fff; }
-.badge.moderator { background-color: #9b59b6; color: #fff; }
+@keyframes slideOut {
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(300px); opacity: 0; }
+   }
+/* Badge visual effects */
+.glow { text-shadow: 0 0 10px #ff0; }
+.spin { display:inline-block; animation: spin 2s linear infinite; }
+@keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+.rainbow { background: linear-gradient(90deg,#f00,#0f0,#00f); -webkit-background-clip: text; color: transparent; animation: rainbow 3s linear infinite; }
+@keyframes rainbow { 0%{background-position:0%} 100%{background-position:100%} }
+.bounce { animation: bounce 1s infinite; }
+@keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
+.shadow { text-shadow: 2px 2px 5px #000; }
+.pulse { animation: pulse 1s infinite; }
+@keyframes pulse { 0%{transform:scale(1);}50%{transform:scale(1.1);}100%{transform:scale(1);} }
 
-.badge.animated {
-  animation: badgePop 0.5s ease forwards;
+/* Status Animation */
+.badgeAnimation {
+  animation: popUp 0.8s ease forwards;
 }
-
-@keyframes badgePop {
-  0% { transform: scale(0.5); opacity: 0; }
+@keyframes popUp {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.1); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
 }
