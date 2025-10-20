@@ -1,23 +1,16 @@
-// ---------- Badge Management (JSON Version) ----------
+// ---------- Badge Management (API Version) ----------
 
-let badges = [];       // Load from badges.json
-let users = [];        // Load from users.json
+let badges = [];
+let users = [];
 
-// ---------- FETCH JSON ----------
+// ---------- LOAD DATA ----------
 async function loadBadgeData() {
   try {
-    const resBadges = await fetch('data/badges.json');
-    badges = await resBadges.json();
-  } catch(e) {
-    console.error('Failed to load badges.json', e);
+    badges = await getBadges(); // API call from api.js
+    users = await getUsers();   // API call from api.js
+  } catch (e) {
+    console.error('Failed to load badges or users:', e);
     badges = [];
-  }
-
-  try {
-    const resUsers = await fetch('data/users.json');
-    users = await resUsers.json();
-  } catch(e) {
-    console.error('Failed to load users.json', e);
     users = [];
   }
 
@@ -31,25 +24,29 @@ document.getElementById('addBadgeForm').addEventListener('submit', async e => {
   const name = document.getElementById('badgeName').value.trim();
   const effects = Array.from(document.getElementById('badgeEffects').selectedOptions).map(o => o.value);
 
-  // Dynamic special access input
   const accessInput = prompt('Enter special access for this badge (comma-separated):', '');
   const access = accessInput ? accessInput.split(',').map(a => a.trim()) : [];
 
   if (!name) return alert('Enter badge name');
 
-  badges.push({ name, effects, access });
-  await saveBadgesJSON();
-  renderBadges();
-  e.target.reset();
-
-  showBadgeStatus(`✅ Badge "${name}" created successfully!`);
+  try {
+    const newBadge = await createBadge(name, effects, access); // API call
+    badges.push(newBadge);
+    renderBadges();
+    document.getElementById('addBadgeForm').reset();
+    showBadgeStatus(`✅ Badge "${name}" created successfully!`);
+    updateAssignBadgeSelect();
+  } catch (err) {
+    console.error('Error creating badge:', err);
+    alert('Failed to create badge!');
+  }
 });
 
 // ---------- RENDER BADGES ----------
 function renderBadges() {
   const div = document.getElementById('badgeList');
   div.innerHTML = '';
-  if (badges.length === 0) {
+  if (!badges.length) {
     div.innerHTML = '<div class="placeholder">No badges yet.</div>';
     return;
   }
@@ -60,7 +57,7 @@ function renderBadges() {
     d.innerHTML = `
       <span class="${b.effects.join(' ')}">${b.name}</span>
       [Effects: ${b.effects.join(', ')} | Access: ${b.access.join(', ')}]
-      <button onclick="deleteBadge(${i})">🗑️ Delete</button>
+      <button onclick="deleteBadge('${b.id}')">🗑️ Delete</button>
     `;
     div.appendChild(d);
   });
@@ -68,10 +65,16 @@ function renderBadges() {
 }
 
 // ---------- DELETE BADGE ----------
-function deleteBadge(index) {
+async function deleteBadge(id) {
   if (!confirm('Delete this badge?')) return;
-  badges.splice(index, 1);
-  saveBadgesJSON().then(renderBadges);
+  try {
+    await removeBadge(id); // API call
+    badges = badges.filter(b => b.id !== id);
+    renderBadges();
+  } catch (err) {
+    console.error('Error deleting badge:', err);
+    alert('Failed to delete badge!');
+  }
 }
 
 // ---------- ASSIGN BADGE ----------
@@ -101,14 +104,19 @@ document.getElementById('assignBadgeBtn').addEventListener('click', async () => 
   const badge = badges.find(b => b.name === badgeName);
   if (!user || !badge) return;
 
-  if (!user.badges) user.badges = [];
-  if (!user.badges.includes(badgeName)) user.badges.push(badgeName);
+  try {
+    await assignBadge(user.username, badge.name); // API call
+    // Update local copy for UI
+    if (!user.badges) user.badges = [];
+    if (!user.badges.includes(badgeName)) user.badges.push(badgeName);
 
-  // Assign dynamic access from badge
-  user.specialAccess = [...new Set([...(user.specialAccess || []), ...badge.access])];
+    user.specialAccess = [...new Set([...(user.specialAccess || []), ...badge.access])];
 
-  await saveUsersJSON();
-  showBadgeStatus(`✅ Badge "${badgeName}" assigned to ${user.name}`);
+    showBadgeStatus(`✅ Badge "${badgeName}" assigned to ${user.name}`);
+  } catch (err) {
+    console.error('Error assigning badge:', err);
+    alert('Failed to assign badge!');
+  }
 });
 
 // ---------- STATUS ANIMATION ----------
@@ -117,17 +125,6 @@ function showBadgeStatus(msg) {
   status.innerText = msg;
   status.classList.add('badgeAnimation');
   setTimeout(() => status.classList.remove('badgeAnimation'), 2000);
-}
-
-// ---------- SAVE JSON ----------
-async function saveBadgesJSON() {
-  // Replace this with your server API
-  console.log('Badges JSON saved. Replace with API POST call.');
-}
-
-async function saveUsersJSON() {
-  // Replace this with your server API
-  console.log('Users JSON saved. Replace with API POST call.');
 }
 
 // ---------- INITIALIZE ----------
