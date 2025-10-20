@@ -1,29 +1,59 @@
-// JSON-based storage simulation (replace with actual file storage in server)
-let badges = JSON.parse(localStorage.getItem('badges') || '[]');
-let users = JSON.parse(localStorage.getItem('users') || '[]');
+// ---------- Badge Management (JSON Version) ----------
 
-// ------------------ CREATE BADGE ------------------
-document.getElementById('addBadgeForm').addEventListener('submit', e => {
+let badges = [];       // Load from badges.json
+let users = [];        // Load from users.json
+
+// ---------- FETCH JSON ----------
+async function loadBadgeData() {
+  try {
+    const resBadges = await fetch('data/badges.json');
+    badges = await resBadges.json();
+  } catch(e) {
+    console.error('Failed to load badges.json', e);
+    badges = [];
+  }
+
+  try {
+    const resUsers = await fetch('data/users.json');
+    users = await resUsers.json();
+  } catch(e) {
+    console.error('Failed to load users.json', e);
+    users = [];
+  }
+
+  renderBadges();
+  updateAssignBadgeUser();
+}
+
+// ---------- CREATE BADGE ----------
+document.getElementById('addBadgeForm').addEventListener('submit', async e => {
   e.preventDefault();
   const name = document.getElementById('badgeName').value.trim();
-  const effects = Array.from(document.getElementById('badgeEffects').selectedOptions).map(o=>o.value);
-  const access = Array.from(document.getElementById('badgeAccess').selectedOptions).map(o=>o.value);
+  const effects = Array.from(document.getElementById('badgeEffects').selectedOptions).map(o => o.value);
 
-  if(!name) return alert('Enter badge name');
+  // Dynamic special access input
+  const accessInput = prompt('Enter special access for this badge (comma-separated):', '');
+  const access = accessInput ? accessInput.split(',').map(a => a.trim()) : [];
+
+  if (!name) return alert('Enter badge name');
 
   badges.push({ name, effects, access });
-  localStorage.setItem('badges', JSON.stringify(badges));
+  await saveBadgesJSON();
   renderBadges();
   e.target.reset();
 
-  // Animation
   showBadgeStatus(`✅ Badge "${name}" created successfully!`);
 });
 
-// ------------------ RENDER BADGES ------------------
+// ---------- RENDER BADGES ----------
 function renderBadges() {
   const div = document.getElementById('badgeList');
   div.innerHTML = '';
+  if (badges.length === 0) {
+    div.innerHTML = '<div class="placeholder">No badges yet.</div>';
+    return;
+  }
+
   badges.forEach((b, i) => {
     const d = document.createElement('div');
     d.className = 'badgeItem';
@@ -37,54 +67,68 @@ function renderBadges() {
   updateAssignBadgeSelect();
 }
 
-// ------------------ DELETE BADGE ------------------
-function deleteBadge(index){
-  if(!confirm('Delete this badge?')) return;
-  badges.splice(index,1);
-  localStorage.setItem('badges', JSON.stringify(badges));
-  renderBadges();
+// ---------- DELETE BADGE ----------
+function deleteBadge(index) {
+  if (!confirm('Delete this badge?')) return;
+  badges.splice(index, 1);
+  saveBadgesJSON().then(renderBadges);
 }
 
-// ------------------ ASSIGN BADGE ------------------
-function updateAssignBadgeUser(){
+// ---------- ASSIGN BADGE ----------
+function updateAssignBadgeUser() {
   const sel = document.getElementById('assignBadgeUser');
   sel.innerHTML = '<option value="">Select User</option>';
-  users.forEach(u=>{
+  users.forEach(u => {
     sel.insertAdjacentHTML('beforeend', `<option value="${u.username}">${u.name} (${u.username})</option>`);
   });
 }
-function updateAssignBadgeSelect(){
+
+function updateAssignBadgeSelect() {
   const sel = document.getElementById('assignBadgeSelect');
   sel.innerHTML = '<option value="">Select Badge</option>';
-  badges.forEach(b=>{
+  badges.forEach(b => {
     sel.insertAdjacentHTML('beforeend', `<option value="${b.name}">${b.name}</option>`);
   });
 }
 
-document.getElementById('assignBadgeBtn').addEventListener('click', ()=>{
+document.getElementById('assignBadgeBtn').addEventListener('click', async () => {
   const userName = document.getElementById('assignBadgeUser').value;
   const badgeName = document.getElementById('assignBadgeSelect').value;
 
-  if(!userName || !badgeName) return alert('Select user and badge');
+  if (!userName || !badgeName) return alert('Select user and badge');
 
-  const user = users.find(u=>u.username===userName);
-  if(!user.badges) user.badges = [];
-  if(!user.badges.includes(badgeName)) user.badges.push(badgeName);
+  const user = users.find(u => u.username === userName);
+  const badge = badges.find(b => b.name === badgeName);
+  if (!user || !badge) return;
 
-  localStorage.setItem('users', JSON.stringify(users));
+  if (!user.badges) user.badges = [];
+  if (!user.badges.includes(badgeName)) user.badges.push(badgeName);
+
+  // Assign dynamic access from badge
+  user.specialAccess = [...new Set([...(user.specialAccess || []), ...badge.access])];
+
+  await saveUsersJSON();
   showBadgeStatus(`✅ Badge "${badgeName}" assigned to ${user.name}`);
 });
 
-// ------------------ STATUS ANIMATION ------------------
-function showBadgeStatus(msg){
+// ---------- STATUS ANIMATION ----------
+function showBadgeStatus(msg) {
   const status = document.getElementById('badgeStatus');
   status.innerText = msg;
   status.classList.add('badgeAnimation');
-  setTimeout(()=> status.classList.remove('badgeAnimation'), 2000);
+  setTimeout(() => status.classList.remove('badgeAnimation'), 2000);
 }
 
-// ------------------ INITIALIZE ------------------
-document.addEventListener('DOMContentLoaded', ()=>{
-  renderBadges();
-  updateAssignBadgeUser();
-});
+// ---------- SAVE JSON ----------
+async function saveBadgesJSON() {
+  // Replace this with your server API
+  console.log('Badges JSON saved. Replace with API POST call.');
+}
+
+async function saveUsersJSON() {
+  // Replace this with your server API
+  console.log('Users JSON saved. Replace with API POST call.');
+}
+
+// ---------- INITIALIZE ----------
+document.addEventListener('DOMContentLoaded', loadBadgeData);
