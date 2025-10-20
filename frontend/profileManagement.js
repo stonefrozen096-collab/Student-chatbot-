@@ -1,6 +1,6 @@
 let users = [];
 
-// Fetch users from JSON file
+// ===== Load users from JSON =====
 async function loadUsers() {
   try {
     const res = await fetch('data/users.json'); // path to your JSON file
@@ -14,7 +14,7 @@ async function loadUsers() {
   }
 }
 
-// Render Profiles
+// ===== Render Profiles =====
 function renderProfiles(list = users) {
   const tbody = document.querySelector('#profileTable tbody');
   tbody.innerHTML = '';
@@ -40,15 +40,15 @@ function renderProfiles(list = users) {
       <td>${accessHtml}</td>
       <td>${user.locked ? '🔒 Locked' : '✅ Active'}</td>
       <td>
-        <button onclick="editUserProfile(${index})">✏️ Edit</button>
-        <button onclick="deleteUser(${index})">🗑️ Delete</button>
+        <button onclick="editUserProfile(${index}, this)">✏️ Edit</button>
+        <button onclick="deleteUser(${index}, this)">🗑️ Delete</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-// Search Filter
+// ===== Search Filter =====
 document.getElementById('profileSearch').addEventListener('input', e => {
   const query = e.target.value.toLowerCase();
   const filtered = users.filter(u =>
@@ -59,8 +59,8 @@ document.getElementById('profileSearch').addEventListener('input', e => {
   renderProfiles(filtered);
 });
 
-// Edit Profile including profile picture
-function editUserProfile(index) {
+// ===== Edit Profile =====
+function editUserProfile(index, btn) {
   const user = users[index];
   const newName = prompt('Edit Name:', user.name);
   const newEmail = prompt('Edit Email:', user.email);
@@ -70,22 +70,38 @@ function editUserProfile(index) {
   if (newEmail) user.email = newEmail;
   if (newPic) user.profilePic = newPic;
 
-  // Save changes back to JSON (simulate by sending to server or updating file)
-  // In a real server, you need an API call here
-  alert('✅ Changes saved (requires server to persist).');
+  showNotification('✅ Profile updated (requires server save).');
+
+  const row = btn.closest('tr');
+  row.classList.add('updated');
+  setTimeout(() => row.classList.remove('updated'), 1200);
 
   renderProfiles();
 }
 
-// Delete User
-function deleteUser(index) {
-  if(confirm(`Delete user ${users[index].username}?`)) {
-    users.splice(index,1);
-    // Save changes back to JSON (simulate by server/API call)
-    alert('✅ User deleted (requires server to persist).');
+// ===== Delete User =====
+function deleteUser(index, btn) {
+  if (confirm(`Delete user ${users[index].username}?`)) {
+    users.splice(index, 1);
+
+    showNotification('🗑️ User deleted (requires server save).');
+
+    const row = btn.closest('tr');
+    row.classList.add('updated');
+    setTimeout(() => row.classList.remove('updated'), 1200);
+
     renderProfiles();
   }
 }
 
-// Initial load
+// ===== Floating Notification =====
+function showNotification(msg) {
+  const notif = document.createElement('div');
+  notif.className = 'floatingNotification';
+  notif.innerText = msg;
+  document.body.appendChild(notif);
+  setTimeout(() => notif.remove(), 3000);
+}
+
+// ===== Initialize =====
 document.addEventListener('DOMContentLoaded', loadUsers);
