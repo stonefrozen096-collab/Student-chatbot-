@@ -1,161 +1,56 @@
 // api.js — unified API for Student Assistant system
-
 const BASE_URL = "https://feathers-26g1.onrender.com";
 
 // ============================
-// ADMIN
+// AUTH / LOGIN
 // ============================
-export async function adminLogin(username, password) {
-  const res = await fetch(`${BASE_URL}/api/admin/login`, {
+export async function login(email, password) {
+  const res = await fetch(`${BASE_URL}/api/login`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ username, password })
-  });
-  return res.json();
-}
-
-export async function adminSetup(password) {
-  const res = await fetch(`${BASE_URL}/api/admin/setup`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ password })
-  });
-  return res.json();
-}
-
-export async function adminForgotPassword(email) {
-  const res = await fetch(`${BASE_URL}/api/admin/forgot-password`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ email })
-  });
-  return res.json();
-}
-
-export async function adminResetPassword(token, newPassword) {
-  const res = await fetch(`${BASE_URL}/api/admin/reset-password`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ token, newPassword })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
   });
   return res.json();
 }
 
 // ============================
-// FACULTY
+// USERS
 // ============================
-export async function facultyLogin(username, password) {
-  const res = await fetch(`${BASE_URL}/api/faculty/login`, {
+export async function getUsers() {
+  const res = await fetch(`${BASE_URL}/api/users`);
+  return res.json();
+}
+
+export async function addUser(user) {
+  const res = await fetch(`${BASE_URL}/api/users`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ username, password })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(user)
   });
   return res.json();
 }
 
-export async function addNoteForStudent(faculty, regno, note, isPrivate=false) {
-  const res = await fetch(`${BASE_URL}/api/faculty/add-note`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ faculty, regno, note, isPrivate })
-  });
-  return res.json();
-}
-
-// ============================
-// STUDENT
-// ============================
-export async function studentLogin(regno) {
-  const res = await fetch(`${BASE_URL}/api/student/login`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ regno })
-  });
-  return res.json();
-}
-
-export async function getStudentData(regno) {
-  const res = await fetch(`${BASE_URL}/api/student/data?regno=${regno}`);
-  return res.json();
-}
-
-// ============================
-// CHATBOT
-// ============================
-export async function askChatbot(message) {
-  const res = await fetch(`${BASE_URL}/api/chatbot/query`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ message })
-  });
-  return res.json();
-}
-
-// Chatbot triggers CRUD
-export async function getChatbotTriggers() {
-  const res = await fetch(`${BASE_URL}/api/chatbot/triggers`);
-  return res.json();
-}
-
-export async function addChatbotTrigger(trigger, response, type='normal') {
-  const res = await fetch(`${BASE_URL}/api/chatbot/triggers`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ trigger, response, type })
-  });
-  return res.json();
-}
-
-export async function editChatbotTrigger(id, trigger, response, type) {
-  const res = await fetch(`${BASE_URL}/api/chatbot/triggers/${id}`, {
+export async function editUser(email, updates) {
+  const res = await fetch(`${BASE_URL}/api/users/${email}`, {
     method: "PUT",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ trigger, response, type })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates)
   });
   return res.json();
 }
 
-export async function deleteChatbotTrigger(id) {
-  const res = await fetch(`${BASE_URL}/api/chatbot/triggers/${id}`, { method: "DELETE" });
-  return res.json();
-}
-
-// ============================
-// MASTER COMMANDS
-// ============================
-export async function getMasterCommands() {
-  const res = await fetch(`${BASE_URL}/api/master-commands`);
-  return res.json();
-}
-
-export async function addMasterCommand(name, action, permission='all') {
-  const res = await fetch(`${BASE_URL}/api/master-commands`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ name, action, permission })
+export async function deleteUser(email) {
+  const res = await fetch(`${BASE_URL}/api/users/${email}`, {
+    method: "DELETE"
   });
   return res.json();
 }
 
-export async function editMasterCommand(id, name, action, permission) {
-  const res = await fetch(`${BASE_URL}/api/master-commands/${id}`, {
-    method: "PUT",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ name, action, permission })
-  });
-  return res.json();
-}
-
-export async function deleteMasterCommand(id) {
-  const res = await fetch(`${BASE_URL}/api/master-commands/${id}`, { method: "DELETE" });
-  return res.json();
-}
-
-export async function executeMasterCommand(id, user) {
-  const res = await fetch(`${BASE_URL}/api/master-commands/${id}/execute`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ user })
+export async function toggleUserLock(email, lockStatus) {
+  const res = await fetch(`${BASE_URL}/api/users/${email}/lock`, {
+    method: "PATCH", // corrected from POST
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ locked: lockStatus })
   });
   return res.json();
 }
@@ -168,10 +63,10 @@ export async function getBadges() {
   return res.json();
 }
 
-export async function createBadge(name, effects=[], access=[]) {
+export async function createBadge(name, effects = [], access = []) {
   const res = await fetch(`${BASE_URL}/api/badges`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, effects, access })
   });
   return res.json();
@@ -182,13 +77,83 @@ export async function deleteBadge(id) {
   return res.json();
 }
 
-// Assign badge to user
-export async function assignBadge(username, badgeName) {
+export async function assignBadge(email, badgeId) {
   const res = await fetch(`${BASE_URL}/api/badges/assign`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ username, badgeName })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, badgeId })
   });
+  return res.json();
+}
+
+// ============================
+// MASTER COMMANDS
+// ============================
+export async function getMasterCommands() {
+  const res = await fetch(`${BASE_URL}/api/master`);
+  return res.json();
+}
+
+export async function addMasterCommand(name, action, permission = "all") {
+  const res = await fetch(`${BASE_URL}/api/master`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, action, permission })
+  });
+  return res.json();
+}
+
+export async function editMasterCommand(id, updates) {
+  const res = await fetch(`${BASE_URL}/api/master/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates)
+  });
+  return res.json();
+}
+
+export async function deleteMasterCommand(id) {
+  const res = await fetch(`${BASE_URL}/api/master/${id}`, { method: "DELETE" });
+  return res.json();
+}
+
+export async function executeMasterCommand(id, actor = "admin") {
+  const res = await fetch(`${BASE_URL}/api/master/${id}/execute`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ actor })
+  });
+  return res.json();
+}
+
+// ============================
+// CHATBOT TRIGGERS
+// ============================
+export async function getChatbotTriggers() {
+  const res = await fetch(`${BASE_URL}/api/chatbot/triggers`);
+  return res.json();
+}
+
+export async function addChatbotTrigger(trigger, response, type = "normal") {
+  const res = await fetch(`${BASE_URL}/api/chatbot/triggers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trigger, response, type })
+  });
+  return res.json();
+}
+
+export async function editChatbotTrigger(id, updates) {
+  const res = await fetch(`${BASE_URL}/api/chatbot/triggers/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates)
+  });
+  return res.json();
+}
+
+export async function deleteChatbotTrigger(id) {
+  const res = await fetch(`${BASE_URL}/api/chatbot/triggers/${id}`, { method: "DELETE" });
   return res.json();
 }
 
@@ -200,20 +165,20 @@ export async function getNotices() {
   return res.json();
 }
 
-export async function createNotice(title, message, assignedStudents=[]) {
+export async function createNotice(notice) {
   const res = await fetch(`${BASE_URL}/api/notices`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ title, message, assignedStudents })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(notice)
   });
   return res.json();
 }
 
-export async function editNotice(id, title, message, assignedStudents=[]) {
+export async function editNotice(id, updates) {
   const res = await fetch(`${BASE_URL}/api/notices/${id}`, {
     method: "PUT",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ title, message, assignedStudents })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates)
   });
   return res.json();
 }
@@ -234,7 +199,7 @@ export async function getTests() {
 export async function createTest(test) {
   const res = await fetch(`${BASE_URL}/api/tests`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(test)
   });
   return res.json();
@@ -246,62 +211,107 @@ export async function deleteTest(id) {
 }
 
 // ============================
-// USERS
+// ATTENDANCE
 // ============================
-export async function getUsers() {
-  const res = await fetch(`${BASE_URL}/api/users`);
+export async function getAttendance() {
+  const res = await fetch(`${BASE_URL}/api/attendance`);
   return res.json();
 }
 
-export async function addUser(user) {
-  const res = await fetch(`${BASE_URL}/api/users`, {
+export async function addAttendance(entries) {
+  const res = await fetch(`${BASE_URL}/api/attendance`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(user)
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ entries })
   });
   return res.json();
 }
 
-export async function editUser(username, updates) {
-  const res = await fetch(`${BASE_URL}/api/users/${username}`, {
-    method: "PUT",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(updates)
-  });
+// ============================
+// ANALYTICS
+// ============================
+export async function getAnalytics() {
+  const res = await fetch(`${BASE_URL}/api/analytics`);
   return res.json();
 }
 
-export async function deleteUser(username) {
-  const res = await fetch(`${BASE_URL}/api/users/${username}`, { method: "DELETE" });
-  return res.json();
-}
-
-// Lock/Unlock user
-export async function toggleUserLock(username, lockStatus) {
-  const res = await fetch(`${BASE_URL}/api/users/${username}/lock`, {
+export async function addAnalytics(event) {
+  const res = await fetch(`${BASE_URL}/api/analytics`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ locked: lockStatus })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(event)
   });
   return res.json();
 }
 
 // ============================
-// FEEDBACK
+// LOGS
 // ============================
-export async function sendFeedback(user, feedback) {
-  const res = await fetch(`${BASE_URL}/api/feedback`, {
+export async function getLogs() {
+  const res = await fetch(`${BASE_URL}/api/logs`);
+  return res.json();
+}
+
+export async function addLog(msg, user = "system") {
+  const res = await fetch(`${BASE_URL}/api/logs`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ user, feedback })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ msg, user })
   });
   return res.json();
 }
 
 // ============================
-// EXAMS / GENERAL
+// CHAT HISTORY
 // ============================
-export async function getExams() {
-  const res = await fetch(`${BASE_URL}/api/exams`);
+export async function getChatHistory() {
+  const res = await fetch(`${BASE_URL}/api/chat/history`);
   return res.json();
-      }
+}
+
+export async function addChatHistory(entry) {
+  const res = await fetch(`${BASE_URL}/api/chat/history`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(entry)
+  });
+  return res.json();
+}
+
+// ============================
+// IMPORT / EXPORT
+// ============================
+export async function exportAllData() {
+  const res = await fetch(`${BASE_URL}/api/export`);
+  return res.json();
+}
+
+export async function importAllData(data) {
+  const res = await fetch(`${BASE_URL}/api/import`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  return res.json();
+}
+
+// ============================
+// 2FA / Password Reset
+// ============================
+export async function send2FA(email) {
+  const res = await fetch(`${BASE_URL}/api/send-2fa`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+  return res.json();
+}
+
+export async function resetPassword(email, code, newPassword) {
+  const res = await fetch(`${BASE_URL}/api/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, code, newPassword })
+  });
+  return res.json();
+}
