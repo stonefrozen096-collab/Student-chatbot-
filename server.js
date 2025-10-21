@@ -290,9 +290,9 @@ app.post('/api/send-2fa', async (req,res)=>{
   twoFactorStore[email] = { code, expiresAt };
 
   try {
-    // Use your existing transporter
+    // Use your existing transporter setup
     await transporter.sendMail({
-      from: 'your_email@gmail.com', // ← replace if needed
+      from: 'your_email@gmail.com', // ← keep your existing email/password config here
       to: email,
       subject: 'Your 2FA Code',
       text: `Your 2FA code is: ${code}. It expires in 5 minutes.`
@@ -326,7 +326,7 @@ app.post('/api/reset-password', async (req,res)=>{
   res.json({ success: true, message: 'Password reset successfully' });
 });
 
-// ---------- Real-Time Notifications (Example) ----------
+// ---------- Real-Time Notifications ----------
 app.post('/api/notify', (req,res)=>{
   io.emit('notify', req.body);
   res.json({ success: true });
@@ -335,4 +335,3 @@ app.post('/api/notify', (req,res)=>{
 // ---------- Start Server ----------
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, ()=> console.log(`Server running on port ${PORT}`));
-  
