@@ -351,7 +351,8 @@ app.post('/api/reset-password', async (req,res)=>{
 // ---------- LOGIN ----------
 app.post('/api/login', async (req,res)=>{
   const { email, password } = req.body;
-  const user = users.find(u => u.email === email);
+
+  const user = users[email];
   if(!user) return res.status(404).json({ success:false, error:'User not found' });
   if(user.locked) return res.status(403).json({ success:false, error:'Account locked' });
 
@@ -359,7 +360,7 @@ app.post('/api/login', async (req,res)=>{
   if(!valid) return res.status(401).json({ success:false, error:'Invalid credentials' });
 
   user.lastLogin = new Date().toISOString();
-  writeData(USERS_FILE, users);
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 
   res.json({ success:true, message:'Login successful', user:{ email:user.email, name:user.name, role:user.role } });
 });
