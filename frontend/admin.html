@@ -43,7 +43,7 @@ body {
   background: #f4f6f9;
 }
 .admin-section {
-  display: none; /* Initially hidden */
+  display: none;
   background: #fff;
   border-radius: 14px;
   padding: 20px;
@@ -51,9 +51,7 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   animation: fadeIn 0.5s ease;
 }
-h2 {
-  margin-top: 0;
-}
+h2 { margin-top: 0; }
 @keyframes fadeIn {
   from {opacity: 0; transform: translateY(10px);}
   to {opacity: 1; transform: translateY(0);}
@@ -79,449 +77,306 @@ h2 {
 <!-- Main Content -->
 <div class="mainContent">
 
-  <!-- ===========================
-       Attendance Management
-  ============================ -->
+  <!-- Attendance Section -->
   <div id="attendanceSection" class="admin-section">
-  <h2>📋 Attendance Management</h2>
-  <div class="attendance-controls">
-    <label>Select Date:</label>
-    <input type="date" id="attendanceDate" />
-    <button onclick="markAllPresent()">Mark All Present</button>
-    <button onclick="markAllAbsent()">Mark All Absent</button>
-  </div>
-  <table id="attendanceTable">
-    <thead>
-      <tr>
-        <th>Student</th>
-        <th>Present</th>
-        <th>Absent</th>
-        <th>Late</th>
-        <th>On Duty</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <button onclick="saveAttendance()">💾 Save Attendance</button>
-</div>
-
-<script src="/socket.io/socket.io.js"></script>
-<script type="module" src="attendance.js"></script>
-<script>
-  const socket = io();
-  socket.on('attendanceUpdated', () => {
-    loadAttendanceData();
-  });
-</script>
-
-  <!-- ===========================
-       Test Management
-  ============================ -->
-  <div id="testSection" class="admin-section">
-  <h2>📝 Test Management</h2>
-
-  <!-- Create Test Form -->
-  <form id="createTestForm">
-    <label for="testTitle">Test Title:</label>
-    <input type="text" id="testTitle" required>
-
-    <label for="testSubject">Subject:</label>
-    <input type="text" id="testSubject" required>
-
-    <label for="testType">Test Type:</label>
-    <select id="testType">
-      <option value="mcq">MCQ</option>
-      <option value="subjective">Subjective</option>
-    </select>
-
-    <!-- MCQ Options Section -->
-    <div id="mcqSection" class="mcqContainer" style="display:none;">
-      <label>Options:</label>
-      <div id="optionContainer"></div>
-      <button type="button" id="addOptionBtn">➕ Add Option</button>
-
-      <label>Correct Answer:</label>
-      <select id="correctAnswerSelect"></select>
+    <h2>📋 Attendance Management</h2>
+    <div class="attendance-controls">
+      <label>Select Date:</label>
+      <input type="date" id="attendanceDate" />
+      <button onclick="markAllPresent()">Mark All Present</button>
+      <button onclick="markAllAbsent()">Mark All Absent</button>
     </div>
-
-    <label for="publishSelect">Publish To:</label>
-    <select id="publishSelect">
-      <option value="all">All Students</option>
-      <option value="specific">Specific Students</option>
-    </select>
-
-    <div id="studentSelectContainer" class="studentSelectContainer" style="display:none;">
-      <label>Select Students:</label>
-      <select id="studentSelect" multiple></select>
-    </div>
-
-    <button type="submit">Create & Publish Test</button>
-  </form>
-
-  <!-- Tests Table -->
-  <h3>Existing Tests</h3>
-  <div class="testTableContainer">
-    <table id="testTable">
+    <table id="attendanceTable">
       <thead>
         <tr>
-          <th>Title</th>
-          <th>Subject</th>
-          <th>Type</th>
-          <th>Published To</th>
-          <th>Actions</th>
+          <th>Student</th>
+          <th>Present</th>
+          <th>Absent</th>
+          <th>Late</th>
+          <th>On Duty</th>
+          <th>Status</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
+    <button onclick="saveAttendance()">💾 Save Attendance</button>
   </div>
 
-  <!-- Confetti & Notifications -->
-  <div id="confettiContainer" class="confettiContainer"></div>
-  <div id="floatingContainer" class="floatingContainer"></div>
-</div>
+  <!-- Test Section -->
+  <div id="testSection" class="admin-section">
+    <h2>📝 Test Management</h2>
+    <form id="createTestForm">
+      <label for="testTitle">Test Title:</label>
+      <input type="text" id="testTitle" required>
+      <label for="testSubject">Subject:</label>
+      <input type="text" id="testSubject" required>
+      <label for="testType">Test Type:</label>
+      <select id="testType">
+        <option value="mcq">MCQ</option>
+        <option value="subjective">Subjective</option>
+      </select>
 
-<!-- JS & Socket.IO -->
-<script src="/socket.io/socket.io.js"></script>
-<script type="module" src="testManagement.js"></script>
+      <div id="mcqSection" class="mcqContainer" style="display:none;">
+        <label>Options:</label>
+        <div id="optionContainer"></div>
+        <button type="button" id="addOptionBtn">➕ Add Option</button>
+        <label>Correct Answer:</label>
+        <select id="correctAnswerSelect"></select>
+      </div>
 
-  <!-- ===========================
-       User Management
-  ============================ -->
-  <div id="userSection" class="admin-section">
-  <h2>👤 User Management</h2>
+      <label for="publishSelect">Publish To:</label>
+      <select id="publishSelect">
+        <option value="all">All Students</option>
+        <option value="specific">Specific Students</option>
+      </select>
 
-  <!-- Add User Form -->
-  <form id="addUserForm" class="userForm">
-    <input type="text" id="username" placeholder="Username" required>
-    <input type="email" id="email" placeholder="Email" required>
-    <select id="role">
-      <option value="student">Student</option>
-      <option value="faculty">Faculty</option>
-      <option value="moderator">Moderator</option>
-      <option value="tester">Tester</option>
-    </select>
-    <input type="password" id="password" placeholder="Password (if applicable)">
-    <button type="submit">Add User</button>
-  </form>
+      <div id="studentSelectContainer" style="display:none;">
+        <label>Select Students:</label>
+        <select id="studentSelect" multiple></select>
+      </div>
 
-  <!-- Search Users -->
-  <div class="searchBar">
-    <input type="text" id="profileSearch" placeholder="Search by username, email, or role...">
+      <button type="submit">Create & Publish Test</button>
+    </form>
+
+    <h3>Existing Tests</h3>
+    <div class="testTableContainer">
+      <table id="testTable">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Subject</th>
+            <th>Type</th>
+            <th>Published To</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="confettiContainer"></div>
   </div>
 
-  <!-- Users Table -->
-  <div class="userTableContainer">
-    <table id="userTable">
-      <thead>
-        <tr>
-          <th>Username</th>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Password</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Users rendered dynamically -->
-      </tbody>
-    </table>
+  <!-- User Management -->
+  <div id="userManagementSection" class="admin-section">
+    <h2>👤 User Management</h2>
+    <form id="addUserForm">
+      <input type="text" id="username" placeholder="Username" required>
+      <input type="email" id="email" placeholder="Email" required>
+      <select id="role">
+        <option value="student">Student</option>
+        <option value="faculty">Faculty</option>
+        <option value="moderator">Moderator</option>
+        <option value="tester">Tester</option>
+      </select>
+      <input type="password" id="password" placeholder="Password (if applicable)">
+      <button type="submit">Add User</button>
+    </form>
+
+    <input type="text" id="profileSearchUser" placeholder="Search by username, email, or role...">
+
+    <div class="userTableContainer">
+      <table id="userTable">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Password</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- Floating Notifications -->
-  <div id="floatingContainer" class="floatingContainer"></div>
-</div>
-
-<!-- Socket.IO & JS -->
-<script src="/socket.io/socket.io.js"></script>
-<script type="module" src="userManagement.js"></script>
-
-  <!-- ===========================
-       Badge Management
-  ============================ -->
+  <!-- Badge Section -->
   <div id="badgeSection" class="admin-section">
-  <h2>🏅 Badge Management</h2>
-  
-  <form id="addBadgeForm">
-    <label>Badge Name:</label>
-    <input type="text" id="badgeName" required>
+    <h2>🏅 Badge Management</h2>
+    <form id="addBadgeForm">
+      <label>Badge Name:</label>
+      <input type="text" id="badgeName" required>
 
-    <label>Effects (visual):</label>
-    <select id="badgeEffects" multiple>
-      <option value="glow">Glow</option>
-      <option value="spin">Spin</option>
-      <option value="rainbow">Rainbow</option>
-      <option value="bounce">Bounce</option>
-      <option value="shadow">Shadow</option>
-      <option value="pulse">Pulse</option>
-    </select>
+      <label>Effects (visual):</label>
+      <select id="badgeEffects" multiple>
+        <option value="glow">Glow</option>
+        <option value="spin">Spin</option>
+        <option value="rainbow">Rainbow</option>
+        <option value="bounce">Bounce</option>
+        <option value="shadow">Shadow</option>
+        <option value="pulse">Pulse</option>
+      </select>
 
-    <label>Special Access (permissions):</label>
-    <select id="badgeAccess" multiple>
-      <option value="editAttendance">Edit Attendance</option>
-      <option value="editTests">Edit Tests</option>
-      <option value="manageUsers">Manage Users</option>
-      <option value="accessMasterCommand">Master Command</option>
-      <option value="sendGlobalMessage">Send Global Messages</option>
-    </select>
+      <label>Special Access (permissions):</label>
+      <select id="badgeAccess" multiple>
+        <option value="editAttendance">Edit Attendance</option>
+        <option value="editTests">Edit Tests</option>
+        <option value="manageUsers">Manage Users</option>
+        <option value="accessMasterCommand">Master Command</option>
+        <option value="sendGlobalMessage">Send Global Messages</option>
+      </select>
 
-    <button type="submit">Create Badge</button>
-  </form>
+      <button type="submit">Create Badge</button>
+    </form>
 
-  <div id="badgeList" class="list"></div>
+    <div id="badgeList"></div>
 
-  <h3>Assign Badge to User</h3>
-  <select id="assignBadgeUser"><option value="">Select User</option></select>
-  <select id="assignBadgeSelect"><option value="">Select Badge</option></select>
-  <button id="assignBadgeBtn">Assign Badge</button>
+    <h3>Assign Badge to User</h3>
+    <select id="assignBadgeUser"><option value="">Select User</option></select>
+    <select id="assignBadgeSelect"><option value="">Select Badge</option></select>
+    <button id="assignBadgeBtn">Assign Badge</button>
 
-  <div id="badgeStatus" class="statusBox"></div>
-</div>
+    <div id="badgeStatus"></div>
+  </div>
 
-<!-- ------------------- JS & Socket.IO ------------------- -->
-<!-- Socket.IO client -->
-<script src="/socket.io/socket.io.js"></script>
-<!-- Badge management JS -->
-<script type="module" src="badge.js"></script>
-
-  <!-- ===========================
-       Chatbot Management
-  ============================ -->
+  <!-- Chatbot Section -->
   <div id="chatbotAdminSection" class="admin-section">
     <h2>🤖 Chatbot Trigger Management</h2>
-    <div class="addCommandBar">
-      <button onclick="promptAddTrigger()">➕ Add New Trigger</button>
-    </div>
+    <button onclick="promptAddTrigger()">➕ Add New Trigger</button>
     <div id="triggerList"></div>
-</div>
-
-<div id="chatbotOverlay">
-  <div id="chatbotMessage">Chatbot Locked</div>
-</div>
-
-<!-- Student Chatbot preview -->
-<div class="chatbot-container" id="studentChatbot" style="display:none;">
-  <div class="chatbot-header">Student Chatbot</div>
-  <div class="chatbot-messages" id="studentMessages"></div>
-  <div class="chatbot-input-area">
-    <input type="text" id="studentInput" placeholder="Type your message...">
-    <button onclick="studentSendMessage(document.getElementById('studentInput').value)">Send</button>
-  </div>
-</div>
-
-<!-- ------------------- JS & Socket.IO ------------------- -->
-<script src="/socket.io/socket.io.js"></script>
-<script type="module" src="chatbot.js"></script>
-
-  <!-- ===========================
-       Analytics
-  ============================ -->
-<div id="analyticsSection" class="admin-section">
-  <h2>📈 Analytics Management</h2>
-
-  <div class="analytics-cards">
-    <div class="card"><h3>Total Messages</h3><p id="totalMessages">0</p></div>
-    <div class="card"><h3>Active Users</h3><p id="activeUsers">0</p></div>
-    <div class="card"><h3>Chatbot Locks</h3><p id="lockCount">0</p></div>
-    <div class="card"><h3>Total Lock Duration (mins)</h3><p id="lockDuration">0</p></div>
   </div>
 
-  <div class="analytics-cards">
-    <div class="card"><h3>Most Used Trigger</h3><p id="topTrigger">None</p></div>
-    <div class="card"><h3>Urgent Alerts</h3><p id="urgentCount">0</p></div>
-    <div class="card"><h3>Warnings</h3><p id="warningCount">0</p></div>
-    <div class="card"><h3>Normal Messages</h3><p id="normalCount">0</p></div>
+  <div id="chatbotOverlay">
+    <div id="chatbotMessage">Chatbot Locked</div>
   </div>
 
-  <canvas id="messagesChart"></canvas>
-</div>
+  <div class="chatbot-container" id="studentChatbot" style="display:none;">
+    <div class="chatbot-header">Student Chatbot</div>
+    <div class="chatbot-messages" id="studentMessages"></div>
+    <div class="chatbot-input-area">
+      <input type="text" id="studentInput" placeholder="Type your message...">
+      <button onclick="studentSendMessage(document.getElementById('studentInput').value)">Send</button>
+    </div>
+  </div>
 
-<!-- Include Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Analytics Section -->
+  <div id="analyticsSection" class="admin-section">
+    <h2>📈 Analytics Management</h2>
+    <div class="analytics-cards">
+      <div class="card"><h3>Total Messages</h3><p id="totalMessages">0</p></div>
+      <div class="card"><h3>Active Users</h3><p id="activeUsers">0</p></div>
+      <div class="card"><h3>Chatbot Locks</h3><p id="lockCount">0</p></div>
+      <div class="card"><h3>Total Lock Duration (mins)</h3><p id="lockDuration">0</p></div>
+    </div>
+    <div class="analytics-cards">
+      <div class="card"><h3>Most Used Trigger</h3><p id="topTrigger">None</p></div>
+      <div class="card"><h3>Urgent Alerts</h3><p id="urgentCount">0</p></div>
+      <div class="card"><h3>Warnings</h3><p id="warningCount">0</p></div>
+      <div class="card"><h3>Normal Messages</h3><p id="normalCount">0</p></div>
+    </div>
+    <canvas id="messagesChart"></canvas>
+  </div>
 
-<!-- Include Socket.IO -->
-<script src="/socket.io/socket.io.js"></script>
-
-<!-- Include Analytics JS -->
-<script type="module" src="analytics.js"></script>
-
-  <!-- ===========================
-       Import/Export
-  ============================ -->
+  <!-- Import/Export Section -->
   <div id="importExportSection" class="admin-section">
-  <h2>🔄 Import & Export Management</h2>
-
-  <div class="importExportContainer">
-    <!-- Export -->
-    <div class="exportBox">
-      <h3>📤 Export Data</h3>
-      <button class="btn btn-primary" onclick="exportAllData()">Export All JSON</button>
+    <h2>🔄 Import & Export Management</h2>
+    <div class="importExportContainer">
+      <div class="exportBox">
+        <h3>📤 Export Data</h3>
+        <button class="btn btn-primary" onclick="exportAllData()">Export All JSON</button>
+      </div>
+      <div class="importBox">
+        <h3>📥 Import Data</h3>
+        <input type="file" id="importFile" accept=".json">
+        <button class="btn btn-success" onclick="importAllData()">Import JSON</button>
+      </div>
     </div>
-
-    <!-- Import -->
-    <div class="importBox">
-      <h3>📥 Import Data</h3>
-      <input type="file" id="importFile" accept=".json">
-      <button class="btn btn-success" onclick="importAllData()">Import JSON</button>
-    </div>
+    <div id="importExportLog" class="logBox"></div>
   </div>
 
-  <!-- Import/Export Logs -->
-  <div id="importExportLog" class="logBox"></div>
-</div>
-
-<!-- ------------------- JS & Socket.IO ------------------- -->
-<!-- Socket.IO client -->
-<script src="/socket.io/socket.io.js"></script>
-<!-- Import/Export JS -->
-<script type="module" src="importExport.js"></script>
-
-  <!-- ===========================
-       Master Command
-  ============================ -->
+  <!-- Master Command Section -->
   <div id="masterCommandSection" class="admin-section">
-  <h2>🛠️ Master Command System</h2>
-
-  <div class="commandControls">
+    <h2>🛠️ Master Command System</h2>
     <button onclick="promptAddCommand()">➕ Add New Command</button>
-  </div>
-
-  <div id="masterList" class="commandList">
-    <!-- Commands rendered here dynamically -->
-  </div>
-
-  <!-- Global Lock Overlay -->
-  <div id="globalLockOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); color:white; font-size:2em; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9999;">
-    <div id="lockMessage">🔒 All Users Locked</div>
-    <div id="countdownTimer"></div>
-  </div>
-</div>
-
-<!-- ------------------- JS & Socket.IO ------------------- -->
-<!-- Socket.IO client -->
-<script src="/socket.io/socket.io.js"></script>
-<!-- Master Command JS -->
-<script type="module" src="masterCommand.js"></script>
-  
-  <!-- ===========================
-       Notice Management
-  ============================ -->
-  <div id="noticeSection" class="admin-section">
-  <h2>📢 Notice Management</h2>
-
-  <!-- Add Notice Form -->
-  <form id="addNoticeForm">
-    <label>Title:</label>
-    <input type="text" id="noticeTitle" required>
-
-    <label>Message:</label>
-    <textarea id="noticeMessage" rows="3" required></textarea>
-
-    <label>Publish To:</label>
-    <select id="noticePublishSelect">
-      <option value="all">All Students</option>
-      <option value="specific">Specific Students</option>
-    </select>
-
-    <div id="noticeStudentContainer" style="display:none;">
-      <label>Select Students:</label>
-      <select id="noticeStudentSelect" multiple></select>
+    <div id="masterList" class="commandList"></div>
+    <div id="globalLockOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); color:white; font-size:2em; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9999;">
+      <div id="lockMessage">🔒 All Users Locked</div>
+      <div id="countdownTimer"></div>
     </div>
-
-    <button type="submit">Publish Notice</button>
-  </form>
-
-  <!-- Notices Table -->
-  <div class="noticeTableContainer">
-    <table id="noticeTable">
-      <thead>
-        <tr>
-          <th>Title</th>
-          <th>Message</th>
-          <th>Published To</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Notices rendered here -->
-      </tbody>
-    </table>
   </div>
 
-  <!-- Floating Notifications Container -->
-  <div id="floatingContainer" style="position:fixed; top:10px; right:10px; z-index:10000;"></div>
-</div>
+  <!-- Notice Section -->
+  <div id="noticeSection" class="admin-section">
+    <h2>📢 Notice Management</h2>
+    <form id="addNoticeForm">
+      <label>Title:</label>
+      <input type="text" id="noticeTitle" required>
+      <label>Message:</label>
+      <textarea id="noticeMessage" rows="3" required></textarea>
+      <label>Publish To:</label>
+      <select id="noticePublishSelect">
+        <option value="all">All Students</option>
+        <option value="specific">Specific Students</option>
+      </select>
+      <div id="noticeStudentContainer" style="display:none;">
+        <label>Select Students:</label>
+        <select id="noticeStudentSelect" multiple></select>
+      </div>
+      <button type="submit">Publish Notice</button>
+    </form>
+    <div class="noticeTableContainer">
+      <table id="noticeTable">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Message</th>
+            <th>Published To</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
 
-<!-- ------------------- JS & Socket.IO ------------------- -->
-<!-- Socket.IO client -->
-<script src="/socket.io/socket.io.js"></script>
-<!-- Notice Management JS -->
-<script type="module" src="notice.js"></script>
-
-  <!-- ===========================
-       Profile Management
-  ============================ -->
+  <!-- Profile Section -->
   <div id="profileSection" class="admin-section">
-  <h2>👤 User Profile Management</h2>
-
-  <!-- Search -->
-  <div class="profileSearchBar">
+    <h2>👤 User Profile Management</h2>
     <input type="text" id="profileSearch" placeholder="Search by username, name, or email...">
+    <div class="profileTableContainer">
+      <table id="profileTable">
+        <thead>
+          <tr>
+            <th>Avatar</th>
+            <th>Username</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Badges</th>
+            <th>Special Access</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- Users Table -->
-  <div class="profileTableContainer">
-    <table id="profileTable">
-      <thead>
-        <tr>
-          <th>Avatar</th>
-          <th>Username</th>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Badges</th>
-          <th>Special Access</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Profiles rendered dynamically -->
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Floating Notifications Container -->
-  <div id="floatingContainer" style="position:fixed; top:10px; right:10px; z-index:10000;"></div>
-</div>
-
-<!-- ------------------- JS & Socket.IO ------------------- -->
-<!-- Socket.IO client -->
-<script src="/socket.io/socket.io.js"></script>
-<!-- Profile Management JS -->
-<script type="module" src="profile.js"></script>
-> <!-- End of mainContent -->
+</div> <!-- End mainContent -->
 
 <!-- ===========================
-     JS Links
+     JS & Modules
 =========================== -->
-<script src="js/attendanceManagement.js"></script>
-<script src="js/testManagement.js"></script>
-<script src="js/userManagement.js"></script>
-<script src="js/badgeManagement.js"></script>
-<script src="js/chatbotManagement.js"></script>
-<script src="js/analytics.js"></script>
-<script src="js/importExport.js"></script>
-<script src="js/masterCommandManagement.js"></script>
-<script src="js/noticeManagement.js"></script>
-<script src="js/profileManagement.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script type="module" src="attendance.js"></script>
+<script type="module" src="testManagement.js"></script>
+<script type="module" src="userManagement.js"></script>
+<script type="module" src="badge.js"></script>
+<script type="module" src="chatbot.js"></script>
+<script type="module" src="analytics.js"></script>
+<script type="module" src="importExport.js"></script>
+<script type="module" src="masterCommand.js"></script>
+<script type="module" src="notice.js"></script>
+<script type="module" src="profile.js"></script>
 
 <!-- Sidebar Navigation Script -->
 <script>
 const menuBtns = document.querySelectorAll('.menuBtn');
 const sections = document.querySelectorAll('.admin-section');
-
 menuBtns.forEach(btn=>{
   btn.addEventListener('click', ()=>{
     menuBtns.forEach(b=>b.classList.remove('active'));
@@ -532,11 +387,8 @@ menuBtns.forEach(btn=>{
     });
   });
 });
-
 // Show first section by default
-sections.forEach((sec, idx)=>{
-  sec.style.display = (idx===0) ? 'block' : 'none';
-});
+sections.forEach((sec, idx)=>{ sec.style.display = (idx===0) ? 'block' : 'none'; });
 </script>
 
 </body>
