@@ -1,6 +1,10 @@
-// analytics.js — persistent analytics management
-
+// analytics.js — persistent analytics management with real-time updates
 import * as api from "./api.js"; // Your unified API
+
+// ----------------------
+// Socket.IO connection
+// ----------------------
+const socket = io(); // assumes <script src="/socket.io/socket.io.js"></script> is included in HTML
 
 // ----------------------
 // Analytics Data (frontend cache)
@@ -20,7 +24,7 @@ let analyticsData = {
 // ----------------------
 export async function loadAnalytics() {
   try {
-    const serverData = await api.getAnalytics(); // New API endpoint
+    const serverData = await api.getAnalytics();
     if (serverData) {
       analyticsData.totalMessages = serverData.totalMessages || 0;
       analyticsData.activeUsers = new Set(serverData.activeUsers || []);
@@ -38,35 +42,25 @@ export async function loadAnalytics() {
 }
 
 // ----------------------
-// Record message
+// Record analytics events
 // ----------------------
 export async function recordMessage(user, trigger, type = "normal") {
   analyticsData.totalMessages++;
   analyticsData.activeUsers.add(user);
   analyticsData.messageHistory.push({ user, trigger, type, time: new Date().toISOString() });
-
   analyticsData.triggerUsage[trigger] = (analyticsData.triggerUsage[trigger] || 0) + 1;
   if (analyticsData.typeCounts[type] !== undefined) analyticsData.typeCounts[type]++;
-
+  
   updateAnalyticsUI();
   renderMessageChart();
 
-  // Persist to server
   try {
-    await api.recordAnalytics({
-      type: "message",
-      user,
-      trigger,
-      messageType: type
-    });
+    await api.recordAnalytics({ type: "message", user, trigger, messageType: type });
   } catch (err) {
     console.error("Failed to record message analytics:", err);
   }
 }
 
-// ----------------------
-// Record lock/unlock
-// ----------------------
 export async function recordLock(durationSeconds) {
   analyticsData.lockCount++;
   analyticsData.totalLockDuration += durationSeconds / 60;
@@ -74,10 +68,7 @@ export async function recordLock(durationSeconds) {
   updateAnalyticsUI();
 
   try {
-    await api.recordAnalytics({
-      type: "lock",
-      duration: durationSeconds
-    });
+    await api.recordAnalytics({ type: "lock", duration: durationSeconds });
   } catch (err) {
     console.error("Failed to record lock analytics:", err);
   }
@@ -134,6 +125,18 @@ export function renderMessageChart() {
 }
 
 // ----------------------
-// Initialize on page load
+// Socket.IO real-time updates
+// ----------------------
+socket.on("analyticsUpdated", (data) => {
+  if (!data) return;
+  if (data.type === "message") {
+    recordMessage(data.user, data.trigger, data.messageType);
+  } else if (data.type === "lock") {
+    recordLock(data.duration);
+  }
+});
+
+// ----------------------
+// Initialize
 // ----------------------
 document.addEventListener("DOMContentLoaded", loadAnalytics);
