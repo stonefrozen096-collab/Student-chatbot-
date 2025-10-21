@@ -1,4 +1,6 @@
-// ---------- Chatbot Management (API Version) ----------
+// ---------- Chatbot Management (API + Socket.IO Version) ----------
+
+import * as api from './api.js'; // API endpoints for chatbot triggers
 
 let chatbotTriggers = [];
 let chatbotWarnings = {};
@@ -12,11 +14,23 @@ const preTriggers = [
   { trigger: 'urgent', response: 'Attention! This is an urgent alert!', type: 'alert' },
 ];
 
+// ---------------- Socket.IO ----------------
+const socket = io();
+
+// Listen for real-time updates
+socket.on('chatbot:updateTriggers', (updatedTriggers) => {
+  chatbotTriggers = updatedTriggers;
+  renderTriggers();
+});
+
+socket.on('chatbot:lock', ({ seconds, message }) => lockChatbot(seconds, message));
+socket.on('chatbot:unlock', () => unlockChatbot());
+
 // ---------------- Load from API ----------------
 async function loadChatbotData() {
   try {
-    chatbotTriggers = await getChatbotTriggers(); // API call
-    chatbotWarnings = {}; // Warnings can be maintained locally or via API if needed
+    chatbotTriggers = await api.getChatbotTriggers(); // API call
+    chatbotWarnings = {};
   } catch (e) {
     console.error('Failed to load triggers from API', e);
     chatbotTriggers = [...preTriggers];
@@ -42,8 +56,8 @@ function renderTriggers() {
   chatbotTriggers.forEach((tr) => {
     const div = document.createElement('div');
     div.innerHTML = `<strong>${tr.trigger}</strong> → ${tr.response} | Type: ${tr.type}
-      <button class="btn tiny btn-ghost" onclick="editTriggerAPI('${tr.id}')">Edit</button>
-      <button class="btn tiny btn-danger" onclick="deleteTriggerAPI('${tr.id}')">Delete</button>`;
+      <button onclick="editTriggerAPI('${tr.id}')">Edit</button>
+      <button onclick="deleteTriggerAPI('${tr.id}')">Delete</button>`;
     container.appendChild(div);
     setTimeout(() => div.classList.add('fadeIn'), 50);
   });
@@ -61,9 +75,10 @@ async function promptAddTrigger() {
 
 async function addTriggerAPI(trigger, response, type = 'normal') {
   try {
-    const newTrigger = await addChatbotTrigger(trigger, response, type); // API call
+    const newTrigger = await api.addChatbotTrigger(trigger, response, type); // API call
     chatbotTriggers.push(newTrigger);
     renderTriggers();
+    socket.emit('chatbot:triggerAdded', newTrigger); // Notify all clients
   } catch (err) {
     console.error('Failed to add trigger', err);
     alert('Failed to add trigger!');
@@ -78,10 +93,11 @@ async function editTriggerAPI(id) {
   const ty = prompt('Type', tr.type); if (ty !== null) tr.type = ty;
 
   try {
-    const updated = await editChatbotTrigger(id, tr.trigger, tr.response, tr.type); // API call
+    const updated = await api.editChatbotTrigger(id, tr.trigger, tr.response, tr.type); // API call
     const index = chatbotTriggers.findIndex(x => x.id === id);
     chatbotTriggers[index] = updated;
     renderTriggers();
+    socket.emit('chatbot:triggerEdited', updated); // Notify all clients
   } catch (err) {
     console.error('Failed to edit trigger', err);
     alert('Failed to edit trigger!');
@@ -91,9 +107,10 @@ async function editTriggerAPI(id) {
 async function deleteTriggerAPI(id) {
   if (!confirm('Delete this trigger?')) return;
   try {
-    await deleteChatbotTrigger(id); // API call
+    await api.deleteChatbotTrigger(id); // API call
     chatbotTriggers = chatbotTriggers.filter(t => t.id !== id);
     renderTriggers();
+    socket.emit('chatbot:triggerDeleted', id); // Notify all clients
   } catch (err) {
     console.error('Failed to delete trigger', err);
     alert('Failed to delete trigger!');
@@ -107,6 +124,8 @@ function lockChatbot(seconds, msg = 'Chatbot Locked!') {
   const overlay = document.getElementById('chatbotOverlay');
   overlay.style.display = 'flex';
   document.getElementById('chatbotMessage').innerText = msg;
+
+  socket.emit('chatbot:lock', { seconds, message: msg });
 
   if (chatbotCountdown) clearInterval(chatbotCountdown);
   chatbotCountdown = setInterval(() => {
@@ -122,6 +141,7 @@ function unlockChatbot() {
   const overlay = document.getElementById('chatbotOverlay');
   overlay.style.display = 'none';
   if (chatbotCountdown) clearInterval(chatbotCountdown);
+  socket.emit('chatbot:unlock');
 }
 
 // ---------------- Handle Student Message ----------------
@@ -133,7 +153,6 @@ async function studentSendMessage(msg, username = 'student') {
     if (['alert', 'urgent', 'warning'].includes(tr.type)) {
       lockChatbot(10, tr.response);
       chatbotWarnings[username] = (chatbotWarnings[username] || 0) + 1;
-      // Optional: call API to log warning
     } else {
       alert(tr.response);
     }
