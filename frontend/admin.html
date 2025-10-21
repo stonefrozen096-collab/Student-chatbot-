@@ -363,24 +363,32 @@ h2 {
        Notice Management
   ============================ -->
   <div id="noticeSection" class="admin-section">
-    <h2>📢 Notice Management</h2>
-    <form id="addNoticeForm">
-      <label>Title:</label>
-      <input type="text" id="noticeTitle" required>
-      <label>Message:</label>
-      <textarea id="noticeMessage" required></textarea>
-      <label>Publish To:</label>
-      <select id="noticePublishSelect">
-        <option value="all">All Students</option>
-        <option value="specific">Specific Students</option>
-      </select>
-      <div id="noticeStudentContainer" style="display:none;">
-        <label>Select Students:</label>
-        <select id="noticeStudentSelect" multiple></select>
-      </div>
-      <button type="submit">Publish Notice</button>
-    </form>
-    <h3>Existing Notices</h3>
+  <h2>📢 Notice Management</h2>
+
+  <!-- Add Notice Form -->
+  <form id="addNoticeForm">
+    <label>Title:</label>
+    <input type="text" id="noticeTitle" required>
+
+    <label>Message:</label>
+    <textarea id="noticeMessage" rows="3" required></textarea>
+
+    <label>Publish To:</label>
+    <select id="noticePublishSelect">
+      <option value="all">All Students</option>
+      <option value="specific">Specific Students</option>
+    </select>
+
+    <div id="noticeStudentContainer" style="display:none;">
+      <label>Select Students:</label>
+      <select id="noticeStudentSelect" multiple></select>
+    </div>
+
+    <button type="submit">Publish Notice</button>
+  </form>
+
+  <!-- Notices Table -->
+  <div class="noticeTableContainer">
     <table id="noticeTable">
       <thead>
         <tr>
@@ -390,9 +398,21 @@ h2 {
           <th>Actions</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+        <!-- Notices rendered here -->
+      </tbody>
     </table>
   </div>
+
+  <!-- Floating Notifications Container -->
+  <div id="floatingContainer" style="position:fixed; top:10px; right:10px; z-index:10000;"></div>
+</div>
+
+<!-- ------------------- JS & Socket.IO ------------------- -->
+<!-- Socket.IO client -->
+<script src="/socket.io/socket.io.js"></script>
+<!-- Notice Management JS -->
+<script type="module" src="notice.js"></script>
 
   <!-- ===========================
        Profile Management
