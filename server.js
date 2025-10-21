@@ -276,14 +276,16 @@ res.json({ imported: true });
 // ---------- 2FA & Password Reset ----------
 const twoFactorStore = {}; // { email: { code, expiresAt } }
 
+// Generate 6-digit 2FA code
 function generate2FACode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-app.post('/api/send-2fa', async (req,res)=>{
+// Send 2FA code
+app.post('/api/send-2fa', async (req, res) => {
   const { email } = req.body;
-  const user = users.find(u => u.email === email);
-  if(!user) return res.status(404).json({ sent: false, error: 'User not found' });
+  const user = users[email]; // lookup by email
+  if (!user) return res.status(404).json({ sent: false, error: 'User not found' });
 
   const code = generate2FACode();
   const expiresAt = Date.now() + 5 * 60 * 1000; // 5 min validity
@@ -298,26 +300,26 @@ app.post('/api/send-2fa', async (req,res)=>{
       text: `Your 2FA code is: ${code}. It expires in 5 minutes.`
     });
     res.json({ sent: true });
-  } catch(e) {
+  } catch (e) {
     console.error('Failed to send 2FA email', e);
     res.status(500).json({ sent: false, error: e.message });
   }
 });
 
 // Verify 2FA code and reset password
-app.post('/api/reset-password', async (req,res)=>{
+app.post('/api/reset-password', async (req, res) => {
   const { email, code, newPassword } = req.body;
   const record = twoFactorStore[email];
 
-  if(!record) return res.status(400).json({ success: false, error: 'No 2FA request found' });
-  if(Date.now() > record.expiresAt){
+  if (!record) return res.status(400).json({ success: false, error: 'No 2FA request found' });
+  if (Date.now() > record.expiresAt) {
     delete twoFactorStore[email];
     return res.status(400).json({ success: false, error: '2FA code expired' });
   }
-  if(record.code !== code) return res.status(400).json({ success: false, error: 'Invalid 2FA code' });
+  if (record.code !== code) return res.status(400).json({ success: false, error: 'Invalid 2FA code' });
 
-  const user = users.find(u => u.email === email);
-  if(!user) return res.status(404).json({ success: false, error: 'User not found' });
+  const user = users[email];
+  if (!user) return res.status(404).json({ success: false, error: 'User not found' });
 
   user.password = await bcrypt.hash(newPassword, 10);
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
@@ -326,12 +328,27 @@ app.post('/api/reset-password', async (req,res)=>{
   res.json({ success: true, message: 'Password reset successfully' });
 });
 
+// ---------- Login ----------
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body;
+  const user = users[email];
+  if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) return res.status(401).json({ success: false, error: 'Invalid credentials' });
+
+  user.lastLogin = new Date().toISOString();
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+
+  res.json({ success: true, message: 'Login successful', user: { email: user.email, name: user.name, role: user.role } });
+});
+
 // ---------- Real-Time Notifications ----------
-app.post('/api/notify', (req,res)=>{
+app.post('/api/notify', (req, res) => {
   io.emit('notify', req.body);
   res.json({ success: true });
 });
 
 // ---------- Start Server ----------
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, ()=> console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
