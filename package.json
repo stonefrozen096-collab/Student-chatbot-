@@ -1,6 +1,6 @@
 {
   "name": "student-assistant-backend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Backend API for Student Assistant Chatbot with full features",
   "main": "server.js",
   "scripts": {
@@ -11,7 +11,9 @@
     "bcrypt": "^5.1.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",
-    "nodemailer": "^6.9.3"
+    "nodemailer": "^6.9.3",
+    "socket.io": "^4.7.2",
+    "crypto": "^1.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
@@ -19,12 +21,26 @@
   "keywords": [
     "student",
     "assistant",
-    "backend",
     "chatbot",
+    "backend",
     "attendance",
     "exams",
     "notices",
-    "badges"
+    "badges",
+    "profile-management",
+    "user-management",
+    "test-management",
+    "assignment-management",
+    "notes-management",
+    "timetable",
+    "analytics",
+    "2fa",
+    "password-reset",
+    "real-time",
+    "notifications",
+    "master-command",
+    "data-import-export",
+    "confetti-animation"
   ],
   "author": "",
   "license": "ISC"
