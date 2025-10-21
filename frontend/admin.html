@@ -418,15 +418,19 @@ h2 {
        Profile Management
   ============================ -->
   <div id="profileSection" class="admin-section">
-    <h2>👤 Profile Management</h2>
-    <div class="searchBar">
-      <label for="profileSearch">Search Users:</label>
-      <input type="text" id="profileSearch" placeholder="Search by name, email, or username">
-    </div>
-    <table id="profileTable" class="styledTable">
+  <h2>👤 User Profile Management</h2>
+
+  <!-- Search -->
+  <div class="profileSearchBar">
+    <input type="text" id="profileSearch" placeholder="Search by username, name, or email...">
+  </div>
+
+  <!-- Users Table -->
+  <div class="profileTableContainer">
+    <table id="profileTable">
       <thead>
         <tr>
-          <th>Profile Picture</th>
+          <th>Avatar</th>
           <th>Username</th>
           <th>Name</th>
           <th>Email</th>
@@ -437,11 +441,22 @@ h2 {
           <th>Actions</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+        <!-- Profiles rendered dynamically -->
+      </tbody>
     </table>
   </div>
 
-</div> <!-- End of mainContent -->
+  <!-- Floating Notifications Container -->
+  <div id="floatingContainer" style="position:fixed; top:10px; right:10px; z-index:10000;"></div>
+</div>
+
+<!-- ------------------- JS & Socket.IO ------------------- -->
+<!-- Socket.IO client -->
+<script src="/socket.io/socket.io.js"></script>
+<!-- Profile Management JS -->
+<script type="module" src="profile.js"></script>
+> <!-- End of mainContent -->
 
 <!-- ===========================
      JS Links
