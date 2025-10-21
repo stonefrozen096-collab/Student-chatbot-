@@ -18,20 +18,15 @@ const studentSelectContainer = document.getElementById('studentSelectContainer')
 const studentSelect = document.getElementById('studentSelect');
 const testTable = document.querySelector('#testTable tbody');
 const confettiContainer = document.getElementById('confettiContainer');
+const floatingContainer = document.getElementById('floatingContainer');
 
-// ---------- Load Data from API ----------
+// ---------- Load Data ----------
 async function loadData() {
-  try {
-    users = await getUsers();
-  } catch (e) {
-    console.error('Failed to load users', e);
-  }
+  try { users = await getUsers(); } 
+  catch (e) { console.error('Failed to load users', e); users = []; }
 
-  try {
-    tests = await getTests();
-  } catch (e) {
-    console.error('Failed to load tests', e);
-  }
+  try { tests = await getTests(); } 
+  catch (e) { console.error('Failed to load tests', e); tests = []; }
 
   renderOptions();
   renderStudentOptions();
@@ -47,11 +42,8 @@ typeSelect.addEventListener('change', () => {
 
 // ---------- Add Option ----------
 addOptionBtn.addEventListener('click', () => {
-  const optionText = prompt('Enter option text:');
-  if (optionText) {
-    options.push(optionText);
-    renderOptions();
-  }
+  const text = prompt('Enter option text:');
+  if (text) { options.push(text); renderOptions(); }
 });
 
 // ---------- Render Options ----------
@@ -59,43 +51,39 @@ function renderOptions() {
   optionContainer.innerHTML = '';
   correctAnswerSelect.innerHTML = '';
 
-  options.forEach((opt, index) => {
+  options.forEach((opt, i) => {
     const div = document.createElement('div');
-    div.textContent = `${index + 1}. ${opt}`;
+    div.textContent = `${i + 1}. ${opt}`;
     optionContainer.appendChild(div);
 
     const optElem = document.createElement('option');
-    optElem.value = index;
+    optElem.value = i;
     optElem.textContent = opt;
     correctAnswerSelect.appendChild(optElem);
   });
 }
 
-// ---------- Publish Select Toggle ----------
+// ---------- Publish Selection Toggle ----------
 publishSelect.addEventListener('change', () => {
   if (publishSelect.value === 'specific') {
     studentSelectContainer.style.display = 'block';
     renderStudentOptions();
-  } else {
-    studentSelectContainer.style.display = 'none';
-  }
+  } else studentSelectContainer.style.display = 'none';
 });
 
 // ---------- Render Student Options ----------
 function renderStudentOptions() {
   studentSelect.innerHTML = '';
-  users
-    .filter((u) => u.role === 'student')
-    .forEach((s) => {
-      const opt = document.createElement('option');
-      opt.value = s.username;
-      opt.textContent = `${s.username} (${s.email})`;
-      studentSelect.appendChild(opt);
-    });
+  users.filter(u => u.role === 'student').forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.username;
+    opt.textContent = `${s.username} (${s.email})`;
+    studentSelect.appendChild(opt);
+  });
 }
 
 // ---------- Create & Publish Test ----------
-form.addEventListener('submit', async (e) => {
+form.addEventListener('submit', async e => {
   e.preventDefault();
 
   const title = document.getElementById('testTitle').value.trim();
@@ -103,18 +91,11 @@ form.addEventListener('submit', async (e) => {
   const type = typeSelect.value;
   const publishTo = publishSelect.value;
 
-  if (!title || !subject) return alert('All fields required.');
+  if (!title || !subject) return alert('All fields are required.');
 
   let assignedStudents = [];
-  if (publishTo === 'all') {
-    assignedStudents = users
-      .filter((u) => u.role === 'student')
-      .map((s) => s.username);
-  } else {
-    assignedStudents = Array.from(studentSelect.selectedOptions).map(
-      (o) => o.value
-    );
-  }
+  if (publishTo === 'all') assignedStudents = users.filter(u => u.role === 'student').map(s => s.username);
+  else assignedStudents = Array.from(studentSelect.selectedOptions).map(o => o.value);
 
   const test = {
     title,
@@ -143,11 +124,8 @@ form.addEventListener('submit', async (e) => {
 
 // ---------- Refresh Test Table ----------
 async function refreshTests() {
-  try {
-    tests = await getTests();
-  } catch (e) {
-    console.error('Failed to refresh tests', e);
-  }
+  try { tests = await getTests(); } 
+  catch (e) { console.error('Failed to refresh tests', e); }
   renderTestTable();
 }
 
@@ -155,18 +133,16 @@ async function refreshTests() {
 function renderTestTable() {
   testTable.innerHTML = '';
   tests.forEach((t, index) => {
-    const publishedToText =
-      t.assignedStudents?.length ===
-      users.filter((u) => u.role === 'student').length
-        ? 'All Students'
-        : (t.assignedStudents || []).join(', ');
+    const publishedText = t.assignedStudents?.length === users.filter(u => u.role === 'student').length
+      ? 'All Students'
+      : (t.assignedStudents || []).join(', ');
 
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${t.title}</td>
       <td>${t.subject}</td>
       <td>${t.type}</td>
-      <td>${publishedToText}</td>
+      <td>${publishedText}</td>
       <td><button onclick="deleteTestEntry('${t._id || index}')">🗑️ Delete</button></td>
     `;
     testTable.appendChild(row);
@@ -175,28 +151,27 @@ function renderTestTable() {
 
 // ---------- Delete Test ----------
 async function deleteTestEntry(id) {
-  if (confirm('Delete this test?')) {
-    try {
-      await deleteTest(id);
-      await refreshTests();
-      showSuccessNotification('🗑️ Test deleted.');
-    } catch (err) {
-      console.error('Failed to delete test:', err);
-      alert('Error deleting test.');
-    }
+  if (!confirm('Delete this test?')) return;
+  try {
+    await deleteTest(id);
+    await refreshTests();
+    showSuccessNotification('🗑️ Test deleted.');
+  } catch (err) {
+    console.error('Failed to delete test:', err);
+    alert('Error deleting test.');
   }
 }
 
-// ---------- Floating Success Notification ----------
+// ---------- Floating Notification ----------
 function showSuccessNotification(msg) {
   const notif = document.createElement('div');
   notif.className = 'floatingNotification';
   notif.innerText = msg;
-  document.body.appendChild(notif);
+  floatingContainer.appendChild(notif);
   setTimeout(() => notif.remove(), 3000);
 }
 
-// ---------- Confetti Animation ----------
+// ---------- Confetti ----------
 function showConfetti() {
   for (let i = 0; i < 50; i++) {
     const confetti = document.createElement('div');
@@ -205,19 +180,14 @@ function showConfetti() {
     confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 80%, 60%)`;
     confettiContainer.appendChild(confetti);
 
-    const fallDuration = 2000 + Math.random() * 2000;
+    const duration = 2000 + Math.random() * 2000;
     confetti.animate(
-      [
-        { transform: `translateY(0px) rotate(0deg)`, opacity: 1 },
-        {
-          transform: `translateY(300px) rotate(${Math.random() * 360}deg)`,
-          opacity: 0,
-        },
-      ],
-      { duration: fallDuration, iterations: 1, easing: 'ease-out' }
+      [{ transform: 'translateY(0px) rotate(0deg)', opacity: 1 },
+       { transform: `translateY(300px) rotate(${Math.random() * 360}deg)`, opacity: 0 }],
+      { duration, iterations: 1, easing: 'ease-out' }
     );
 
-    setTimeout(() => confetti.remove(), fallDuration);
+    setTimeout(() => confetti.remove(), duration);
   }
 }
 
