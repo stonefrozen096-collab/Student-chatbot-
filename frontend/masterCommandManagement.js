@@ -1,4 +1,9 @@
-// ---------- Master Command System (API Version) ----------
+// ---------- Master Command System (API + Socket.IO) ----------
+
+import { getMasterCommands, addMasterCommand, editMasterCommand, deleteMasterCommand, fetchLogs, saveLogs } from './api.js';
+
+// Socket.IO connection
+const socket = io(); // assumes socket.io client loaded in HTML
 
 let masterCommands = [];
 let warnings = {};
@@ -12,36 +17,30 @@ const preCommands = [
   {name:'Delete Last Test', action:'state.createdTests.pop(); renderCreatedTests();', permission:'admin'},
   {name:'Restore Last Deleted Test', action:'restoreLastDeletedTest();', permission:'admin'},
   {name:'Global Broadcast', action:'showGlobalMessage("This is a broadcast!")', permission:'admin'},
-  {name:'Highlight Message', action:'alert("Highlight executed!")', permission:'admin'},
+  {name:'Highlight Message', action:'alert("Highlight executed!")', permission:'all'},
   {name:'Sample Test Command', action:'console.log("Sample Test Run")', permission:'all'}
 ];
 
 // ---------- Load from API ----------
-async function loadMasterCommands(){
+export async function loadMasterCommands(){
   try { 
-    masterCommands = await getMasterCommands(); // API call from api.js
+    masterCommands = await getMasterCommands(); 
   } catch(e){ 
-    console.error('Failed to load master commands from API', e); 
+    console.error('Failed to load master commands', e); 
     masterCommands = [...preCommands]; 
   }
-
-  try { 
-    warnings = {}; // Could extend to API if needed
-  } catch(e){ 
-    warnings={}; 
-  }
-
+  warnings = {};
   renderMasterCommands();
 }
 
 // ---------- Render Commands ----------
-function renderMasterCommands(){
+export function renderMasterCommands(){
   const c = document.getElementById('masterList'); if(!c) return; 
   c.innerHTML = '';
   if(masterCommands.length === 0){
     const ph = document.createElement('div'); ph.className = 'placeholder'; ph.innerText = 'No commands yet.'; c.appendChild(ph); return;
   }
-  masterCommands.forEach((cmd) => {
+  masterCommands.forEach(cmd=>{
     const div = document.createElement('div'); div.className = 'commandItem';
     div.innerHTML=`<strong>${cmd.name}</strong> | Permission: ${cmd.permission || 'all'}
       <button class="btn btn-ghost" onclick="editMasterAPI('${cmd.id}')">Edit</button>
@@ -53,46 +52,49 @@ function renderMasterCommands(){
 }
 
 // ---------- Add/Edit/Delete via API ----------
-async function promptAddCommand(){
+export async function promptAddCommand(){
   const name = prompt('Command Name'); if(!name) return;
   const action = prompt('JS Action'); if(!action) return;
-  const permission = prompt('Permission (all, badge, or dynamic special access)', 'all');
+  const permission = prompt('Permission (all, badge, special access)', 'all');
   await addMasterCommandAPI(name, action, permission);
 }
 
-async function addMasterCommandAPI(name, action, permission='all'){
+export async function addMasterCommandAPI(name, action, permission='all'){
   try{
-    const newCmd = await addMasterCommand(name, action, permission); // api.js
+    const newCmd = await addMasterCommand(name, action, permission);
     masterCommands.push(newCmd);
     renderMasterCommands();
+    socket.emit('masterCommandAdded', newCmd); // real-time update
   } catch(e){
     console.error('Failed to add master command', e);
     alert('Failed to add command!');
   }
 }
 
-async function editMasterAPI(id){
+export async function editMasterAPI(id){
   const cmd = masterCommands.find(c=>c.id===id); if(!cmd) return;
-  const n = prompt('Command Name', cmd.name); if(n!==null) cmd.name = n;
-  const a = prompt('JS Action', cmd.action); if(a!==null) cmd.action = a;
-  const p = prompt('Permission', cmd.permission||'all'); if(p!==null) cmd.permission = p;
+  const n = prompt('Command Name', cmd.name); if(n!==null) cmd.name=n;
+  const a = prompt('JS Action', cmd.action); if(a!==null) cmd.action=a;
+  const p = prompt('Permission', cmd.permission||'all'); if(p!==null) cmd.permission=p;
 
   try{
-    const updated = await editMasterCommand(id, cmd.name, cmd.action, cmd.permission); // api.js
-    const idx = masterCommands.findIndex(c=>c.id===id); masterCommands[idx] = updated;
+    const updated = await editMasterCommand(id, cmd.name, cmd.action, cmd.permission);
+    const idx = masterCommands.findIndex(c=>c.id===id); masterCommands[idx]=updated;
     renderMasterCommands();
+    socket.emit('masterCommandEdited', updated);
   } catch(e){
     console.error('Failed to edit master command', e);
     alert('Failed to edit command!');
   }
 }
 
-async function deleteMasterAPI(id){
+export async function deleteMasterAPI(id){
   if(!confirm('Delete this command?')) return;
   try{
-    await deleteMasterCommand(id); // api.js
+    await deleteMasterCommand(id);
     masterCommands = masterCommands.filter(c=>c.id!==id);
     renderMasterCommands();
+    socket.emit('masterCommandDeleted', id);
   } catch(e){
     console.error('Failed to delete master command', e);
     alert('Failed to delete command!');
@@ -100,25 +102,23 @@ async function deleteMasterAPI(id){
 }
 
 // ---------- Execute ----------
-async function executeMasterById(id, user={username:'admin', badges:[], specialAccess:[]}){
-  const cmd = masterCommands.find(c=>c.id===id);
-  if(!cmd) return alert('Command not found');
+export async function executeMasterById(id, user={username:'admin', badges:[], specialAccess:[]}){
+  const cmd = masterCommands.find(c=>c.id===id); if(!cmd) return alert('Command not found');
 
   const hasPermission = cmd.permission === 'all' || 
-                        (cmd.permission === 'badge' && user.badges?.length) ||
-                        (user.specialAccess?.includes(cmd.permission));
+                        (cmd.permission==='badge' && user.badges?.length) || 
+                        user.specialAccess?.includes(cmd.permission);
 
   if(!hasPermission){
-    warnings[user.username] = (warnings[user.username]||0)+1;
-    // Optional: save warnings via API if implemented
+    warnings[user.username]=(warnings[user.username]||0)+1;
     alert(`Access denied! Warning ${warnings[user.username]}/5`);
     if(warnings[user.username]>=6) lockUserTemporarily(user.username, warnings[user.username]*10);
     return;
   }
 
   showCommandOverlay(cmd.name,user.username);
-  try { eval(cmd.action); addLog(`Executed ${cmd.name} by ${user.username}`); }
-  catch(e){ console.error('Master command failed', e); }
+  try{ eval(cmd.action); addLog(`Executed ${cmd.name} by ${user.username}`); } catch(e){ console.error('Command execution failed', e); }
+  socket.emit('masterCommandExecuted', {id, user: user.username}); // real-time notification
 }
 
 // ---------- Overlay ----------
@@ -131,31 +131,28 @@ function showCommandOverlay(name,user){
   setTimeout(()=>overlay.animate([{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(0.9)'}],{duration:400,fill:'forwards'}).onfinish=()=>overlay.remove(),1500);
 }
 
-// ---------- Temp lock ----------
-function lockUserTemporarily(user,sec){
-  alert(`User ${user} locked for ${sec} seconds!`);
-}
+// ---------- Temporary Lock ----------
+function lockUserTemporarily(user, sec){ alert(`User ${user} locked for ${sec} seconds!`); }
 
-// ---------- Lock All Users ----------
-function lockAllUsersPrompt(){
-  const durations = {'1 min':60,'2 min':120,'5 min':300};
-  let choice = prompt('Enter lock duration: 1 min / 2 min / 5 min','1 min');
-  let sec = durations[choice] || 60;
-  lockAllUsers(sec,false);
+// ---------- Global Lock ----------
+export function lockAllUsersPrompt(){ 
+  const durations={'1 min':60,'2 min':120,'5 min':300}; 
+  let choice=prompt('Enter lock duration: 1 min / 2 min / 5 min','1 min'); 
+  let sec=durations[choice]||60; lockAllUsers(sec,false); 
 }
-function lockAllUsers(sec=30,permanent=false){
+export function lockAllUsers(sec=30, permanent=false){
   globalLock.active=true; globalLock.unlockTime=Date.now()+sec*1000;
-  renderGlobalLockAnimation(sec,permanent);
+  renderGlobalLockAnimation(sec, permanent);
   if(!permanent){
     if(countdownInterval) clearInterval(countdownInterval);
-    countdownInterval = setInterval(updateCountdown,1000);
+    countdownInterval=setInterval(updateCountdown,1000);
     setTimeout(()=>{
       globalLock.active=false; globalLock.unlockTime=null; removeGlobalLockAnimation();
       clearInterval(countdownInterval);
-    },sec*1000);
+    }, sec*1000);
   }
 }
-function renderGlobalLockAnimation(sec,permanent=false){
+function renderGlobalLockAnimation(sec, permanent=false){
   const overlay=document.getElementById('globalLockOverlay'); overlay.style.display='flex';
   document.getElementById('lockMessage').innerHTML=permanent?'🔒 All Users Locked Permanently':'🔒 All Users Locked';
   document.getElementById('countdownTimer').innerText = permanent ? '' : `Unlock in ${sec} sec`;
@@ -170,7 +167,7 @@ function removeGlobalLockAnimation(){
 }
 
 // ---------- Global Message ----------
-function showGlobalMessage(msg){
+export function showGlobalMessage(msg){
   const overlay=document.getElementById('globalLockOverlay'); overlay.style.display='flex';
   document.getElementById('lockMessage').innerHTML=msg;
   document.getElementById('countdownTimer').innerText='';
@@ -178,26 +175,24 @@ function showGlobalMessage(msg){
 }
 
 // ---------- Restore Last Deleted Test ----------
-let lastDeletedTest = null;
-function deleteTestForMaster(id){
+let lastDeletedTest=null;
+export function deleteTestForMaster(id){
   const index = state.createdTests.findIndex(t=>t.id===id);
   if(index===-1) return;
-  lastDeletedTest = state.createdTests.splice(index,1)[0];
+  lastDeletedTest=state.createdTests.splice(index,1)[0];
   renderCreatedTests();
 }
-function restoreLastDeletedTest(){
-  if(lastDeletedTest) { state.createdTests.push(lastDeletedTest); renderCreatedTests(); lastDeletedTest=null; }
+export function restoreLastDeletedTest(){
+  if(lastDeletedTest){ state.createdTests.push(lastDeletedTest); renderCreatedTests(); lastDeletedTest=null; }
 }
 
-// ---------- Log ----------
+// ---------- Logging ----------
 async function addLog(msg){
   try{
-    const logs = await fetchLogs(); // API call
+    const logs = await fetchLogs();
     logs.unshift({msg,time:new Date().toLocaleString()});
-    await saveLogs(logs); // API call
-  } catch(e){
-    console.error('Failed to log message', e);
-  }
+    await saveLogs(logs);
+  } catch(e){ console.error('Failed to log message', e); }
 }
 
 // ---------- Initialize ----------
