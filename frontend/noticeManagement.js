@@ -1,6 +1,9 @@
-// ---------- Notice Management (API Version) ----------
-let notices = [];  // Fetched from server via API
-let users = [];    // Fetched from server for student selection
+// ---------- Notice Management (API + Socket.IO Version) ----------
+import { io } from "/socket.io/socket.io.js";
+
+let notices = [];  // All notices fetched from server
+let users = [];    // All users fetched for student selection
+const socket = io(); // Initialize Socket.IO client
 
 // ---------- Fetch Data from API ----------
 async function loadNoticeData() {
@@ -65,6 +68,9 @@ form.addEventListener('submit', async e => {
     studentContainer.style.display = 'none';
     renderNoticeTable();
     showFloatingNotification('Notice published successfully!');
+
+    // Emit socket event for real-time update
+    socket.emit('newNotice', savedNotice);
   } catch (err) {
     console.error('Failed to save notice', err);
     alert('Failed to publish notice!');
@@ -74,7 +80,7 @@ form.addEventListener('submit', async e => {
 // ---------- Render Notice Table ----------
 function renderNoticeTable() {
   tableBody.innerHTML = '';
-  notices.forEach((n, index) => {
+  notices.forEach((n) => {
     const publishedToText = n.assignedStudents.length === users.filter(u => u.role === 'student').length
                             ? 'All Students'
                             : n.assignedStudents.join(', ');
@@ -106,6 +112,9 @@ async function editNoticeAPI(id) {
       notices[idx] = updated;
       renderNoticeTable();
       showFloatingNotification('Notice updated successfully!');
+
+      // Emit socket event
+      socket.emit('updateNotice', updated);
     } catch (err) {
       console.error('Failed to update notice', err);
       alert('Failed to update notice!');
@@ -121,6 +130,9 @@ async function deleteNoticeAPI(id) {
     notices = notices.filter(n => n.id !== id);
     renderNoticeTable();
     showFloatingNotification('Notice deleted!');
+
+    // Emit socket event
+    socket.emit('deleteNotice', id);
   } catch (err) {
     console.error('Failed to delete notice', err);
     alert('Failed to delete notice!');
@@ -135,6 +147,25 @@ function showFloatingNotification(msg) {
   document.getElementById('floatingContainer').appendChild(notif);
   setTimeout(() => notif.remove(), 3000);
 }
+
+// ---------- Socket.IO Real-Time Updates ----------
+socket.on('noticeAdded', notice => {
+  notices.push(notice);
+  renderNoticeTable();
+});
+
+socket.on('noticeUpdated', notice => {
+  const idx = notices.findIndex(n => n.id === notice.id);
+  if (idx !== -1) {
+    notices[idx] = notice;
+    renderNoticeTable();
+  }
+});
+
+socket.on('noticeDeleted', id => {
+  notices = notices.filter(n => n.id !== id);
+  renderNoticeTable();
+});
 
 // ---------- Initialize ----------
 document.addEventListener('DOMContentLoaded', loadNoticeData);
