@@ -1,9 +1,9 @@
-// importExport.js — API-based Import/Export
+// importExport.js — API-based Import/Export with Socket.IO
+import { socket } from './socket.js'; // make sure socket.js exports initialized socket
 
 // ---------------- Export All Data ----------------
 async function exportAllData() {
   try {
-    // Fetch current data from server via APIs
     const [masterRes, chatbotRes, analyticsRes] = await Promise.all([
       fetch('/api/getMasterCommands'),
       fetch('/api/getChatbotTriggers'),
@@ -27,6 +27,7 @@ async function exportAllData() {
     URL.revokeObjectURL(url);
 
     logImportExport("✅ Export completed.");
+    socket.emit('analyticsUpdate', { type: 'export', timestamp: Date.now() });
   } catch (err) {
     console.error(err);
     logImportExport("❌ Export failed.");
@@ -45,7 +46,6 @@ function importAllData() {
     try {
       const imported = JSON.parse(e.target.result);
 
-      // Save imported data via APIs
       if (imported.masterCommands) {
         await fetch('/api/saveMasterCommands', {
           method: 'POST',
@@ -68,12 +68,12 @@ function importAllData() {
         });
       }
 
-      // Optionally refresh UI if render functions exist
       renderMasterCommands?.();
       renderTriggers?.();
       renderAnalytics?.();
 
       logImportExport("✅ Import successful.");
+      socket.emit('analyticsUpdate', { type: 'import', timestamp: Date.now() });
     } catch (err) {
       console.error(err);
       logImportExport("❌ Import failed. Invalid JSON.");
@@ -92,3 +92,12 @@ function logImportExport(msg) {
   container.appendChild(div);
   div.scrollIntoView({ behavior: "smooth" });
 }
+
+// ---------------- Event Listeners ----------------
+document.getElementById("exportBtn")?.addEventListener("click", exportAllData);
+document.getElementById("importBtn")?.addEventListener("click", importAllData);
+
+// ---------------- Socket Listener for Real-time Update ----------------
+socket.on('analyticsUpdate', data => {
+  logImportExport(`🔄 Real-time update triggered: ${data.type} at ${new Date(data.timestamp).toLocaleTimeString()}`);
+});
