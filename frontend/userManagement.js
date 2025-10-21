@@ -1,8 +1,29 @@
-// ---------- User Management (API Integrated) ----------
+// ---------- User Management (API + Socket.IO) ----------
 let users = [];
 const rolesWithPassword = ['faculty', 'moderator', 'tester'];
 
-// 🔹 Fetch users from API
+// ---------- Socket.IO Setup ----------
+const socket = io(); // assumes Socket.IO is served from server
+
+socket.on('user-updated', updatedUser => {
+  const idx = users.findIndex(u => u.email === updatedUser.email);
+  if (idx !== -1) {
+    users[idx] = updatedUser;
+    renderUsers();
+  }
+});
+
+socket.on('user-added', newUser => {
+  users.push(newUser);
+  renderUsers();
+});
+
+socket.on('user-deleted', email => {
+  users = users.filter(u => u.email !== email);
+  renderUsers();
+});
+
+// ---------- Fetch Users from API ----------
 async function fetchUsers() {
   try {
     const res = await fetch('/api/users');
@@ -11,27 +32,12 @@ async function fetchUsers() {
     renderUsers();
   } catch (err) {
     console.error(err);
-    const tbody = document.querySelector('#userTable tbody');
-    tbody.innerHTML = '<tr><td colspan="6">Error loading users.</td></tr>';
+    document.querySelector('#userTable tbody').innerHTML =
+      '<tr><td colspan="6">Error loading users.</td></tr>';
   }
 }
 
-// 🔹 Save users via API
-async function saveUsers() {
-  try {
-    const res = await fetch('/api/users/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(users)
-    });
-    if (!res.ok) throw new Error('Failed to save users');
-  } catch (err) {
-    console.error('Error saving users:', err);
-    showNotification('Error saving users', 'error');
-  }
-}
-
-// 🎯 Render Users Table
+// ---------- Render Users ----------
 function renderUsers() {
   const tbody = document.querySelector('#userTable tbody');
   tbody.innerHTML = '';
@@ -59,13 +65,15 @@ function renderUsers() {
   });
 }
 
-// ➕ Add User
+// ---------- Add User ----------
 document.getElementById('addUserForm').addEventListener('submit', async e => {
   e.preventDefault();
   const username = document.getElementById('username').value.trim();
   const email = document.getElementById('email').value.trim();
   const role = document.getElementById('role').value;
-  const password = rolesWithPassword.includes(role) ? document.getElementById('password').value.trim() : '';
+  const password = rolesWithPassword.includes(role)
+    ? document.getElementById('password').value.trim()
+    : '';
 
   if (!username || !email || (rolesWithPassword.includes(role) && !password))
     return showNotification('All required fields must be filled', 'error');
@@ -79,8 +87,9 @@ document.getElementById('addUserForm').addEventListener('submit', async e => {
       body: JSON.stringify(newUser)
     });
     if (!res.ok) throw new Error('Failed to add user');
-    users.push(newUser);
-    renderUsers();
+
+    const savedUser = await res.json();
+    socket.emit('add-user', savedUser); // notify server to broadcast
     e.target.reset();
     showNotification('User added successfully!', 'success');
   } catch (err) {
@@ -89,7 +98,7 @@ document.getElementById('addUserForm').addEventListener('submit', async e => {
   }
 });
 
-// ✏️ Edit User
+// ---------- Edit User ----------
 function editUser(index) {
   const user = users[index];
   const newEmail = prompt(`Edit email for ${user.username}:`, user.email);
@@ -106,34 +115,34 @@ function editUser(index) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(user)
   })
-    .then(res => res.ok ? renderUsers() : showNotification('Update failed', 'error'))
+    .then(res => res.ok ? socket.emit('update-user', user) : showNotification('Update failed', 'error'))
     .then(() => showNotification(`User ${user.username} updated`, 'success'))
     .catch(() => showNotification('Error updating user', 'error'));
 }
 
-// 🗑️ Delete User
+// ---------- Delete User ----------
 function deleteUser(index) {
-  if (confirm(`Delete user ${users[index].username}?`)) {
-    const deletedUser = users[index];
-    fetch(`/api/users/delete`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: deletedUser.email })
+  const user = users[index];
+  if (!confirm(`Delete user ${user.username}?`)) return;
+
+  fetch('/api/users/delete', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: user.email })
+  })
+    .then(res => {
+      if (!res.ok) throw new Error('Delete failed');
+      socket.emit('delete-user', user.email); // broadcast deletion
+      showNotification(`User ${user.username} deleted`, 'success');
     })
-      .then(res => {
-        if (!res.ok) throw new Error('Delete failed');
-        users.splice(index, 1);
-        renderUsers();
-        showNotification(`User ${deletedUser.username} deleted`, 'success');
-      })
-      .catch(() => showNotification('Error deleting user', 'error'));
-  }
+    .catch(() => showNotification('Error deleting user', 'error'));
 }
 
-// 🔒 Lock / Unlock User
+// ---------- Lock/Unlock ----------
 function toggleLock(index) {
   const user = users[index];
   user.locked = !user.locked;
+
   fetch('/api/users/lock-toggle', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -141,13 +150,13 @@ function toggleLock(index) {
   })
     .then(res => {
       if (!res.ok) throw new Error('Toggle lock failed');
-      renderUsers();
+      socket.emit('update-user', user);
       showNotification(`User ${user.username} ${user.locked ? 'locked' : 'unlocked'}`, 'info');
     })
     .catch(() => showNotification('Error changing lock status', 'error'));
 }
 
-// 🔔 Notifications
+// ---------- Notifications ----------
 function showNotification(message, type = 'info') {
   const banner = document.createElement('div');
   banner.className = `notification ${type}`;
@@ -167,7 +176,7 @@ function showNotification(message, type = 'info') {
   }, 3000);
 }
 
-// 🔎 Search Filter
+// ---------- Search Filter ----------
 document.getElementById('profileSearch').addEventListener('input', e => {
   const query = e.target.value.toLowerCase();
   const filtered = users.filter(u =>
@@ -205,5 +214,5 @@ function renderFilteredUsers(list) {
   });
 }
 
-// 🔄 Initialize
+// ---------- Initialize ----------
 document.addEventListener('DOMContentLoaded', fetchUsers);
