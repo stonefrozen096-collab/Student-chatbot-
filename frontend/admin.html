@@ -119,36 +119,49 @@ h2 {
        Test Management
   ============================ -->
   <div id="testSection" class="admin-section">
-    <h2>📚 Test Management</h2>
-    <form id="createTestForm">
-      <label>Test Title:</label>
-      <input type="text" id="testTitle" required>
-      <label>Subject:</label>
-      <input type="text" id="testSubject" required>
-      <label>Type:</label>
-      <select id="testType">
-        <option value="mcq">MCQ</option>
-        <option value="short">Short Answer</option>
-      </select>
-      <div id="mcqSection" style="display:none;">
-        <h4>MCQ Options</h4>
-        <div id="optionContainer"></div>
-        <button type="button" id="addOptionBtn">Add Option</button>
-        <label>Correct Answer:</label>
-        <select id="correctAnswerSelect"></select>
-      </div>
-      <label>Publish To:</label>
-      <select id="publishSelect">
-        <option value="all">All Students</option>
-        <option value="specific">Specific Students</option>
-      </select>
-      <div id="studentSelectContainer" style="display:none;">
-        <label>Select Students:</label>
-        <select id="studentSelect" multiple></select>
-      </div>
-      <button type="submit">Create & Publish Test</button>
-    </form>
-    <h3>Existing Tests</h3>
+  <h2>📝 Test Management</h2>
+
+  <!-- Create Test Form -->
+  <form id="createTestForm">
+    <label for="testTitle">Test Title:</label>
+    <input type="text" id="testTitle" required>
+
+    <label for="testSubject">Subject:</label>
+    <input type="text" id="testSubject" required>
+
+    <label for="testType">Test Type:</label>
+    <select id="testType">
+      <option value="mcq">MCQ</option>
+      <option value="subjective">Subjective</option>
+    </select>
+
+    <!-- MCQ Options Section -->
+    <div id="mcqSection" class="mcqContainer" style="display:none;">
+      <label>Options:</label>
+      <div id="optionContainer"></div>
+      <button type="button" id="addOptionBtn">➕ Add Option</button>
+
+      <label>Correct Answer:</label>
+      <select id="correctAnswerSelect"></select>
+    </div>
+
+    <label for="publishSelect">Publish To:</label>
+    <select id="publishSelect">
+      <option value="all">All Students</option>
+      <option value="specific">Specific Students</option>
+    </select>
+
+    <div id="studentSelectContainer" class="studentSelectContainer" style="display:none;">
+      <label>Select Students:</label>
+      <select id="studentSelect" multiple></select>
+    </div>
+
+    <button type="submit">Create & Publish Test</button>
+  </form>
+
+  <!-- Tests Table -->
+  <h3>Existing Tests</h3>
+  <div class="testTableContainer">
     <table id="testTable">
       <thead>
         <tr>
@@ -162,6 +175,15 @@ h2 {
       <tbody></tbody>
     </table>
   </div>
+
+  <!-- Confetti & Notifications -->
+  <div id="confettiContainer" class="confettiContainer"></div>
+  <div id="floatingContainer" class="floatingContainer"></div>
+</div>
+
+<!-- JS & Socket.IO -->
+<script src="/socket.io/socket.io.js"></script>
+<script type="module" src="testManagement.js"></script>
 
   <!-- ===========================
        User Management
