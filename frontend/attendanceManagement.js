@@ -1,6 +1,7 @@
-// ---------- Attendance Management (API Version) ----------
+// ---------- Attendance Management (API + Socket.IO) ----------
+import * as api from './api.js';
 
-import * as api from './api.js'; // Make sure api.js has attendance endpoints
+const socket = io(); // Connect to Socket.IO server
 
 let students = [];
 let attendanceRecords = [];
@@ -8,8 +9,8 @@ let attendanceRecords = [];
 // ---------- Load Data from API ----------
 async function loadAttendanceData() {
   try {
-    students = await api.getUsers(); // Should return all users
-    attendanceRecords = await api.getAttendance(); // New API endpoint for attendance
+    students = await api.getUsers(); // All users
+    attendanceRecords = await api.getAttendance(); // Returns array of {username, date, status}
   } catch (err) {
     console.error('Error loading data from API:', err);
     students = [];
@@ -28,7 +29,7 @@ function renderAttendance() {
     const record = attendanceRecords.find(a => a.username === student.username && a.date === date) || {};
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${student.username}</td>
+      <td>${student.name}</td>
       <td><input type="radio" name="att-${student.username}" value="present" ${record.status === 'present' ? 'checked' : ''}></td>
       <td><input type="radio" name="att-${student.username}" value="absent" ${record.status === 'absent' ? 'checked' : ''}></td>
       <td><input type="radio" name="att-${student.username}" value="late" ${record.status === 'late' ? 'checked' : ''}></td>
@@ -50,15 +51,30 @@ async function saveAttendance() {
   });
 
   try {
-    await api.saveAttendance(updatedRecords); // POST to backend
+    await api.saveAttendance(updatedRecords);
     attendanceRecords = updatedRecords;
     renderAttendance();
     showAttendanceMsg();
+    
+    // Emit real-time update to all connected clients
+    socket.emit('attendanceUpdated', { date, records: updatedRecords });
   } catch (err) {
     console.error('Error saving attendance via API:', err);
     alert('Failed to save attendance!');
   }
 }
+
+// ---------- Listen for real-time updates ----------
+socket.on('attendanceUpdated', data => {
+  // Update local cache and re-render
+  if (data?.records) {
+    const date = document.getElementById('attendanceDate').value || new Date().toISOString().split('T')[0];
+    if (data.date === date) {
+      attendanceRecords = data.records;
+      renderAttendance();
+    }
+  }
+});
 
 // ---------- Optional Buttons ----------
 function markAllPresent() {
@@ -79,3 +95,8 @@ function showAttendanceMsg() {
 
 // ---------- Initialize ----------
 document.addEventListener('DOMContentLoaded', loadAttendanceData);
+
+// ---------- Expose functions to HTML buttons ----------
+window.saveAttendance = saveAttendance;
+window.markAllPresent = markAllPresent;
+window.markAllAbsent = markAllAbsent;
