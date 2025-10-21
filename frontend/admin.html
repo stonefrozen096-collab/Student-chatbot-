@@ -249,21 +249,25 @@ h2 {
       <button onclick="promptAddTrigger()">➕ Add New Trigger</button>
     </div>
     <div id="triggerList"></div>
-  </div>
+</div>
 
-  <div id="chatbotOverlay">
-    <div id="chatbotMessage">Chatbot Locked</div>
-  </div>
+<div id="chatbotOverlay">
+  <div id="chatbotMessage">Chatbot Locked</div>
+</div>
 
-  <!-- Student Chatbot preview (optional) -->
-  <div class="chatbot-container" id="studentChatbot" style="display:none;">
-    <div class="chatbot-header">Student Chatbot</div>
-    <div class="chatbot-messages" id="studentMessages"></div>
-    <div class="chatbot-input-area">
-      <input type="text" id="studentInput" placeholder="Type your message...">
-      <button onclick="studentSendMessage(document.getElementById('studentInput').value)">Send</button>
-    </div>
+<!-- Student Chatbot preview -->
+<div class="chatbot-container" id="studentChatbot" style="display:none;">
+  <div class="chatbot-header">Student Chatbot</div>
+  <div class="chatbot-messages" id="studentMessages"></div>
+  <div class="chatbot-input-area">
+    <input type="text" id="studentInput" placeholder="Type your message...">
+    <button onclick="studentSendMessage(document.getElementById('studentInput').value)">Send</button>
   </div>
+</div>
+
+<!-- ------------------- JS & Socket.IO ------------------- -->
+<script src="/socket.io/socket.io.js"></script>
+<script type="module" src="chatbot.js"></script>
 
   <!-- ===========================
        Analytics
