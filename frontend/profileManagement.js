@@ -1,10 +1,13 @@
-// ---------- Profile Management (API Version) ----------
-let users = [];
+// ---------- Profile Management (API + Real-Time Badge/Access Sync) ----------
+import { fetchUsers, updateUser, deleteUser } from './api.js';
 
-// ---------- Fetch Users from API ----------
+let users = [];
+const socket = io(); // Socket.IO client
+
+// ---------- Fetch Users ----------
 async function loadUsers() {
   try {
-    users = await fetchUsers(); // API: returns all users
+    users = await fetchUsers();
     renderProfiles(users);
   } catch (err) {
     console.error('Failed to fetch users from API', err);
@@ -23,12 +26,13 @@ function renderProfiles(list = users) {
     return;
   }
 
-  list.forEach((user, index) => {
+  list.forEach((user) => {
     const profilePic = user.profilePic || 'default-avatar.png';
     const badgeHtml = (user.badges || []).map(b => `<span class="badge">${b}</span>`).join(' ');
     const accessHtml = (user.specialAccess || []).join(', ');
 
     const tr = document.createElement('tr');
+    tr.id = `user-${user.id}`;
     tr.innerHTML = `
       <td><img src="${profilePic}" alt="avatar" class="profileAvatar"></td>
       <td>${user.username}</td>
@@ -59,7 +63,7 @@ document.getElementById('profileSearch').addEventListener('input', e => {
 });
 
 // ---------- Edit Profile ----------
-async function editUserProfileAPI(id) {
+export async function editUserProfileAPI(id) {
   const user = users.find(u => u.id === id);
   if (!user) return alert('User not found');
 
@@ -72,11 +76,14 @@ async function editUserProfileAPI(id) {
   if (newPic) user.profilePic = newPic;
 
   try {
-    const updatedUser = await updateUser(id, user); // API call
+    const updatedUser = await updateUser(id, user);
     const idx = users.findIndex(u => u.id === id);
     users[idx] = updatedUser;
     renderProfiles();
     showNotification('✅ Profile updated.');
+
+    // Emit socket event for real-time update
+    socket.emit('profileUpdated', updatedUser);
   } catch (err) {
     console.error('Failed to update user', err);
     alert('Failed to update profile!');
@@ -84,17 +91,30 @@ async function editUserProfileAPI(id) {
 }
 
 // ---------- Delete User ----------
-async function deleteUserAPI(id) {
+export async function deleteUserAPI(id) {
   if (!confirm('Delete this user?')) return;
   try {
-    await deleteUser(id); // API call
+    await deleteUser(id);
     users = users.filter(u => u.id !== id);
     renderProfiles();
     showNotification('🗑️ User deleted.');
+
+    socket.emit('profileDeleted', id);
   } catch (err) {
     console.error('Failed to delete user', err);
     alert('Failed to delete user!');
   }
+}
+
+// ---------- Update Badges / Special Access ----------
+export function updateUserBadges(id, badges = [], specialAccess = []) {
+  const user = users.find(u => u.id === id);
+  if (!user) return;
+  user.badges = badges;
+  user.specialAccess = specialAccess;
+  renderProfiles();
+  showNotification(`🎖️ Updated badges/access for ${user.username}`);
+  socket.emit('profileBadgesUpdated', { id, badges, specialAccess });
 }
 
 // ---------- Floating Notification ----------
@@ -102,9 +122,35 @@ function showNotification(msg) {
   const notif = document.createElement('div');
   notif.className = 'floatingNotification';
   notif.innerText = msg;
-  document.body.appendChild(notif);
+  document.getElementById('floatingContainer').appendChild(notif);
   setTimeout(() => notif.remove(), 3000);
 }
+
+// ---------- Socket.IO Listeners ----------
+socket.on('profileUpdated', updatedUser => {
+  const idx = users.findIndex(u => u.id === updatedUser.id);
+  if (idx !== -1) {
+    users[idx] = updatedUser;
+    renderProfiles();
+    showNotification(`🔄 Profile updated: ${updatedUser.username}`);
+  }
+});
+
+socket.on('profileDeleted', deletedId => {
+  users = users.filter(u => u.id !== deletedId);
+  renderProfiles();
+  showNotification(`🗑️ User deleted`);
+});
+
+socket.on('profileBadgesUpdated', ({ id, badges, specialAccess }) => {
+  const user = users.find(u => u.id === id);
+  if (user) {
+    user.badges = badges;
+    user.specialAccess = specialAccess;
+    renderProfiles();
+    showNotification(`🎖️ Badges/access updated for ${user.username}`);
+  }
+});
 
 // ---------- Initialize ----------
 document.addEventListener('DOMContentLoaded', loadUsers);
