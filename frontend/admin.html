@@ -188,31 +188,54 @@ h2 {
   <!-- ===========================
        User Management
   ============================ -->
-  <div id="userManagementSection" class="admin-section">
-    <h2>👤 User Management</h2>
-    <form id="addUserForm" class="user-form">
-      <input type="text" id="username" placeholder="Username" required>
-      <input type="email" id="email" placeholder="Email" required>
-      <select id="role">
-        <option value="student">Student</option>
-        <option value="moderator">Moderator</option>
-        <option value="admin">Admin</option>
-      </select>
-      <button type="submit">Add User</button>
-    </form>
+  <div id="userSection" class="admin-section">
+  <h2>👤 User Management</h2>
+
+  <!-- Add User Form -->
+  <form id="addUserForm" class="userForm">
+    <input type="text" id="username" placeholder="Username" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <select id="role">
+      <option value="student">Student</option>
+      <option value="faculty">Faculty</option>
+      <option value="moderator">Moderator</option>
+      <option value="tester">Tester</option>
+    </select>
+    <input type="password" id="password" placeholder="Password (if applicable)">
+    <button type="submit">Add User</button>
+  </form>
+
+  <!-- Search Users -->
+  <div class="searchBar">
+    <input type="text" id="profileSearch" placeholder="Search by username, email, or role...">
+  </div>
+
+  <!-- Users Table -->
+  <div class="userTableContainer">
     <table id="userTable">
       <thead>
         <tr>
           <th>Username</th>
           <th>Email</th>
           <th>Role</th>
+          <th>Password</th>
           <th>Status</th>
           <th>Actions</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+        <!-- Users rendered dynamically -->
+      </tbody>
     </table>
   </div>
+
+  <!-- Floating Notifications -->
+  <div id="floatingContainer" class="floatingContainer"></div>
+</div>
+
+<!-- Socket.IO & JS -->
+<script src="/socket.io/socket.io.js"></script>
+<script type="module" src="userManagement.js"></script>
 
   <!-- ===========================
        Badge Management
