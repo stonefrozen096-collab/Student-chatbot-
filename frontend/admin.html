@@ -305,20 +305,32 @@ h2 {
        Import/Export
   ============================ -->
   <div id="importExportSection" class="admin-section">
-    <h2>🔄 Import & Export Management</h2>
-    <div class="importExportContainer">
-      <div class="exportBox">
-        <h3>📤 Export Data</h3>
-        <button class="btn btn-primary" onclick="exportAllData()">Export All JSON</button>
-      </div>
-      <div class="importBox">
-        <h3>📥 Import Data</h3>
-        <input type="file" id="importFile" accept=".json">
-        <button class="btn btn-success" onclick="importAllData()">Import JSON</button>
-      </div>
+  <h2>🔄 Import & Export Management</h2>
+
+  <div class="importExportContainer">
+    <!-- Export -->
+    <div class="exportBox">
+      <h3>📤 Export Data</h3>
+      <button class="btn btn-primary" onclick="exportAllData()">Export All JSON</button>
     </div>
-    <div id="importExportLog" class="logBox"></div>
+
+    <!-- Import -->
+    <div class="importBox">
+      <h3>📥 Import Data</h3>
+      <input type="file" id="importFile" accept=".json">
+      <button class="btn btn-success" onclick="importAllData()">Import JSON</button>
+    </div>
   </div>
+
+  <!-- Import/Export Logs -->
+  <div id="importExportLog" class="logBox"></div>
+</div>
+
+<!-- ------------------- JS & Socket.IO ------------------- -->
+<!-- Socket.IO client -->
+<script src="/socket.io/socket.io.js"></script>
+<!-- Import/Export JS -->
+<script type="module" src="importExport.js"></script>
 
   <!-- ===========================
        Master Command
