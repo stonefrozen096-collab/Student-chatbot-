@@ -1,13 +1,16 @@
-// ---------- Badge Management (API Version) ----------
+// ---------- Badge Management (API + Socket.IO Version) ----------
+import * as api from './api.js'; // Your API endpoints
 
 let badges = [];
 let users = [];
 
+const socket = io(); // Socket.IO client
+
 // ---------- LOAD DATA ----------
 async function loadBadgeData() {
   try {
-    badges = await getBadges(); // API call from api.js
-    users = await getUsers();   // API call from api.js
+    badges = await api.getBadges();
+    users = await api.getUsers();
   } catch (e) {
     console.error('Failed to load badges or users:', e);
     badges = [];
@@ -23,19 +26,20 @@ document.getElementById('addBadgeForm').addEventListener('submit', async e => {
   e.preventDefault();
   const name = document.getElementById('badgeName').value.trim();
   const effects = Array.from(document.getElementById('badgeEffects').selectedOptions).map(o => o.value);
-
   const accessInput = prompt('Enter special access for this badge (comma-separated):', '');
   const access = accessInput ? accessInput.split(',').map(a => a.trim()) : [];
 
   if (!name) return alert('Enter badge name');
 
   try {
-    const newBadge = await createBadge(name, effects, access); // API call
+    const newBadge = await api.createBadge(name, effects, access);
     badges.push(newBadge);
     renderBadges();
     document.getElementById('addBadgeForm').reset();
     showBadgeStatus(`✅ Badge "${name}" created successfully!`);
-    updateAssignBadgeSelect();
+
+    // Notify all clients
+    socket.emit('badgeUpdated');
   } catch (err) {
     console.error('Error creating badge:', err);
     alert('Failed to create badge!');
@@ -51,7 +55,7 @@ function renderBadges() {
     return;
   }
 
-  badges.forEach((b, i) => {
+  badges.forEach(b => {
     const d = document.createElement('div');
     d.className = 'badgeItem';
     d.innerHTML = `
@@ -68,9 +72,11 @@ function renderBadges() {
 async function deleteBadge(id) {
   if (!confirm('Delete this badge?')) return;
   try {
-    await removeBadge(id); // API call
+    await api.removeBadge(id);
     badges = badges.filter(b => b.id !== id);
     renderBadges();
+
+    socket.emit('badgeUpdated');
   } catch (err) {
     console.error('Error deleting badge:', err);
     alert('Failed to delete badge!');
@@ -105,14 +111,16 @@ document.getElementById('assignBadgeBtn').addEventListener('click', async () => 
   if (!user || !badge) return;
 
   try {
-    await assignBadge(user.username, badge.name); // API call
-    // Update local copy for UI
+    await api.assignBadge(user.username, badge.name);
+
     if (!user.badges) user.badges = [];
     if (!user.badges.includes(badgeName)) user.badges.push(badgeName);
 
     user.specialAccess = [...new Set([...(user.specialAccess || []), ...badge.access])];
 
     showBadgeStatus(`✅ Badge "${badgeName}" assigned to ${user.name}`);
+
+    socket.emit('badgeUpdated');
   } catch (err) {
     console.error('Error assigning badge:', err);
     alert('Failed to assign badge!');
@@ -126,6 +134,9 @@ function showBadgeStatus(msg) {
   status.classList.add('badgeAnimation');
   setTimeout(() => status.classList.remove('badgeAnimation'), 2000);
 }
+
+// ---------- SOCKET.IO LISTENER ----------
+socket.on('badgeUpdated', loadBadgeData);
 
 // ---------- INITIALIZE ----------
 document.addEventListener('DOMContentLoaded', loadBadgeData);
