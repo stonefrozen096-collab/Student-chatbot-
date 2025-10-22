@@ -1,223 +1,364 @@
-// ---------- Master Command System (JSON-Based + Socket.IO) ----------
+// masterCommand.js — Full Updated Version
+import { 
+  getMasterCommands, addMasterCommand, editMasterCommand, deleteMasterCommand, executeMasterCommand,
+  getUsers, toggleUserLock 
+} from './api.js';
 
-import { getMasterCommands, addMasterCommand, editMasterCommand, deleteMasterCommand, fetchLogs, saveLogs, fetchUsers, saveUsers } from './api.js';
+const socket = io();
 
-const socket = io(); // socket.io client
 let masterCommands = [];
-let warnings = {};
+let currentUser = null;
 let globalLock = { active: false, unlockTime: null };
 let countdownInterval = null;
 
-// ---------- Preloaded Commands ----------
+// ----------------------
+// Get current user from login storage
+// ----------------------
+if(localStorage.getItem('user')){
+  currentUser = JSON.parse(localStorage.getItem('user'));
+}
+
+// ----------------------
+// Predefined commands (fallback)
+// ----------------------
 const preCommands = [
-  { id: 'pre1', name: 'Lock All Temporary', action: 'lockAllUsersPrompt()', permission: 'admin' },
-  { id: 'pre2', name: 'Lock All Permanent', action: 'lockAllUsers(0,true)', permission: 'admin' },
-  { id: 'pre3', name: 'Global Broadcast', action: 'showGlobalMessage("This is a broadcast!")', permission: 'admin' },
-  { id: 'pre4', name: 'Sample Test Command', action: 'console.log("Sample Test Run")', permission: 'all' }
+  { name: "Lock All Temporary", action: "lockAllUsers(30,false)", permission: "admin" },
+  { name: "Lock All Permanent", action: "lockAllUsers(0,true)", permission: "admin" },
+  { name: "Global Broadcast", action: "alert('Global message broadcasted')", permission: "admin" }
 ];
 
-// ---------- Load Commands ----------
-export async function loadMasterCommands() {
-  try {
-    masterCommands = await getMasterCommands();
-  } catch (e) {
-    console.error('Failed to load master commands', e);
-    masterCommands = [...preCommands];
+// ----------------------
+// Load commands from API
+// ----------------------
+export async function loadMasterCommands(){
+  try{
+    const cmds = await getMasterCommands();
+    masterCommands = cmds.length ? cmds : preCommands;
+  } catch(e){
+    console.error("Failed to fetch master commands", e);
+    masterCommands = preCommands;
   }
   renderMasterCommands();
 }
 
-// ---------- Render Commands ----------
-export function renderMasterCommands() {
-  const c = document.getElementById('masterList');
-  if (!c) return;
-  c.innerHTML = '';
-
-  if (masterCommands.length === 0) {
-    const ph = document.createElement('div');
-    ph.className = 'placeholder';
-    ph.innerText = 'No commands yet.';
-    c.appendChild(ph);
-    return;
-  }
+// ----------------------
+// Render Master Commands
+// ----------------------
+export function renderMasterCommands(){
+  const list = document.getElementById('masterList');
+  if(!list) return;
+  list.innerHTML = '';
 
   masterCommands.forEach(cmd => {
     const div = document.createElement('div');
     div.className = 'commandItem';
     div.innerHTML = `
       <strong>${cmd.name}</strong> | Permission: ${cmd.permission || 'all'}
-      <button class="btn btn-primary" onclick="executeMasterById('${cmd.id}')">Execute</button>
-      <button class="btn btn-ghost" onclick="editMasterAPI('${cmd.id}')">Edit</button>
-      <button class="btn btn-danger" onclick="deleteMasterAPI('${cmd.id}')">Delete</button>
+      <button class="btn btn-primary">Execute</button>
+      ${currentUser?.role === 'admin' ? '<button class="btn btn-danger">Delete</button>' : ''}
     `;
-    c.appendChild(div);
-    setTimeout(() => div.classList.add('fadeIn'), 50);
+    // Execute button
+    div.querySelector('.btn-primary').addEventListener('click', () => executeCommand(cmd));
+    // Delete button
+    if(currentUser?.role === 'admin'){
+      div.querySelector('.btn-danger').addEventListener('click', async () => {
+        if(confirm(`Delete command "${cmd.name}"?`)){
+          await deleteMasterCommand(cmd.id);
+          loadMasterCommands();
+          socket.emit('masterCommandUpdated');
+        }
+      });
+    }
+    list.appendChild(div);
+  });
+}
+// ----------------------
+// masterCommand.js — Part 2
+// ----------------------
+import { getMasterCommands, addMasterCommand, editMasterCommand, deleteMasterCommand, executeMasterCommand, getUsers, toggleUserLock } from './api.js';
+
+const socket = io(); // Socket.IO connection
+
+let masterCommands = [];
+let users = [];
+let globalLock = { active: false, unlockTime: null };
+let countdownInterval = null;
+
+// Current logged-in user (from localStorage)
+const currentUser = JSON.parse(localStorage.getItem('user')) || { username: 'guest', role: 'student', badges: [], specialAccess: [] };
+
+// ----------------------
+// Load master commands and users
+// ----------------------
+export async function loadMasterCommands() {
+  try {
+    masterCommands = await getMasterCommands();
+    users = await getUsers();
+  } catch (e) {
+    console.error('Failed to load master commands or users:', e);
+    masterCommands = [];
+    users = [];
+  }
+  renderMasterCommands();
+}
+
+// ----------------------
+// Render commands
+// ----------------------
+export function renderMasterCommands() {
+  const list = document.getElementById('masterList');
+  list.innerHTML = '';
+
+  if (masterCommands.length === 0) {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'placeholder';
+    placeholder.innerText = 'No commands yet.';
+    list.appendChild(placeholder);
+    return;
+  }
+
+  masterCommands.forEach(cmd => {
+    const item = document.createElement('div');
+    item.className = 'commandItem';
+    item.innerHTML = `
+      <span>${cmd.name}</span>
+      <div>
+        <button onclick="executeMasterCommandById('${cmd.id}')">Execute</button>
+        <button onclick="deleteMasterCommandById('${cmd.id}')">Delete</button>
+      </div>
+    `;
+    list.appendChild(item);
   });
 }
 
-// ---------- Add Command ----------
-window.addNewCommand = async function () {
-  const name = prompt('Command Name');
+// ----------------------
+// Add new command
+// ----------------------
+export async function addNewCommand() {
+  const name = prompt('Enter Command Name');
   if (!name) return;
-  const action = prompt('JS Action');
+  const action = prompt('Enter JS Action for this command');
   if (!action) return;
-  const permission = prompt('Permission (all, badge, special access)', 'all');
 
   try {
-    const newCmd = await addMasterCommand(name, action, permission);
+    const newCmd = await addMasterCommand(name, action, 'all'); // default permission all
     masterCommands.push(newCmd);
     renderMasterCommands();
     socket.emit('masterCommandAdded', newCmd);
-  } catch (e) {
-    console.error('Failed to add command', e);
-    alert('Failed to add command!');
+  } catch (err) {
+    console.error('Failed to add command:', err);
+    alert('Failed to add command');
   }
-};
+}
 
-// ---------- Edit Command ----------
-window.editMasterAPI = async function (id) {
+// ----------------------
+// Execute command
+// ----------------------
+export async function executeMasterCommandById(id) {
   const cmd = masterCommands.find(c => c.id === id);
-  if (!cmd) return;
-  const n = prompt('Command Name', cmd.name); if (n !== null) cmd.name = n;
-  const a = prompt('JS Action', cmd.action); if (a !== null) cmd.action = a;
-  const p = prompt('Permission', cmd.permission || 'all'); if (p !== null) cmd.permission = p;
+  if (!cmd) return alert('Command not found');
+
+  // Check locks
+  if (globalLock.active && currentUser.role !== 'admin') {
+    return alert('⚠️ All users locked! You cannot execute commands.');
+  }
 
   try {
-    const updated = await editMasterCommand(id, cmd.name, cmd.action, cmd.permission);
-    const idx = masterCommands.findIndex(c => c.id === id);
-    masterCommands[idx] = updated;
-    renderMasterCommands();
-    socket.emit('masterCommandEdited', updated);
-  } catch (e) {
-    console.error('Failed to edit master command', e);
-    alert('Failed to edit command!');
+    eval(cmd.action);
+    await executeMasterCommand(id, currentUser.username);
+    showCommandOverlay(cmd.name);
+  } catch (err) {
+    console.error('Command execution failed:', err);
+    alert('Failed to execute command');
   }
-};
+}
 
-// ---------- Delete Command ----------
-window.deleteMasterAPI = async function (id) {
+// ----------------------
+// Delete command
+// ----------------------
+export async function deleteMasterCommandById(id) {
   if (!confirm('Delete this command?')) return;
   try {
     await deleteMasterCommand(id);
     masterCommands = masterCommands.filter(c => c.id !== id);
     renderMasterCommands();
     socket.emit('masterCommandDeleted', id);
-  } catch (e) {
-    console.error('Failed to delete master command', e);
-    alert('Failed to delete command!');
+  } catch (err) {
+    console.error('Failed to delete command:', err);
+    alert('Failed to delete command');
   }
-};
-
-// ---------- Execute Command ----------
-window.executeMasterById = async function (id) {
-  const cmd = masterCommands.find(c => c.id === id);
-  if (!cmd) return alert('Command not found');
-
-  const user = window.currentUser;
-  if (!user) return alert('No logged-in user');
-
-  // Admin always bypasses locks
-  const hasPermission = user.role === 'admin' ||
-                        cmd.permission === 'all' ||
-                        (cmd.permission === 'badge' && user.badges?.length) ||
-                        user.specialAccess?.includes(cmd.permission);
-
-  if (!hasPermission) {
-    warnings[user.username] = (warnings[user.username] || 0) + 1;
-    alert(`Access denied! Warning ${warnings[user.username]}/5`);
-    return;
-  }
-
-  try {
-    eval(cmd.action);
-    addLog(`Executed ${cmd.name} by ${user.username}`);
-    showCommandOverlay(cmd.name, user.username);
-    socket.emit('masterCommandExecuted', { id, user: user.username });
-  } catch (e) {
-    console.error('Command execution failed', e);
-  }
-};
-
-// ---------- Overlay ----------
-function showCommandOverlay(name, user) {
-  const overlay = document.createElement('div');
-  overlay.id = 'commandOverlay';
-  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;color:white;font-size:2em;flex-direction:column;z-index:9999;';
-  overlay.innerHTML = `⚡ ${name} executed by ${user} ⚡`;
-  document.body.appendChild(overlay);
-  overlay.animate([{ opacity: 0, transform: 'scale(0.9)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 400, fill: 'forwards' });
-  setTimeout(() => overlay.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.9)' }], { duration: 400, fill: 'forwards' }).onfinish = () => overlay.remove(), 1500);
 }
 
-// ---------- Global Lock ----------
-window.lockAllUsersPrompt = function () {
-  const durations = { '1 min': 60, '2 min': 120, '5 min': 300 };
-  let choice = prompt('Enter lock duration: 1 min / 2 min / 5 min', '1 min');
-  let sec = durations[choice] || 60;
-  lockAllUsers(sec, false);
-};
+// ----------------------
+// Global Lock
+// ----------------------
+export function lockAllUsersPrompt() {
+  const sec = parseInt(prompt('Enter lock duration in seconds:', '30'));
+  if (!sec) return;
+  lockAllUsers(sec);
+}
 
-window.lockAllUsers = function (sec = 30, permanent = false) {
+export function lockAllUsers(seconds = 30) {
   globalLock.active = true;
-  globalLock.unlockTime = Date.now() + sec * 1000;
-  renderGlobalLockAnimation(sec, permanent);
+  globalLock.unlockTime = Date.now() + seconds * 1000;
+  renderGlobalLockOverlay(seconds);
 
-  // Lock users in JSON file
-  fetchUsers().then(users => {
-    Object.values(users).forEach(u => {
-      if (u.role !== 'admin') u.locked = true; // Admin always bypass
-    });
-    saveUsers(users);
+  users.forEach(u => {
+    if (u.username !== currentUser.username) { // admin bypass
+      toggleUserLock(u.email, true);
+    }
   });
 
-  if (!permanent) {
-    if (countdownInterval) clearInterval(countdownInterval);
-    countdownInterval = setInterval(updateCountdown, 1000);
-    setTimeout(() => {
+  if (countdownInterval) clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => {
+    const remaining = Math.ceil((globalLock.unlockTime - Date.now()) / 1000);
+    document.getElementById('countdownTimer').innerText = remaining > 0 ? `Unlock in ${remaining} sec` : '';
+    if (remaining <= 0) {
+      clearInterval(countdownInterval);
       globalLock.active = false;
-      globalLock.unlockTime = null;
-      removeGlobalLockAnimation();
-    }, sec * 1000);
-  }
-};
+      document.getElementById('globalLockOverlay').style.display = 'none';
+      users.forEach(u => toggleUserLock(u.email, false));
+    }
+  }, 1000);
+}
 
-function renderGlobalLockAnimation(sec, permanent = false) {
+// ----------------------
+// Render lock overlay
+// ----------------------
+function renderGlobalLockOverlay(seconds) {
   const overlay = document.getElementById('globalLockOverlay');
   overlay.style.display = 'flex';
-  document.getElementById('lockMessage').innerHTML = permanent ? '🔒 All Users Locked Permanently' : '🔒 All Users Locked';
-  document.getElementById('countdownTimer').innerText = permanent ? '' : `Unlock in ${sec} sec`;
+  document.getElementById('lockMessage').innerText = '🔒 All Users Locked';
+  document.getElementById('countdownTimer').innerText = `Unlock in ${seconds} sec`;
 }
 
-function updateCountdown() {
-  const remaining = Math.ceil((globalLock.unlockTime - Date.now()) / 1000);
-  document.getElementById('countdownTimer').innerText = remaining > 0 ? `Unlock in ${remaining} sec` : '';
-}
-
-function removeGlobalLockAnimation() {
-  const overlay = document.getElementById('globalLockOverlay');
-  overlay.style.display = 'none';
-  document.getElementById('countdownTimer').innerText = '';
-}
-
-// ---------- Global Message ----------
-window.showGlobalMessage = function (msg) {
-  const overlay = document.getElementById('globalLockOverlay');
+// ----------------------
+// Overlay when command executes
+// ----------------------
+function showCommandOverlay(name) {
+  const overlay = document.createElement('div');
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100%';
+  overlay.style.height = '100%';
+  overlay.style.background = 'rgba(0,0,0,0.7)';
   overlay.style.display = 'flex';
-  document.getElementById('lockMessage').innerHTML = msg;
-  document.getElementById('countdownTimer').innerText = '';
-  setTimeout(() => overlay.style.display = 'none', 3000);
-};
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  overlay.style.color = '#fff';
+  overlay.style.fontSize = '2em';
+  overlay.style.zIndex = '9999';
+  overlay.innerText = `⚡ Executed: ${name} ⚡`;
+  document.body.appendChild(overlay);
 
-// ---------- Logging ----------
-async function addLog(msg) {
-  try {
-    const logs = await fetchLogs();
-    logs.unshift({ msg, time: new Date().toLocaleString() });
-    await saveLogs(logs);
-  } catch (e) {
-    console.error('Failed to log message', e);
-  }
+  setTimeout(() => overlay.remove(), 1500);
 }
 
-// ---------- Initialize ----------
+// ----------------------
+// Socket.IO listeners
+// ----------------------
+socket.on('masterCommandAdded', cmd => {
+  masterCommands.push(cmd);
+  renderMasterCommands();
+});
+socket.on('masterCommandDeleted', id => {
+  masterCommands = masterCommands.filter(c => c.id !== id);
+  renderMasterCommands();
+});
+
+// ----------------------
+// Initialize
+// ----------------------
 document.addEventListener('DOMContentLoaded', loadMasterCommands);
+// ----------------------
+// masterCommand.js — Part 3 (Persistent Locks)
+// ----------------------
+
+import { getUsers, toggleUserLock } from './api.js';
+
+let users = [];
+let currentUser = JSON.parse(localStorage.getItem('user')) || { username: 'guest', role: 'student', badges: [], specialAccess: [] };
+
+// ----------------------
+// Load users and check locks
+// ----------------------
+export async function loadUsersAndLocks() {
+  try {
+    users = await getUsers();
+  } catch (err) {
+    console.error("Failed to fetch users:", err);
+    users = [];
+  }
+
+  // Check if current user is locked
+  const me = users.find(u => u.username === currentUser.username);
+  if (me && me.locked && currentUser.role !== 'admin') {
+    showPersistentLockOverlay(me.locked);
+  }
+}
+
+// ----------------------
+// Persistent Lock Overlay
+// ----------------------
+function showPersistentLockOverlay(lockTimeSeconds = 0) {
+  const overlay = document.getElementById('globalLockOverlay');
+  overlay.style.display = 'flex';
+  document.getElementById('lockMessage').innerText = '🔒 You are Locked';
+  if (lockTimeSeconds > 0) {
+    document.getElementById('countdownTimer').innerText = `Unlock in ${lockTimeSeconds} sec`;
+    let endTime = Date.now() + lockTimeSeconds * 1000;
+    const interval = setInterval(() => {
+      const remaining = Math.ceil((endTime - Date.now()) / 1000);
+      document.getElementById('countdownTimer').innerText = remaining > 0 ? `Unlock in ${remaining} sec` : '';
+      if (remaining <= 0) {
+        overlay.style.display = 'none';
+        clearInterval(interval);
+        toggleUserLock(currentUser.email, false); // unlock user in backend
+      }
+    }, 1000);
+  } else {
+    document.getElementById('countdownTimer').innerText = '';
+  }
+}
+
+// ----------------------
+// Lock specific user (except admin)
+// ----------------------
+export async function lockUser(username, seconds = 30) {
+  const user = users.find(u => u.username === username);
+  if (!user) return;
+
+  if (user.role === 'admin') return; // Admin bypass
+
+  await toggleUserLock(user.email, true);
+  showPersistentLockOverlay(seconds);
+}
+
+// ----------------------
+// Unlock specific user
+// ----------------------
+export async function unlockUser(username) {
+  const user = users.find(u => u.username === username);
+  if (!user) return;
+
+  await toggleUserLock(user.email, false);
+  document.getElementById('globalLockOverlay').style.display = 'none';
+}
+
+// ----------------------
+// Apply global lock with persistence
+// ----------------------
+export async function lockAllUsersPersistent(seconds = 30) {
+  users.forEach(async (u) => {
+    if (u.role !== 'admin') {
+      await toggleUserLock(u.email, true);
+    }
+  });
+  showPersistentLockOverlay(seconds);
+}
+
+// ----------------------
+// Initialize persistent locks on DOM load
+// ----------------------
+document.addEventListener('DOMContentLoaded', loadUsersAndLocks);
