@@ -23,7 +23,7 @@
       position: relative;
       z-index: 2;
       max-width: 400px;
-      margin: 10vh auto;
+      margin: 12vh auto;
       padding: 30px;
       background: rgba(255, 255, 255, 0.07);
       backdrop-filter: blur(10px);
@@ -31,12 +31,12 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.3);
       color: #fff;
       text-align: center;
-      animation: fadeInUp 1s ease-out;
     }
 
-    h1 {
-      font-size: 1.8rem;
+    h1#animated-header {
+      font-size: 2rem;
       margin-bottom: 10px;
+      letter-spacing: 2px;
     }
 
     .role-tabs {
@@ -111,14 +111,8 @@
     }
 
     @keyframes fadeInUp {
-      from {
-        transform: translateY(40px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
+      from { transform: translateY(40px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
 
     @media (max-width: 480px) {
@@ -127,15 +121,15 @@
     }
   </style>
 </head>
-
 <body>
   <!-- Animated background -->
   <canvas id="bg-canvas" aria-hidden="true"></canvas>
 
   <!-- Login Container -->
   <div class="login-container">
-    <h1>Welcome to Student Assistant</h1>
-    <p>Please select your role and login:</p>
+    <!-- Animated Feathers Header -->
+    <h1 id="animated-header">Feathers</h1>
+    <p>Please enter your email and password to login:</p>
 
     <!-- Role Tabs -->
     <div class="role-tabs">
@@ -148,8 +142,8 @@
 
     <!-- Login Form -->
     <form id="loginForm">
-      <input type="text" id="username" placeholder="Username / Register No" required>
-      <input type="password" id="password" placeholder="Password (if Admin/Faculty)">
+      <input type="email" id="email" placeholder="Email" required>
+      <input type="password" id="password" placeholder="Password">
       <button type="submit" class="primary-btn">Login</button>
       <p class="forgot-password"><a href="forgot-password.html">Forgot Password?</a></p>
       <p id="loginMsg" class="feedback-msg"></p>
@@ -157,12 +151,22 @@
   </div>
 
   <script>
-    // --- Role switch and login ---
+    // --- Animated header ---
+    const header = document.getElementById("animated-header");
+    let chars = header.innerText.split("");
+    header.innerHTML = "";
+    chars.forEach((c, i) => {
+      const span = document.createElement("span");
+      span.innerText = c;
+      span.style.animation = `fadeInUp 0.6s ease forwards`;
+      span.style.animationDelay = `${i * 0.08}s`;
+      header.appendChild(span);
+    });
+
+    // --- Role switch & password visibility ---
     const roleButtons = document.querySelectorAll('.role-btn');
-    let selectedRole = 'admin';
-    const loginForm = document.getElementById('loginForm');
-    const loginMsg = document.getElementById('loginMsg');
     const passwordInput = document.getElementById('password');
+    let selectedRole = 'admin';
 
     function updatePasswordVisibility() {
       if(selectedRole === 'student') {
@@ -179,147 +183,129 @@
         roleButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedRole = btn.dataset.role;
-        loginMsg.textContent = "";
         updatePasswordVisibility();
       });
     });
 
-    updatePasswordVisibility(); // Initial setup
+    updatePasswordVisibility();
 
-    loginForm.addEventListener('submit', async (e) => {
+    // --- Login logic ---
+    const loginForm = document.getElementById("loginForm");
+    const loginMsg = document.getElementById("loginMsg");
+
+    loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const username = document.getElementById('username').value.trim();
+      const email = document.getElementById("email").value.trim();
       const password = passwordInput.value.trim();
-      loginMsg.textContent = "";
 
-      if(!username) return alert("Please enter username or register no.");
-
-      let endpoint = '/login';
-      let bodyData = { regno: username };
-
-      if (selectedRole === 'admin') {
-        endpoint = '/admin/login';
-        bodyData = { username, password };
-      } else if (selectedRole === 'faculty') {
-        endpoint = '/faculty/login';
-        bodyData = { username, password };
-      } else if (selectedRole === 'moderator') {
-        endpoint = '/moderator/login';
-        bodyData = { username, password };
-      } else if (selectedRole === 'tester') {
-        endpoint = '/tester/login';
-        bodyData = { username, password };
-      }
+      loginMsg.style.color = "#555";
+      loginMsg.textContent = "Logging in...";
 
       try {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(bodyData)
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
         });
-
         const data = await res.json();
 
-        if(res.ok){
-          loginMsg.style.color = '#90ee90';
-          loginMsg.textContent = data.msg || "Login successful!";
-          setTimeout(() => {
-            window.location.href = `${selectedRole}.html`;
-          }, 1000);
+        if(res.ok && data.success) {
+          loginMsg.style.color = "green";
+          loginMsg.textContent = "✅ Login successful! Redirecting...";
+          localStorage.setItem("user", JSON.stringify(data.user));
+          setTimeout(() => window.location.href = "/dashboard.html", 1200);
         } else {
-          loginMsg.style.color = '#ff5555';
-          loginMsg.textContent = data.msg || "Invalid credentials!";
+          loginMsg.style.color = "red";
+          loginMsg.textContent = data.error || "❌ Invalid login";
         }
-
-      } catch(err) {
-        loginMsg.style.color = '#ff5555';
-        loginMsg.textContent = "Server error. Try again later.";
+      } catch (err) {
+        loginMsg.style.color = "red";
+        loginMsg.textContent = "⚠️ Server error. Please try again later.";
+        console.error("Login error:", err);
       }
     });
-  </script>
 
-  <!-- === Moving Background Animation Script === -->
-  <script>
-  (() => {
-    const canvas = document.getElementById('bg-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: true });
-    let width = canvas.width = window.innerWidth;
-    let height = canvas.height = window.innerHeight;
-    const DPR = Math.min(window.devicePixelRatio || 1, 2);
-    const baseCount = Math.round((width * height) / 60000);
-    let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
-    if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
-    const particles = [];
-    function rand(min, max) { return Math.random() * (max - min) + min; }
-
-    function initParticles() {
-      particles.length = 0;
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const size = rand(1, 3.2);
-        particles.push({
-          x: rand(0, width),
-          y: rand(0, height),
-          vx: rand(-0.12, 0.12),
-          vy: rand(-0.02, 0.6),
-          size,
-          alpha: rand(0.06, 0.22),
-          hue: rand(200, 240)
-        });
-      }
-    }
-
-    function resize() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      const newBase = Math.round((width * height) / 60000);
-      PARTICLE_COUNT = Math.min(120, Math.max(25, newBase * 40));
+    // --- Moving background animation ---
+    (() => {
+      const canvas = document.getElementById('bg-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d', { alpha: true });
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+      const baseCount = Math.round((width * height) / 60000);
+      let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
       if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
-      initParticles();
-    }
+      const particles = [];
 
-    window.addEventListener('resize', () => {
-      clearTimeout(window._bgResizeTimer);
-      window._bgResizeTimer = setTimeout(resize, 120);
-    });
+      function rand(min, max) { return Math.random() * (max - min) + min; }
 
-    function draw() {
-      ctx.clearRect(0, 0, width, height);
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y -= p.vy * 0.3;
-        if (p.x < -50) p.x = width + 50;
-        if (p.x > width + 50) p.x = -50;
-        if (p.y < -50) p.y = height + 50;
-        if (p.y > height + 50) p.y = -50;
+      function initParticles() {
+        particles.length = 0;
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          const size = rand(1, 3.2);
+          particles.push({
+            x: rand(0, width),
+            y: rand(0, height),
+            vx: rand(-0.12, 0.12),
+            vy: rand(-0.02, 0.6),
+            size,
+            alpha: rand(0.06, 0.22),
+            hue: rand(200, 240)
+          });
+        }
+      }
 
-        ctx.beginPath();
-        ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
+      function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        const newBase = Math.round((width * height) / 60000);
+        PARTICLE_COUNT = Math.min(120, Math.max(25, newBase * 40));
+        if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
+        initParticles();
+      }
 
-        for (let j = i + 1; j < particles.length && j < i + 6; j++) {
-          const p2 = particles[j];
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120) {
-            ctx.beginPath();
-            ctx.strokeStyle = `hsla(${(p.hue + p2.hue) / 2}, 70%, 60%, ${Math.max(0, 0.08 - dist/1500)})`;
-            ctx.lineWidth = 0.6;
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
+      window.addEventListener('resize', () => {
+        clearTimeout(window._bgResizeTimer);
+        window._bgResizeTimer = setTimeout(resize, 120);
+      });
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y -= p.vy * 0.3;
+          if (p.x < -50) p.x = width + 50;
+          if (p.x > width + 50) p.x = -50;
+          if (p.y < -50) p.y = height + 50;
+          if (p.y > height + 50) p.y = -50;
+
+          ctx.beginPath();
+          ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+
+          for (let j = i + 1; j < particles.length && j < i + 6; j++) {
+            const p2 = particles[j];
+            const dx = p.x - p2.x;
+            const dy = p.y - p2.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 120) {
+              ctx.beginPath();
+              ctx.strokeStyle = `hsla(${(p.hue + p2.hue) / 2}, 70%, 60%, ${Math.max(0, 0.08 - dist / 1500)})`;
+              ctx.lineWidth = 0.6;
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.stroke();
+            }
           }
         }
+        window.requestAnimationFrame(draw);
       }
-      window.requestAnimationFrame(draw);
-    }
 
-    initParticles();
-    draw();
-  })();
+      initParticles();
+      draw();
+    })();
   </script>
 </body>
 </html>
