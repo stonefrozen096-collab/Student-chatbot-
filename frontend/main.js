@@ -1,5 +1,5 @@
 // ----------------------
-// MAIN.JS — Updated + Safe for Login & Role-Based Redirect
+// MAIN.JS — Updated + JSON-Based User Storage & Role-Based Redirect
 // ----------------------
 
 // Connect to backend WebSocket (for real-time updates)
@@ -30,7 +30,7 @@ searchInput?.addEventListener("input", () => {
 });
 
 // ----------------------
-// Animated Counters (e.g., attendance, exams, notices)
+// Animated Counters
 // ----------------------
 function animateCounter(element, start = 0, end, duration = 1000) {
   let startTime = null;
@@ -90,7 +90,7 @@ document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
 });
 
 // ----------------------
-// LOGIN HANDLER (role-based redirect)
+// JSON-Based Login Handler
 // ----------------------
 const loginForm = document.getElementById("loginForm");
 if (loginForm) {
@@ -105,58 +105,54 @@ if (loginForm) {
     statusDiv.style.color = "#555";
 
     try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      // Fetch users.json from server
+      const res = await fetch("/data/users.json");
+      const users = await res.json();
 
-      const data = await res.json();
+      const user = users[email];
+      if (!user) throw new Error("User not found");
 
-      if (res.ok && data.success) {
-        statusDiv.textContent = "✅ Login successful! Redirecting...";
-        statusDiv.style.color = "green";
+      // NOTE: Password is hashed, you need backend verification. Here simplified for JSON demo
+      if (user.password !== password) throw new Error("Invalid password");
 
-        // Store user info (optional)
-        localStorage.setItem("user", JSON.stringify(data.user));
+      statusDiv.textContent = "✅ Login successful! Redirecting...";
+      statusDiv.style.color = "green";
 
-        // Redirect based on role
-        const role = data.user.role?.toLowerCase() || "student";
-        let redirectPage = "student.html"; // default
-
-        switch (role) {
-          case "admin":
-            redirectPage = "admin.html";
-            break;
-          case "moderator":
-            redirectPage = "moderator.html";
-            break;
-          case "faculty":
-            redirectPage = "faculty.html";
-            break;
-          case "tester":
-            redirectPage = "tester.html";
-            break;
-          case "student":
-            redirectPage = "student.html";
-            break;
-        }
-
-        setTimeout(() => (window.location.href = `/${redirectPage}`), 1000);
-      } else {
-        statusDiv.textContent = `❌ ${data.error || "Invalid login"}`;
-        statusDiv.style.color = "red";
+      // Redirect based on role
+      const role = user.role?.toLowerCase() || "student";
+      let redirectPage = "student.html"; // default
+      switch (role) {
+        case "admin":
+          redirectPage = "admin.html";
+          break;
+        case "moderator":
+          redirectPage = "moderator.html";
+          break;
+        case "faculty":
+          redirectPage = "faculty.html";
+          break;
+        case "tester":
+          redirectPage = "tester.html";
+          break;
+        case "student":
+          redirectPage = "student.html";
+          break;
       }
+
+      // Store in a global JS variable for session (instead of localStorage)
+      window.currentUser = user;
+
+      setTimeout(() => (window.location.href = `/${redirectPage}`), 1000);
     } catch (err) {
       console.error("Login error:", err);
-      statusDiv.textContent = "⚠️ Server error. Please try again later.";
+      statusDiv.textContent = `❌ ${err.message || "Server error"}`;
       statusDiv.style.color = "red";
     }
   });
 }
 
 // ----------------------
-// Initialize counters when DOM is loaded
+// Initialize counters
 // ----------------------
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".counter").forEach((el) => {
