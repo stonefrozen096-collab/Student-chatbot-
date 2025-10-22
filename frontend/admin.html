@@ -293,63 +293,43 @@ h2 { margin-top: 0; }
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Master Command System</title>
-<link rel="stylesheet" href="styles.css"> <!-- optional external CSS -->
 <style>
-  body { font-family: 'Poppins', sans-serif; margin:0; background:#1e1e2f; color:#fff; }
-  h1 { text-align:center; margin-top:20px; }
+  body { font-family: 'Poppins', sans-serif; margin:0; background:#fff; color:#000; }
+  h1 { text-align:center; margin-top:20px; color:#000; }
   .container { display:flex; flex-wrap:wrap; padding:20px; gap:20px; justify-content:center; }
 
-  /* Command List Panel */
-  #masterList { background:rgba(255,255,255,0.05); padding:20px; border-radius:12px; width:300px; max-height:80vh; overflow-y:auto; }
-  .commandItem { display:flex; justify-content:space-between; align-items:center; padding:8px 5px; border-bottom:1px solid rgba(255,255,255,0.1); }
-  .commandItem button { margin-left:5px; }
+  /* Admin Controls */
+  #adminControls { text-align:center; margin-bottom:20px; display:none; }
+  #adminControls button { margin:0 5px; padding:10px 15px; border-radius:8px; border:none; cursor:pointer; background:#4caf50; color:#fff; }
 
-  /* Input Box */
+  /* Command Input */
   #commandInputContainer { display:flex; justify-content:center; margin-bottom:20px; }
-  #masterCommandInput { width:60%; padding:10px; border-radius:8px; border:none; font-size:16px; }
+  #masterCommandInput { width:60%; padding:10px; border-radius:8px; border:1px solid #ccc; font-size:16px; color:#000; background:#fff; }
+
+  /* Command List Panel */
+  #masterList { background: #f5f5f5; color: #000; padding:20px; border-radius:12px; width:300px; max-height:70vh; overflow-y:auto; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+  .commandItem { display:flex; justify-content:space-between; align-items:center; padding:8px 5px; border-bottom:1px solid rgba(0,0,0,0.1); }
+  .commandItem button { margin-left:5px; padding:4px 8px; border-radius:5px; border:none; cursor:pointer; background:#2196f3; color:#fff; }
 
   /* Global Lock Overlay */
   #globalLockOverlay {
     position: fixed;
-    top: 0; left:0;
+    top:0; left:0;
     width:100%; height:100%;
     background: rgba(0,0,0,0.85);
     display: none;
-    justify-content: center;
-    align-items: center;
+    justify-content:center;
+    align-items:center;
     flex-direction: column;
-    z-index: 9999;
-    animation: fadeInOverlay 0.5s ease forwards;
+    z-index:9999;
   }
-  .lockContainer {
-    text-align:center;
-    padding:40px;
-    border-radius:20px;
-    background: rgba(255,255,255,0.05);
-    box-shadow: 0 0 30px rgba(0,0,0,0.5);
-    animation: pulse 2s infinite;
-  }
-  .lockIcon { font-size:80px; margin-bottom:20px; animation: rotateLock 2s linear infinite; }
-  .lockMessage { font-size:32px; font-weight:600; margin-bottom:10px; }
-  .countdownTimer { font-size:24px; opacity:0.8; }
+  .lockContainer { text-align:center; padding:40px; border-radius:20px; background:#fff; color:#000; box-shadow:0 0 30px rgba(0,0,0,0.3); animation:pulse 2s infinite; }
+  .lockIcon { font-size:80px; margin-bottom:20px; color:#000; animation:rotateLock 2s linear infinite; }
+  .lockMessage { font-size:32px; font-weight:600; margin-bottom:10px; color:#000; }
+  .countdownTimer { font-size:24px; opacity:0.8; color:#000; }
 
-  @keyframes pulse {
-    0%,100% { transform: scale(1); }
-    50% { transform: scale(1.08); }
-  }
-  @keyframes rotateLock {
-    0% { transform: rotate(0deg); }
-    50% { transform: rotate(15deg); }
-    100% { transform: rotate(0deg); }
-  }
-  @keyframes fadeInOverlay {
-    from { opacity:0; }
-    to { opacity:1; }
-  }
-
-  /* Admin Buttons */
-  #adminControls { text-align:center; margin-bottom:20px; }
-  #adminControls button { margin:0 5px; padding:10px 15px; border-radius:8px; border:none; cursor:pointer; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+  @keyframes rotateLock { 0% { transform: rotate(0deg); } 50% { transform: rotate(15deg); } 100% { transform: rotate(0deg); } }
 </style>
 </head>
 <body>
@@ -358,8 +338,8 @@ h2 { margin-top: 0; }
 
 <!-- Admin Controls -->
 <div id="adminControls">
-  <button onclick="addNewCommand()">➕ Create Command</button>
-  <button onclick="lockAllUsersPrompt()">🔒 Lock Users</button>
+  <button id="createCommandBtn">➕ Create Command</button>
+  <button id="lockUsersBtn">🔒 Lock Users</button>
 </div>
 
 <!-- Command Input -->
@@ -381,13 +361,120 @@ h2 { margin-top: 0; }
   </div>
 </div>
 
-<!-- Socket.IO -->
 <script src="/socket.io/socket.io.js"></script>
-<!-- Master Command JS -->
-<script type="module" src="masterCommand.js"></script>
+<script type="module">
+const socket = io();
+
+// Simulated users JSON (replace with actual fetch from your JSON file)
+const users = [
+  { username:'admin1', role:'admin', badges:['master'], specialAccess:['all'], locked:false },
+  { username:'user1', role:'student', badges:[], specialAccess:[], locked:false }
+];
+
+// Current logged-in user
+const currentUser = users[0]; // admin1 for demo
+
+// Show admin controls only for admin
+if(currentUser.role==='admin') document.getElementById('adminControls').style.display='block';
+
+// Preloaded commands
+let masterCommands = [
+  {name:'Lock All Temporary', action:'lockAllUsersPrompt()', permission:'all'},
+  {name:'Lock All Permanent', action:'lockAllUsers(0,true)', permission:'all'},
+  {name:'Global Broadcast', action:'showGlobalMessage("This is a broadcast!")', permission:'all'}
+];
+
+// Render commands
+function renderMasterCommands(){
+  const list = document.getElementById('masterList');
+  list.innerHTML='';
+  masterCommands.forEach((cmd, idx)=>{
+    const div=document.createElement('div');
+    div.className='commandItem';
+    div.innerHTML=`<span>${cmd.name}</span>
+      <div>
+        <button onclick="executeCommand(${idx})">Execute</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+renderMasterCommands();
+
+// Execute command with permission check
+window.executeCommand = function(idx){
+  const cmd = masterCommands[idx];
+  const hasAccess = currentUser.role==='admin' || currentUser.badges.includes(cmd.permission) || currentUser.specialAccess.includes(cmd.permission);
+  if(!hasAccess){
+    alert('❌ Access denied!');
+    return;
+  }
+  try{
+    eval(cmd.action);
+    alert(`✅ Command executed: ${cmd.name}`);
+  }catch(e){
+    console.error(e);
+    alert('❌ Error executing command');
+  }
+};
+
+// Create new command
+document.getElementById('createCommandBtn').addEventListener('click', ()=>{
+  const name = prompt('Command Name'); if(!name) return;
+  const action = prompt('JS Action'); if(!action) return;
+  const permission = prompt('Permission badge/special access (e.g., master, special)') || 'all';
+  masterCommands.push({name, action, permission});
+  renderMasterCommands();
+});
+
+// Input box execution
+document.getElementById('masterCommandInput').addEventListener('keypress', e=>{
+  if(e.key==='Enter'){
+    const cmdName = e.target.value.trim();
+    const idx = masterCommands.findIndex(c=>c.name===cmdName);
+    if(idx!==-1) executeCommand(idx);
+    else alert('Command not found');
+    e.target.value='';
+  }
+});
+
+// Global Lock
+let globalLock = { active:false, unlockTime:null };
+let lockInterval = null;
+window.lockAllUsersPrompt = function(){
+  const sec = parseInt(prompt('Lock duration in seconds', '30')) || 30;
+  lockAllUsers(sec);
+};
+window.lockAllUsers = function(sec=30, permanent=false){
+  globalLock.active=true;
+  globalLock.unlockTime=Date.now()+sec*1000;
+  const overlay=document.getElementById('globalLockOverlay');
+  overlay.style.display='flex';
+  document.getElementById('lockMessage').innerText = permanent?'🔒 All Users Locked Permanently':'🔒 All Users Locked';
+  updateCountdown();
+  if(lockInterval) clearInterval(lockInterval);
+  lockInterval=setInterval(updateCountdown,1000);
+  if(!permanent){
+    setTimeout(()=>{ globalLock.active=false; overlay.style.display='none'; clearInterval(lockInterval); }, sec*1000);
+  }
+};
+function updateCountdown(){
+  if(globalLock.active && globalLock.unlockTime){
+    const remaining=Math.ceil((globalLock.unlockTime-Date.now())/1000);
+    document.getElementById('countdownTimer').innerText = remaining>0?`Unlock in ${remaining} sec`:'';
+  }
+}
+window.showGlobalMessage = function(msg){
+  const overlay=document.getElementById('globalLockOverlay');
+  overlay.style.display='flex';
+  document.getElementById('lockMessage').innerText=msg;
+  document.getElementById('countdownTimer').innerText='';
+  setTimeout(()=>{overlay.style.display='none';},3000);
+};
+</script>
 
 </body>
 </html>
+
  
   <!-- Notice Section -->
   <div id="noticeSection" class="admin-section">
