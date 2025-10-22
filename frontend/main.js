@@ -1,19 +1,24 @@
-// main.js
+// ----------------------
+// MAIN.JS — Updated + Safe for Login & Dashboard
+// ----------------------
+
+// Connect to backend WebSocket (for real-time updates)
+const socket = io();
+
+// Handle connection logs
+socket.on("connect", () => console.log("✅ Connected to server via WebSocket"));
+socket.on("disconnect", () => console.warn("⚠️ Disconnected from WebSocket"));
 
 // ----------------------
-// Theme toggle (Light/Dark)
+// Theme Toggle (Light/Dark)
 // ----------------------
 const themeToggle = document.getElementById("theme-toggle");
 themeToggle?.addEventListener("click", () => {
   document.body.classList.toggle("dark-mode");
-  // Theme state can now be saved via API if needed
 });
 
-// Load saved theme from server if available
-// You can replace this with an API call to fetch user preferences
-
 // ----------------------
-// Search functionality
+// Search Functionality
 // ----------------------
 const searchInput = document.getElementById("search-input");
 
@@ -26,7 +31,7 @@ searchInput?.addEventListener("input", () => {
 });
 
 // ----------------------
-// Animated counters (ex: attendance, exams, notices)
+// Animated Counters (e.g., attendance, exams, notices)
 // ----------------------
 function animateCounter(element, start = 0, end, duration = 1000) {
   let startTime = null;
@@ -40,7 +45,7 @@ function animateCounter(element, start = 0, end, duration = 1000) {
 }
 
 // ----------------------
-// Toast notifications
+// Toast Notifications
 // ----------------------
 function showToast(message, type = "success") {
   const toast = document.createElement("div");
@@ -51,7 +56,18 @@ function showToast(message, type = "success") {
 }
 
 // ----------------------
-// Collapsible sections
+// Floating Notification Utility
+// ----------------------
+function showFloatingNotification(msg, duration = 3000) {
+  const notif = document.createElement("div");
+  notif.className = "floatingNotification";
+  notif.innerText = msg;
+  document.getElementById("floatingContainer")?.appendChild(notif) || document.body.appendChild(notif);
+  setTimeout(() => notif.remove(), duration);
+}
+
+// ----------------------
+// Collapsible Sections
 // ----------------------
 document.querySelectorAll(".collapsible").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -64,7 +80,7 @@ document.querySelectorAll(".collapsible").forEach((btn) => {
 });
 
 // ----------------------
-// Smooth scrolling for internal links
+// Smooth Scrolling for Internal Links
 // ----------------------
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   anchor.addEventListener("click", (e) => {
@@ -75,18 +91,48 @@ document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
 });
 
 // ----------------------
-// Floating notification utility
+// LOGIN HANDLER (if login form is present)
 // ----------------------
-function showFloatingNotification(msg, duration = 3000) {
-  const notif = document.createElement("div");
-  notif.className = "floatingNotification";
-  notif.innerText = msg;
-  document.getElementById('floatingContainer')?.appendChild(notif) || document.body.appendChild(notif);
-  setTimeout(() => notif.remove(), duration);
+const loginForm = document.getElementById("loginForm");
+if (loginForm) {
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const statusDiv = document.getElementById("loginStatus");
+
+    statusDiv.textContent = "Logging in...";
+    statusDiv.style.color = "#555";
+
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        statusDiv.textContent = "✅ Login successful! Redirecting...";
+        statusDiv.style.color = "green";
+        localStorage.setItem("user", JSON.stringify(data.user));
+        setTimeout(() => (window.location.href = "/dashboard.html"), 1200);
+      } else {
+        statusDiv.textContent = `❌ ${data.error || "Invalid login"}`;
+        statusDiv.style.color = "red";
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      statusDiv.textContent = "⚠️ Server error. Please try again later.";
+      statusDiv.style.color = "red";
+    }
+  });
 }
 
 // ----------------------
-// Initialize
+// Initialize counters when DOM is loaded
 // ----------------------
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".counter").forEach((el) => {
