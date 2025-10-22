@@ -1,5 +1,5 @@
 // ----------------------
-// MAIN.JS — Updated for Role-Based Login Redirect
+// MAIN.JS — Updated + Role-based Login Redirect
 // ----------------------
 
 // Connect to backend WebSocket (for real-time updates)
@@ -100,7 +100,9 @@ if (loginForm) {
 
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
-    const statusDiv = document.getElementById("loginStatus");
+    const statusDiv = document.getElementById("loginStatus") || document.getElementById("loginMsg");
+
+    if (!statusDiv) return;
 
     statusDiv.textContent = "Logging in...";
     statusDiv.style.color = "#555";
@@ -118,15 +120,12 @@ if (loginForm) {
         statusDiv.textContent = "✅ Login successful! Redirecting...";
         statusDiv.style.color = "green";
 
-        // Store user info temporarily (optional)
-        // localStorage.setItem("user", JSON.stringify(data.user));
-
-        // Redirect based on role
+        // Role-based redirect
         const role = data.user.role?.toLowerCase();
         let redirectPage = "student.html"; // default
         if (role === "admin") redirectPage = "admin.html";
-        else if (role === "faculty") redirectPage = "faculty.html";
         else if (role === "moderator") redirectPage = "moderator.html";
+        else if (role === "faculty") redirectPage = "faculty.html";
         else if (role === "tester") redirectPage = "tester.html";
 
         setTimeout(() => {
