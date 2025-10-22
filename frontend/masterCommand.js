@@ -1,8 +1,8 @@
 // ----------------------
-// masterCommand.js — Fully updated
+// masterCommand.js — Fully Updated & Persistent
 // ----------------------
 
-import { getMasterCommands, addMasterCommand, deleteMasterCommand } from './api.js';
+import { getMasterCommands, addMasterCommand, deleteMasterCommand, executeMasterCommand } from './api.js';
 import { fetchJSON, saveJSON } from './jsonUtils.js';
 
 const socket = io();
@@ -113,12 +113,10 @@ window.executeCommand = async function (id, user = { username: 'admin', badges: 
   const userLocked = lockData.users[user.username]?.locked;
   const globalLockActive = lockData.globalLock.active && !isAdmin;
 
-  // Permission check
   const hasAccess = isAdmin || user.badges.includes(cmd.permission) || user.specialAccess.includes(cmd.permission);
   if (!hasAccess) return alert('Access denied! Insufficient permission');
   if (userLocked || globalLockActive) return alert(`Access denied! ${user.username} is locked`);
 
-  // Animate command
   const cmdDiv = document.getElementById(`cmd-${id}`);
   if (cmdDiv) {
     cmdDiv.classList.add('command-run');
@@ -126,6 +124,7 @@ window.executeCommand = async function (id, user = { username: 'admin', badges: 
   }
 
   try {
+    await executeMasterCommand(id, user.username);
     eval(cmd.action);
     addLog(`Executed ${cmd.name} by ${user.username}`);
   } catch (e) {
@@ -148,7 +147,6 @@ async function lockAllUsers(sec = 30, permanent = false) {
   lockData.globalLock.unlockTime = Date.now() + sec * 1000;
   await saveJSON('lock.json', lockData);
   renderGlobalLockOverlay();
-
   socket.emit('globalLockUpdated', lockData.globalLock);
 
   if (!permanent) {
