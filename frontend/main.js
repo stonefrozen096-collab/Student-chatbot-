@@ -1,5 +1,5 @@
 // ----------------------
-// MAIN.JS — Updated + Role-based Login Redirect
+// MAIN.JS — Updated + Safe for Login & Role-Based Redirect
 // ----------------------
 
 // Connect to backend WebSocket (for real-time updates)
@@ -21,7 +21,6 @@ themeToggle?.addEventListener("click", () => {
 // Search Functionality
 // ----------------------
 const searchInput = document.getElementById("search-input");
-
 searchInput?.addEventListener("input", () => {
   const query = searchInput.value.toLowerCase();
   const items = document.querySelectorAll(".search-item");
@@ -91,7 +90,7 @@ document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
 });
 
 // ----------------------
-// LOGIN HANDLER (if login form is present)
+// LOGIN HANDLER (role-based redirect)
 // ----------------------
 const loginForm = document.getElementById("loginForm");
 if (loginForm) {
@@ -101,8 +100,6 @@ if (loginForm) {
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
     const statusDiv = document.getElementById("loginStatus") || document.getElementById("loginMsg");
-
-    if (!statusDiv) return;
 
     statusDiv.textContent = "Logging in...";
     statusDiv.style.color = "#555";
@@ -120,17 +117,32 @@ if (loginForm) {
         statusDiv.textContent = "✅ Login successful! Redirecting...";
         statusDiv.style.color = "green";
 
-        // Role-based redirect
-        const role = data.user.role?.toLowerCase();
-        let redirectPage = "student.html"; // default
-        if (role === "admin") redirectPage = "admin.html";
-        else if (role === "moderator") redirectPage = "moderator.html";
-        else if (role === "faculty") redirectPage = "faculty.html";
-        else if (role === "tester") redirectPage = "tester.html";
+        // Store user info (optional)
+        localStorage.setItem("user", JSON.stringify(data.user));
 
-        setTimeout(() => {
-          window.location.href = `/${redirectPage}`;
-        }, 1200);
+        // Redirect based on role
+        const role = data.user.role?.toLowerCase() || "student";
+        let redirectPage = "student.html"; // default
+
+        switch (role) {
+          case "admin":
+            redirectPage = "admin.html";
+            break;
+          case "moderator":
+            redirectPage = "moderator.html";
+            break;
+          case "faculty":
+            redirectPage = "faculty.html";
+            break;
+          case "tester":
+            redirectPage = "tester.html";
+            break;
+          case "student":
+            redirectPage = "student.html";
+            break;
+        }
+
+        setTimeout(() => (window.location.href = `/${redirectPage}`), 1000);
       } else {
         statusDiv.textContent = `❌ ${data.error || "Invalid login"}`;
         statusDiv.style.color = "red";
