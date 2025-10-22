@@ -5,6 +5,8 @@
     "password": "$2b$12$y5k4pP29v1px5AIiF8pfuOjGK8asqx9pR1zZiWG5y/1UJu2ZK16Le",
     "role": "admin",
     "badges": [],
+    "specialAccess": [],
+    "locked": false,
     "createdAt": "2025-10-10T08:00:00.000Z",
     "lastLogin": null
   }
