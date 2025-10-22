@@ -1,4 +1,4 @@
-// api.js — unified API for Student Assistant system
+// api.js — unified API for Student Assistant system with lock + master command integration
 const BASE_URL = "https://feathers-26g1.onrender.com";
 
 // ============================
@@ -40,15 +40,13 @@ export async function editUser(email, updates) {
 }
 
 export async function deleteUser(email) {
-  const res = await fetch(`${BASE_URL}/api/users/${email}`, {
-    method: "DELETE"
-  });
+  const res = await fetch(`${BASE_URL}/api/users/${email}`, { method: "DELETE" });
   return res.json();
 }
 
 export async function toggleUserLock(email, lockStatus) {
   const res = await fetch(`${BASE_URL}/api/users/${email}/lock`, {
-    method: "PATCH", // corrected from POST
+    method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ locked: lockStatus })
   });
@@ -122,6 +120,23 @@ export async function executeMasterCommand(id, actor = "admin") {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ actor })
+  });
+  return res.json();
+}
+
+// ============================
+// LOCK SYSTEM (NEW)
+// ============================
+export async function getLockStatus() {
+  const res = await fetch(`${BASE_URL}/api/lock`);
+  return res.json();
+}
+
+export async function updateLockStatus(data) {
+  const res = await fetch(`${BASE_URL}/api/lock`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
   });
   return res.json();
 }
@@ -314,4 +329,4 @@ export async function resetPassword(email, code, newPassword) {
     body: JSON.stringify({ email, code, newPassword })
   });
   return res.json();
-}
+    }
