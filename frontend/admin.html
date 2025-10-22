@@ -304,18 +304,19 @@ h2 { margin-top: 0; }
   #commandInputContainer { display:flex; justify-content:center; margin-bottom:20px; }
   #masterCommandInput { width:60%; padding:10px; border-radius:8px; border:1px solid #ccc; font-size:16px; color:#000; background:#fff; }
 
-  #masterList { background:#f5f5f5; color:#000; padding:20px; border-radius:12px; width:300px; max-height:70vh; overflow-y:auto; box-shadow:0 0 15px rgba(0,0,0,0.1); }
-  .commandItem { display:flex; justify-content:space-between; align-items:center; padding:8px 5px; border-bottom:1px solid rgba(0,0,0,0.1); transition:background 0.3s; }
+  #masterList { background: #f5f5f5; color: #000; padding:20px; border-radius:12px; width:300px; max-height:70vh; overflow-y:auto; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+  .commandItem { display:flex; justify-content:space-between; align-items:center; padding:8px 5px; border-bottom:1px solid rgba(0,0,0,0.1); }
   .commandItem button { margin-left:5px; padding:4px 8px; border-radius:5px; border:none; cursor:pointer; background:#2196f3; color:#fff; }
 
-  /* Animation effect when executing a command */
-  .commandExecuted { background: #b3e5fc; transition: background 0.5s ease; }
-
   #globalLockOverlay {
-    position:fixed; top:0; left:0; width:100%; height:100%;
-    background:rgba(0,0,0,0.85); display:none;
-    justify-content:center; align-items:center;
-    flex-direction:column; z-index:9999;
+    position: fixed;
+    top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    justify-content:center;
+    align-items:center;
+    flex-direction: column;
+    z-index:9999;
   }
   .lockContainer { text-align:center; padding:40px; border-radius:20px; background:#fff; color:#000; box-shadow:0 0 30px rgba(0,0,0,0.3); animation:pulse 2s infinite; }
   .lockIcon { font-size:80px; margin-bottom:20px; color:#000; animation:rotateLock 2s linear infinite; }
@@ -351,12 +352,100 @@ h2 { margin-top: 0; }
   </div>
 </div>
 
-<!-- Import external JS modules -->
-<script type="module" src="jsonApi.js"></script>
-<script type="module" src="masterCommand.js"></script>
+<script type="module">
+import {
+  getMasterCommands,
+  addMasterCommand,
+  executeMasterCommand
+} from './api.js'; // Make sure api.js uses deployed backend
 
+const currentUser = { role:'admin', badges:['master'], specialAccess:['all'] };
+if(currentUser.role==='admin') document.getElementById('adminControls').style.display='block';
+
+let masterCommandsData = [];
+
+// Fetch and render commands
+async function loadCommands() {
+  masterCommandsData = await getMasterCommands();
+  renderCommands();
+}
+
+function renderCommands(){
+  const list = document.getElementById('masterList');
+  list.innerHTML='';
+  masterCommandsData.forEach((cmd, idx)=>{
+    const div=document.createElement('div');
+    div.className='commandItem';
+    div.innerHTML=`<span>${cmd.name}</span>
+      <div>
+        <button onclick="executeCommand('${cmd.id}')">Execute</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+window.executeCommand = async function(id){
+  const cmd = masterCommandsData.find(c=>c.id===id);
+  if(!cmd) return alert('Command not found');
+  try{
+    await executeMasterCommand(id, currentUser.role);
+    eval(cmd.action);
+    alert(`✅ Executed: ${cmd.name}`);
+  }catch(e){
+    console.error(e);
+    alert('❌ Error executing command');
+  }
+};
+
+// Create new command
+document.getElementById('createCommandBtn').addEventListener('click', async ()=>{
+  const name = prompt('Command Name'); if(!name) return;
+  const action = prompt('JS Action'); if(!action) return;
+  const permission = prompt('Permission badge/special access') || 'all';
+  const newCmd = await addMasterCommand(name, action, permission);
+  masterCommandsData.push(newCmd);
+  renderCommands();
+});
+
+// Input box execution by name
+document.getElementById('masterCommandInput').addEventListener('keypress', e=>{
+  if(e.key==='Enter'){
+    const cmdName = e.target.value.trim();
+    const cmd = masterCommandsData.find(c=>c.name===cmdName);
+    if(cmd) executeCommand(cmd.id);
+    else alert('Command not found');
+    e.target.value='';
+  }
+});
+
+// Global Lock command
+window.lockAllUsers = function(sec=30){
+  const overlay=document.getElementById('globalLockOverlay');
+  overlay.style.display='flex';
+  document.getElementById('lockMessage').innerText = `🔒 All Users Locked for ${sec} sec`;
+  let endTime=Date.now()+sec*1000;
+  const timer = setInterval(()=>{
+    const remaining = Math.ceil((endTime-Date.now())/1000);
+    document.getElementById('countdownTimer').innerText = remaining>0?`Unlock in ${remaining} sec`:'';
+    if(remaining<=0){ clearInterval(timer); overlay.style.display='none'; }
+  },1000);
+};
+
+window.showGlobalMessage = function(msg){
+  const overlay=document.getElementById('globalLockOverlay');
+  overlay.style.display='flex';
+  document.getElementById('lockMessage').innerText=msg;
+  document.getElementById('countdownTimer').innerText='';
+  setTimeout(()=>{ overlay.style.display='none'; },3000);
+};
+
+// Initialize
+loadCommands();
+</script>
 </body>
 </html>
+  
+    
  
   <!-- Notice Section -->
   <div id="noticeSection" class="admin-section">
