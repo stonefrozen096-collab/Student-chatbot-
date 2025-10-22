@@ -1,129 +1,213 @@
-// ---------- Master Command System (API + Socket.IO) ----------
+// ----------------------
+// MASTER COMMAND SYSTEM (Powerful Admin Control)
+// ----------------------
 
-import { getMasterCommands, addMasterCommand, editMasterCommand, deleteMasterCommand, fetchLogs, saveLogs } from './api.js';
+// Import API functions
+import { 
+  getMasterCommands, addMasterCommand, editMasterCommand, deleteMasterCommand, 
+  fetchLogs, saveLogs 
+} from './api.js';
 
 // Socket.IO connection
-const socket = io(); // assumes socket.io client loaded in HTML
+const socket = io();
 
+// ----------------------
+// GLOBAL STATE
+// ----------------------
 let masterCommands = [];
 let warnings = {};
-let globalLock = { active: false, unlockTime: null };
-let countdownInterval = null;
+let loggedInUser = window.loggedInUser || { username:'guest', role:'student', badges:[], specialAccess:[] };
+let commandInputBox = null;
 
-// Preloaded commands (fallback)
+// ----------------------
+// PRELOADED COMMANDS
+// ----------------------
 const preCommands = [
-  {name:'Lock All Temporary', action:'lockAllUsersPrompt()', permission:'admin'},
-  {name:'Lock All Permanent', action:'lockAllUsers(0,true)', permission:'admin'},
-  {name:'Delete Last Test', action:'state.createdTests.pop(); renderCreatedTests();', permission:'admin'},
-  {name:'Restore Last Deleted Test', action:'restoreLastDeletedTest();', permission:'admin'},
-  {name:'Global Broadcast', action:'showGlobalMessage("This is a broadcast!")', permission:'admin'},
-  {name:'Highlight Message', action:'alert("Highlight executed!")', permission:'all'},
-  {name:'Sample Test Command', action:'console.log("Sample Test Run")', permission:'all'}
+  { id:'lock-temp', name:'Lock All Temporary', action:'lockAllUsersPrompt()', permission:'lock' },
+  { id:'lock-perm', name:'Lock All Permanent', action:'lockAllUsers(0,true)', permission:'lock' },
+  { id:'delete-last-test', name:'Delete Last Test', action:'deleteLastTest()', permission:'master' },
+  { id:'restore-last-test', name:'Restore Last Deleted Test', action:'masterRestoreLastTest()', permission:'master' },
+  { id:'global-broadcast', name:'Global Broadcast', action:'showGlobalMessage("This is a broadcast!")', permission:'admin' },
+  { id:'highlight-message', name:'Highlight Message', action:'alert("Highlight executed!")', permission:'all' },
+  { id:'sample', name:'Sample Test Command', action:'console.log("Sample Test Run")', permission:'all' }
 ];
 
-// ---------- Load from API ----------
-export async function loadMasterCommands(){
-  try { 
-    masterCommands = await getMasterCommands(); 
-  } catch(e){ 
-    console.error('Failed to load master commands', e); 
-    masterCommands = [...preCommands]; 
+// ----------------------
+// INITIALIZATION
+// ----------------------
+document.addEventListener('DOMContentLoaded', async () => {
+  // Set logged-in user if available globally
+  loggedInUser = window.loggedInUser || loggedInUser;
+
+  // Command input box
+  commandInputBox = document.getElementById('masterCommandInput');
+  if(commandInputBox){
+    commandInputBox.addEventListener('keydown', e=>{
+      if(e.key==='Enter'){
+        executeCommandByName(commandInputBox.value.trim());
+        commandInputBox.value='';
+      }
+    });
   }
-  warnings = {};
+
+  await loadMasterCommands();
+  socket.on('masterCommandUpdated', loadMasterCommands);
+});
+
+// ----------------------
+// LOAD COMMANDS
+// ----------------------
+export async function loadMasterCommands(){
+  try {
+    const cmds = await getMasterCommands();
+    masterCommands = cmds.length ? cmds : preCommands;
+  } catch(e){
+    console.error('Failed to load master commands', e);
+    masterCommands = [...preCommands];
+  }
   renderMasterCommands();
 }
 
-// ---------- Render Commands ----------
+// ----------------------
+// RENDER COMMAND LIST
+// ----------------------
 export function renderMasterCommands(){
-  const c = document.getElementById('masterList'); if(!c) return; 
-  c.innerHTML = '';
-  if(masterCommands.length === 0){
-    const ph = document.createElement('div'); ph.className = 'placeholder'; ph.innerText = 'No commands yet.'; c.appendChild(ph); return;
-  }
-  masterCommands.forEach(cmd=>{
-    const div = document.createElement('div'); div.className = 'commandItem';
-    div.innerHTML=`<strong>${cmd.name}</strong> | Permission: ${cmd.permission || 'all'}
-      <button class="btn btn-ghost" onclick="editMasterAPI('${cmd.id}')">Edit</button>
-      <button class="btn btn-danger" onclick="deleteMasterAPI('${cmd.id}')">Delete</button>
-      <button class="btn btn-primary" onclick="executeMasterById('${cmd.id}')">Execute</button>`;
-    c.appendChild(div);
-    setTimeout(()=>div.classList.add('fadeIn'),50);
+  const container = document.getElementById('masterList');
+  if(!container) return;
+  container.innerHTML = '';
+
+  masterCommands.forEach(cmd => {
+    const div = document.createElement('div');
+    div.className = 'commandItem';
+    div.innerHTML = `
+      <strong>${cmd.name}</strong> | Permission: ${cmd.permission || 'all'}
+      <button class="btn btn-primary" onclick="executeCommandById('${cmd.id}')">Execute</button>
+      ${loggedInUser.role==='admin' ? `<button class="btn btn-ghost" onclick="editCommand('${cmd.id}')">Edit</button>
+      <button class="btn btn-danger" onclick="deleteCommand('${cmd.id}')">Delete</button>` : ''}
+    `;
+    container.appendChild(div);
   });
 }
 
-// ---------- Add/Edit/Delete via API ----------
-export async function promptAddCommand(){
-  const name = prompt('Command Name'); if(!name) return;
-  const action = prompt('JS Action'); if(!action) return;
-  const permission = prompt('Permission (all, badge, special access)', 'all');
-  await addMasterCommandAPI(name, action, permission);
+// ----------------------
+// EXECUTE COMMAND BY ID
+// ----------------------
+window.executeCommandById = function(id){
+  const cmd = masterCommands.find(c => c.id === id);
+  if(!cmd) return alert('Command not found');
+  executeCommand(cmd);
+};
+
+// ----------------------
+// EXECUTE COMMAND BY NAME (Input Box)
+// ----------------------
+function executeCommandByName(name){
+  if(!name) return;
+  const cmd = masterCommands.find(c => c.name.toLowerCase()===name.toLowerCase());
+  if(!cmd){
+    if(loggedInUser.role==='admin'){
+      try{ eval(name); addLog(`Executed raw command by admin: ${name}`); } catch(e){ console.error(e); alert('Error executing command'); }
+    } else {
+      alert('Command not found or access denied');
+    }
+    return;
+  }
+  executeCommand(cmd);
 }
 
-export async function addMasterCommandAPI(name, action, permission='all'){
+// ----------------------
+// EXECUTE COMMAND CORE
+// ----------------------
+function executeCommand(cmd){
+  const isAdmin = loggedInUser.role==='admin';
+  const hasPermission = isAdmin || cmd.permission==='all' || 
+                        (cmd.permission==='badge' && loggedInUser.badges?.length) || 
+                        loggedInUser.specialAccess?.includes(cmd.permission);
+
+  if(!hasPermission){
+    warnings[loggedInUser.username] = (warnings[loggedInUser.username] || 0) + 1;
+    alert(`Access denied! Warning ${warnings[loggedInUser.username]}/5`);
+    return;
+  }
+
+  try{
+    eval(cmd.action);
+    addLog(`Executed command "${cmd.name}" by ${loggedInUser.username}`);
+    showCommandOverlay(cmd.name, loggedInUser.username);
+    socket.emit('masterCommandExecuted', { id: cmd.id, user: loggedInUser.username });
+  } catch(e){
+    console.error('Command execution failed', e);
+    alert('Command execution error');
+  }
+}
+
+// ----------------------
+// CREATE NEW COMMAND
+// ----------------------
+window.addNewCommand = async function(){
+  if(loggedInUser.role!=='admin') return alert('Only admin can create commands');
+
+  const name = prompt('Command Name'); 
+  if(!name) return;
+  const action = prompt('JavaScript Action'); 
+  if(!action) return;
+  const permission = prompt('Permission (all, badge, special access, lock, master, admin)', 'all');
+
   try{
     const newCmd = await addMasterCommand(name, action, permission);
     masterCommands.push(newCmd);
     renderMasterCommands();
-    socket.emit('masterCommandAdded', newCmd); // real-time update
+    socket.emit('masterCommandUpdated');
   } catch(e){
-    console.error('Failed to add master command', e);
-    alert('Failed to add command!');
+    console.error('Failed to add command', e);
+    alert('Failed to create command');
   }
-}
+};
 
-export async function editMasterAPI(id){
-  const cmd = masterCommands.find(c=>c.id===id); if(!cmd) return;
-  const n = prompt('Command Name', cmd.name); if(n!==null) cmd.name=n;
-  const a = prompt('JS Action', cmd.action); if(a!==null) cmd.action=a;
-  const p = prompt('Permission', cmd.permission||'all'); if(p!==null) cmd.permission=p;
+// ----------------------
+// EDIT COMMAND
+// ----------------------
+window.editCommand = async function(id){
+  const cmd = masterCommands.find(c=>c.id===id);
+  if(!cmd) return;
+  const name = prompt('Command Name', cmd.name); if(name!==null) cmd.name=name;
+  const action = prompt('JavaScript Action', cmd.action); if(action!==null) cmd.action=action;
+  const permission = prompt('Permission', cmd.permission); if(permission!==null) cmd.permission=permission;
 
   try{
     const updated = await editMasterCommand(id, cmd.name, cmd.action, cmd.permission);
-    const idx = masterCommands.findIndex(c=>c.id===id); masterCommands[idx]=updated;
+    const idx = masterCommands.findIndex(c=>c.id===id);
+    masterCommands[idx] = updated;
     renderMasterCommands();
-    socket.emit('masterCommandEdited', updated);
+    socket.emit('masterCommandUpdated');
   } catch(e){
-    console.error('Failed to edit master command', e);
-    alert('Failed to edit command!');
+    console.error(e);
+    alert('Failed to edit command');
   }
-}
+};
 
-export async function deleteMasterAPI(id){
+// ----------------------
+// DELETE COMMAND
+// ----------------------
+window.deleteCommand = async function(id){
   if(!confirm('Delete this command?')) return;
   try{
     await deleteMasterCommand(id);
     masterCommands = masterCommands.filter(c=>c.id!==id);
     renderMasterCommands();
-    socket.emit('masterCommandDeleted', id);
+    socket.emit('masterCommandUpdated');
   } catch(e){
-    console.error('Failed to delete master command', e);
-    alert('Failed to delete command!');
+    console.error(e);
+    alert('Failed to delete command');
   }
-}
+};
 
-// ---------- Execute ----------
-export async function executeMasterById(id, user={username:'admin', badges:[], specialAccess:[]}){
-  const cmd = masterCommands.find(c=>c.id===id); if(!cmd) return alert('Command not found');
-
-  const hasPermission = cmd.permission === 'all' || 
-                        (cmd.permission==='badge' && user.badges?.length) || 
-                        user.specialAccess?.includes(cmd.permission);
-
-  if(!hasPermission){
-    warnings[user.username]=(warnings[user.username]||0)+1;
-    alert(`Access denied! Warning ${warnings[user.username]}/5`);
-    if(warnings[user.username]>=6) lockUserTemporarily(user.username, warnings[user.username]*10);
-    return;
-  }
-
-  showCommandOverlay(cmd.name,user.username);
-  try{ eval(cmd.action); addLog(`Executed ${cmd.name} by ${user.username}`); } catch(e){ console.error('Command execution failed', e); }
-  socket.emit('masterCommandExecuted', {id, user: user.username}); // real-time notification
-}
-
-// ---------- Overlay ----------
-function showCommandOverlay(name,user){
-  const overlay=document.createElement('div'); overlay.id='commandOverlay';
+// ----------------------
+// OVERLAY FOR COMMAND EXECUTION
+// ----------------------
+function showCommandOverlay(name, user){
+  const overlay=document.createElement('div');
+  overlay.id='commandOverlay';
   overlay.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;color:white;font-size:2em;flex-direction:column;z-index:9999;';
   overlay.innerHTML=`⚡ ${name} executed by ${user} ⚡`;
   document.body.appendChild(overlay);
@@ -131,69 +215,13 @@ function showCommandOverlay(name,user){
   setTimeout(()=>overlay.animate([{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(0.9)'}],{duration:400,fill:'forwards'}).onfinish=()=>overlay.remove(),1500);
 }
 
-// ---------- Temporary Lock ----------
-function lockUserTemporarily(user, sec){ alert(`User ${user} locked for ${sec} seconds!`); }
-
-// ---------- Global Lock ----------
-export function lockAllUsersPrompt(){ 
-  const durations={'1 min':60,'2 min':120,'5 min':300}; 
-  let choice=prompt('Enter lock duration: 1 min / 2 min / 5 min','1 min'); 
-  let sec=durations[choice]||60; lockAllUsers(sec,false); 
-}
-export function lockAllUsers(sec=30, permanent=false){
-  globalLock.active=true; globalLock.unlockTime=Date.now()+sec*1000;
-  renderGlobalLockAnimation(sec, permanent);
-  if(!permanent){
-    if(countdownInterval) clearInterval(countdownInterval);
-    countdownInterval=setInterval(updateCountdown,1000);
-    setTimeout(()=>{
-      globalLock.active=false; globalLock.unlockTime=null; removeGlobalLockAnimation();
-      clearInterval(countdownInterval);
-    }, sec*1000);
-  }
-}
-function renderGlobalLockAnimation(sec, permanent=false){
-  const overlay=document.getElementById('globalLockOverlay'); overlay.style.display='flex';
-  document.getElementById('lockMessage').innerHTML=permanent?'🔒 All Users Locked Permanently':'🔒 All Users Locked';
-  document.getElementById('countdownTimer').innerText = permanent ? '' : `Unlock in ${sec} sec`;
-}
-function updateCountdown(){
-  const remaining=Math.ceil((globalLock.unlockTime-Date.now())/1000);
-  document.getElementById('countdownTimer').innerText = remaining>0 ? `Unlock in ${remaining} sec` : '';
-}
-function removeGlobalLockAnimation(){ 
-  const overlay=document.getElementById('globalLockOverlay'); overlay.style.display='none';
-  document.getElementById('countdownTimer').innerText='';
-}
-
-// ---------- Global Message ----------
-export function showGlobalMessage(msg){
-  const overlay=document.getElementById('globalLockOverlay'); overlay.style.display='flex';
-  document.getElementById('lockMessage').innerHTML=msg;
-  document.getElementById('countdownTimer').innerText='';
-  setTimeout(()=>overlay.style.display='none',3000);
-}
-
-// ---------- Restore Last Deleted Test ----------
-let lastDeletedTest=null;
-export function deleteTestForMaster(id){
-  const index = state.createdTests.findIndex(t=>t.id===id);
-  if(index===-1) return;
-  lastDeletedTest=state.createdTests.splice(index,1)[0];
-  renderCreatedTests();
-}
-export function restoreLastDeletedTest(){
-  if(lastDeletedTest){ state.createdTests.push(lastDeletedTest); renderCreatedTests(); lastDeletedTest=null; }
-}
-
-// ---------- Logging ----------
+// ----------------------
+// LOGGING
+// ----------------------
 async function addLog(msg){
   try{
     const logs = await fetchLogs();
-    logs.unshift({msg,time:new Date().toLocaleString()});
+    logs.unshift({ msg, time: new Date().toLocaleString() });
     await saveLogs(logs);
   } catch(e){ console.error('Failed to log message', e); }
 }
-
-// ---------- Initialize ----------
-document.addEventListener('DOMContentLoaded', loadMasterCommands);
