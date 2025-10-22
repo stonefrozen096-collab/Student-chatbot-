@@ -311,6 +311,19 @@ app.post('/api/master/:id/execute', (req, res) => {
   addLog(`Master executed: ${cmd.name} by ${actor}`, actor);
   res.json({ executed: true, id: cmd.id });
 });
+// ---------------- LOCK SYSTEM ----------------
+const LOCKS_FILE = path.join(DATA_DIR, 'locks.json');
+let lockData = readJSON(LOCKS_FILE, { allLocked: false, lockedUsers: [] });
+
+app.get('/api/locks', (req, res) => res.json(lockData));
+
+app.post('/api/locks', (req, res) => {
+  lockData = { ...lockData, ...req.body };
+  writeJSON(LOCKS_FILE, lockData);
+  addLog(`Lock state updated: allLocked=${lockData.allLocked}`, 'admin');
+  io.emit('locks:updated', lockData);
+  res.json({ saved: true, data: lockData });
+});
 
 // ---------------- TESTS CRUD ----------------
 app.get('/api/tests', (req, res) => res.json(tests));
