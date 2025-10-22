@@ -1,17 +1,19 @@
-// ----------------------
-// MASTER COMMAND SYSTEM JS
-// ----------------------
+// ---------- Master Command System (JSON User + Socket.IO) ----------
+
 import { getMasterCommands, addMasterCommand, editMasterCommand, deleteMasterCommand, fetchLogs, saveLogs } from './api.js';
 
+// Socket.IO connection
 const socket = io();
 
+// ---------- GLOBAL VARIABLES ----------
 let masterCommands = [];
 let warnings = {};
-let globalLock = { active:false, unlockTime:null };
+let globalLock = { active: false, unlockTime: null };
 let countdownInterval = null;
-let loggedInUser = JSON.parse(localStorage.getItem('user')) || { username:'guest', role:'student', badges:[], specialAccess:[] };
+let loggedInUser = { username:'guest', role:'student', badges:[], specialAccess:[] }; // default
+let lastDeletedTest = null;
 
-// Preloaded fallback commands
+// ---------- PRELOADED COMMANDS ----------
 const preCommands = [
   {name:'Lock All Temporary', action:'lockAllUsersPrompt()', permission:'admin'},
   {name:'Lock All Permanent', action:'lockAllUsers(0,true)', permission:'admin'},
@@ -22,35 +24,35 @@ const preCommands = [
   {name:'Sample Test Command', action:'console.log("Sample Test Run")', permission:'all'}
 ];
 
-// ----------------------
-// LOAD COMMANDS
-// ----------------------
+// ---------- LOAD LOGGED-IN USER FROM JSON ----------
+export async function loadLoggedInUser(email){
+  try{
+    const res = await fetch('/data/users.json');
+    const users = await res.json();
+    if(users[email]){
+      loggedInUser = users[email];
+    } else {
+      loggedInUser = { username:'guest', role:'student', badges:[], specialAccess:[] };
+    }
+  } catch(err){
+    console.error('Failed to load user from JSON', err);
+    loggedInUser = { username:'guest', role:'student', badges:[], specialAccess:[] };
+  }
+}
+
+// ---------- LOAD MASTER COMMANDS ----------
 export async function loadMasterCommands(){
   try{
     masterCommands = await getMasterCommands();
-    if(!masterCommands.length) masterCommands = [...preCommands];
   } catch(e){
-    console.error('Failed to load commands', e);
+    console.error('Failed to load master commands', e);
     masterCommands = [...preCommands];
   }
+  warnings = {};
   renderMasterCommands();
 }
 
-// Socket.IO real-time updates
-socket.on('masterCommandAdded', cmd => { masterCommands.push(cmd); renderMasterCommands(); });
-socket.on('masterCommandEdited', cmd => { 
-  const idx = masterCommands.findIndex(c => c.id === cmd.id);
-  if(idx>=0) masterCommands[idx] = cmd; 
-  renderMasterCommands(); 
-});
-socket.on('masterCommandDeleted', id => { 
-  masterCommands = masterCommands.filter(c => c.id !== id); 
-  renderMasterCommands(); 
-});
-socket.on('masterCommandExecuted', data => { console.log(`Command ${data.id} executed by ${data.user}`); });
-// ----------------------
-// RENDER COMMANDS
-// ----------------------
+// ---------- RENDER MASTER COMMANDS ----------
 export function renderMasterCommands(){
   const container = document.getElementById('masterList');
   if(!container) return;
@@ -67,8 +69,6 @@ export function renderMasterCommands(){
   masterCommands.forEach(cmd => {
     const div = document.createElement('div');
     div.className = 'commandItem';
-    
-    // Display command name and permission
     div.innerHTML = `<strong>${cmd.name}</strong> | Permission: ${cmd.permission || 'all'}`;
 
     // Admin-only buttons
@@ -84,7 +84,7 @@ export function renderMasterCommands(){
       div.appendChild(delBtn);
     }
 
-    // Execute button for allowed users
+    // Execute button
     const execBtn = document.createElement('button');
     execBtn.innerText = 'Execute';
     execBtn.onclick = () => executeMasterById(cmd.id, loggedInUser);
@@ -94,12 +94,10 @@ export function renderMasterCommands(){
   });
 }
 
-// ----------------------
-// ADMIN CONTROLS
-// ----------------------
+// ---------- ADD NEW COMMAND ----------
 export async function addNewCommand(){
   if(loggedInUser.role !== 'admin') return alert('Only admin can create commands');
-  
+
   const name = prompt('Command Name');
   if(!name) return;
   const action = prompt('JS Action');
@@ -116,19 +114,17 @@ export async function addNewCommand(){
     alert('Failed to add command!');
   }
 }
-// ----------------------
-// EXECUTE COMMAND
-// ----------------------
+
+// ---------- EXECUTE COMMAND ----------
 export async function executeMasterById(id, user = loggedInUser){
   const cmd = masterCommands.find(c => c.id === id);
   if(!cmd) return alert('Command not found');
 
-  // Permission check
   const hasPermission =
     cmd.permission === 'all' ||
     (cmd.permission === 'badge' && user.badges?.length) ||
     user.specialAccess?.includes(cmd.permission) ||
-    user.role === 'admin'; // Admin bypass
+    user.role === 'admin';
 
   if(!hasPermission){
     warnings[user.username] = (warnings[user.username] || 0) + 1;
@@ -137,22 +133,17 @@ export async function executeMasterById(id, user = loggedInUser){
     return;
   }
 
-  // Show overlay animation
   showCommandOverlay(cmd.name, user.username);
 
-  try { 
-    eval(cmd.action); 
-    addLog(`Executed ${cmd.name} by ${user.username}`); 
-  } catch(e){ 
-    console.error('Command execution failed', e); 
-  }
+  try{
+    eval(cmd.action);
+    addLog(`Executed ${cmd.name} by ${user.username}`);
+  } catch(e){ console.error('Command execution failed', e); }
 
   socket.emit('masterCommandExecuted', {id, user: user.username});
 }
 
-// ----------------------
-// COMMAND OVERLAY ANIMATION
-// ----------------------
+// ---------- COMMAND OVERLAY ----------
 function showCommandOverlay(name, user){
   const overlay = document.createElement('div');
   overlay.id = 'commandOverlay';
@@ -166,16 +157,13 @@ function showCommandOverlay(name, user){
 
   overlay.animate([{opacity:0, transform:'scale(0.9)'},{opacity:1, transform:'scale(1)'}],
                   {duration:400, fill:'forwards'});
-  setTimeout(() => {
+  setTimeout(()=>{
     overlay.animate([{opacity:1, transform:'scale(1)'},{opacity:0, transform:'scale(0.9)'}],
-                    {duration:400, fill:'forwards'})
-          .onfinish = () => overlay.remove();
-  }, 1500);
+                    {duration:400, fill:'forwards'}).onfinish=()=>overlay.remove();
+  },1500);
 }
 
-// ----------------------
-// TEMPORARY USER LOCK
-// ----------------------
+// ---------- TEMPORARY LOCK ----------
 function lockUserTemporarily(user, sec){
   if(user === loggedInUser.username && loggedInUser.role !== 'admin'){
     alert(`You are locked for ${sec} seconds!`);
@@ -183,9 +171,7 @@ function lockUserTemporarily(user, sec){
   }
 }
 
-// ----------------------
-// GLOBAL LOCK SYSTEM
-// ----------------------
+// ---------- GLOBAL LOCK ----------
 export function lockAllUsersPrompt(){
   if(loggedInUser.role !== 'admin') return alert('Only admin can lock users');
   const durations = {'1 min':60,'2 min':120,'5 min':300};
@@ -232,24 +218,7 @@ function removeGlobalLockAnimation(){
   if(timer) timer.innerText='';
 }
 
-// ----------------------
-// LOGGING EXECUTIONS
-// ----------------------
-async function addLog(msg){
-  try{
-    const logs = await fetchLogs(); // fetch existing logs from API
-    logs.unshift({ msg, time: new Date().toLocaleString() });
-    await saveLogs(logs); // save updated logs
-  } catch(e){
-    console.error('Failed to log message', e);
-  }
-}
-
-// ----------------------
-// RESTORE LAST DELETED TEST
-// ----------------------
-let lastDeletedTest = null;
-
+// ---------- DELETE / RESTORE LAST TEST ----------
 export function deleteLastTestPrompt(){
   if(!state.createdTests || !state.createdTests.length) return alert('No tests to delete');
   const lastTest = state.createdTests.pop();
@@ -266,9 +235,16 @@ export function restoreLastDeletedTest(){
   lastDeletedTest = null;
 }
 
-// ----------------------
-// EXECUTE COMMAND BY NAME INPUT
-// ----------------------
+// ---------- LOGGING ----------
+async function addLog(msg){
+  try{
+    const logs = await fetchLogs();
+    logs.unshift({ msg, time: new Date().toLocaleString() });
+    await saveLogs(logs);
+  } catch(e){ console.error('Failed to log message', e); }
+}
+
+// ---------- COMMAND INPUT EXECUTION ----------
 const commandInput = document.getElementById('masterCommandInput');
 if(commandInput){
   commandInput.addEventListener('keypress', e => {
@@ -283,11 +259,12 @@ if(commandInput){
   });
 }
 
-// ----------------------
-// INITIALIZATION
-// ----------------------
+// ---------- INITIALIZATION ----------
 document.addEventListener('DOMContentLoaded', async () => {
+  // replace email with the actual logged-in user's email
+  await loadLoggedInUser('sunshinesbright004@gmail.com'); 
   await loadMasterCommands();
+
   // Admin bypass: hide overlay if admin
   if(loggedInUser.role === 'admin'){
     removeGlobalLockAnimation();
