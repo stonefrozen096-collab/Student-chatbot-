@@ -1,18 +1,21 @@
 // ----------------------
-// masterCommand.js — Updated with lock.json persistence
+// masterCommand.js — Fully updated
 // ----------------------
 
-import { getMasterCommands, addMasterCommand, editMasterCommand, deleteMasterCommand } from './api.js';
-import { fetchJSON, saveJSON } from './jsonUtils.js'; // utility to read/write JSON files
+import { getMasterCommands, addMasterCommand, deleteMasterCommand } from './api.js';
+import { fetchJSON, saveJSON } from './jsonUtils.js';
 
 const socket = io();
 
+// ----------------------
+// State
+// ----------------------
 let masterCommands = [];
 let lockData = { globalLock: { active: false, unlockTime: null }, users: {} };
 let countdownInterval = null;
 
 // ----------------------
-// Load lock.json and master commands
+// Load Data
 // ----------------------
 async function loadData() {
   try {
@@ -31,18 +34,18 @@ async function loadData() {
   }
 
   renderMasterCommands();
-  renderGlobalLockAnimation();
+  renderGlobalLockOverlay();
 }
 
 document.addEventListener('DOMContentLoaded', loadData);
 
 // ----------------------
-// Render Master Commands
+// Render Commands
 // ----------------------
 function renderMasterCommands() {
   const container = document.getElementById('masterList');
   container.innerHTML = '';
-  if (masterCommands.length === 0) {
+  if (!masterCommands.length) {
     container.innerHTML = '<div class="placeholder">No commands yet.</div>';
     return;
   }
@@ -50,6 +53,7 @@ function renderMasterCommands() {
   masterCommands.forEach(cmd => {
     const div = document.createElement('div');
     div.className = 'commandItem';
+    div.id = `cmd-${cmd.id}`;
     div.innerHTML = `
       <strong>${cmd.name}</strong> | Permission: ${cmd.permission || 'all'}
       <button onclick="executeCommand('${cmd.id}')">Execute</button>
@@ -60,7 +64,7 @@ function renderMasterCommands() {
 }
 
 // ----------------------
-// Add New Command
+// Add Command
 // ----------------------
 window.addNewCommand = async function () {
   const name = prompt('Command Name');
@@ -109,12 +113,20 @@ window.executeCommand = async function (id, user = { username: 'admin', badges: 
   const userLocked = lockData.users[user.username]?.locked;
   const globalLockActive = lockData.globalLock.active && !isAdmin;
 
-  if (userLocked || globalLockActive) {
-    return alert(`Access denied! ${user.username} is locked`);
+  // Permission check
+  const hasAccess = isAdmin || user.badges.includes(cmd.permission) || user.specialAccess.includes(cmd.permission);
+  if (!hasAccess) return alert('Access denied! Insufficient permission');
+  if (userLocked || globalLockActive) return alert(`Access denied! ${user.username} is locked`);
+
+  // Animate command
+  const cmdDiv = document.getElementById(`cmd-${id}`);
+  if (cmdDiv) {
+    cmdDiv.classList.add('command-run');
+    setTimeout(() => cmdDiv.classList.remove('command-run'), 1500);
   }
 
   try {
-    eval(cmd.action); // execute JS code
+    eval(cmd.action);
     addLog(`Executed ${cmd.name} by ${user.username}`);
   } catch (e) {
     console.error('Command execution failed', e);
@@ -128,7 +140,6 @@ window.lockAllUsersPrompt = async function () {
   const durations = { '1 min': 60, '2 min': 120, '5 min': 300 };
   const choice = prompt('Enter lock duration: 1 min / 2 min / 5 min', '1 min');
   const sec = durations[choice] || 60;
-
   await lockAllUsers(sec, false);
 };
 
@@ -136,7 +147,9 @@ async function lockAllUsers(sec = 30, permanent = false) {
   lockData.globalLock.active = true;
   lockData.globalLock.unlockTime = Date.now() + sec * 1000;
   await saveJSON('lock.json', lockData);
-  renderGlobalLockAnimation();
+  renderGlobalLockOverlay();
+
+  socket.emit('globalLockUpdated', lockData.globalLock);
 
   if (!permanent) {
     if (countdownInterval) clearInterval(countdownInterval);
@@ -146,8 +159,9 @@ async function lockAllUsers(sec = 30, permanent = false) {
       lockData.globalLock.active = false;
       lockData.globalLock.unlockTime = null;
       await saveJSON('lock.json', lockData);
-      removeGlobalLockAnimation();
+      renderGlobalLockOverlay();
       clearInterval(countdownInterval);
+      socket.emit('globalLockUpdated', lockData.globalLock);
     }, sec * 1000);
   }
 }
@@ -155,7 +169,7 @@ async function lockAllUsers(sec = 30, permanent = false) {
 // ----------------------
 // Render Global Lock Overlay
 // ----------------------
-function renderGlobalLockAnimation() {
+function renderGlobalLockOverlay() {
   const overlay = document.getElementById('globalLockOverlay');
   if (lockData.globalLock.active) {
     overlay.style.display = 'flex';
@@ -167,29 +181,49 @@ function renderGlobalLockAnimation() {
 }
 
 function updateCountdown() {
+  if (!lockData.globalLock.unlockTime) return;
   const remaining = Math.ceil((lockData.globalLock.unlockTime - Date.now()) / 1000);
   const timer = document.getElementById('countdownTimer');
   timer.innerText = remaining > 0 ? `Unlock in ${remaining} sec` : '';
 }
 
 // ----------------------
-// Utilities: Logging & JSON
+// Logging
 // ----------------------
 async function addLog(msg) {
   try {
-    const res = await fetch('/api/logs', {
+    await fetch('/api/logs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ msg, user: 'system' })
     });
-    return res.json();
   } catch (e) {
     console.error('Failed to add log', e);
   }
 }
 
 // ----------------------
-// Socket.IO Listeners
+// Socket.IO Events
 // ----------------------
 socket.on('masterCommandAdded', loadData);
 socket.on('masterCommandDeleted', loadData);
+socket.on('globalLockUpdated', (lock) => {
+  lockData.globalLock = lock;
+  renderGlobalLockOverlay();
+});
+
+// ----------------------
+// Animations CSS Injection
+// ----------------------
+const style = document.createElement('style');
+style.innerHTML = `
+.command-run {
+  animation: pulse 1s ease;
+}
+@keyframes pulse {
+  0% { transform: scale(1); background-color: #fff; }
+  50% { transform: scale(1.05); background-color: #d0f0fd; }
+  100% { transform: scale(1); background-color: #fff; }
+}
+`;
+document.head.appendChild(style);
