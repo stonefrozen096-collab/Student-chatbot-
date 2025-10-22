@@ -1,5 +1,5 @@
 // ----------------------
-// MAIN.JS — Updated + Safe for Login & Dashboard
+// MAIN.JS — Updated for Role-Based Login Redirect
 // ----------------------
 
 // Connect to backend WebSocket (for real-time updates)
@@ -117,8 +117,21 @@ if (loginForm) {
       if (res.ok && data.success) {
         statusDiv.textContent = "✅ Login successful! Redirecting...";
         statusDiv.style.color = "green";
-        localStorage.setItem("user", JSON.stringify(data.user));
-        setTimeout(() => (window.location.href = "/dashboard.html"), 1200);
+
+        // Store user info temporarily (optional)
+        // localStorage.setItem("user", JSON.stringify(data.user));
+
+        // Redirect based on role
+        const role = data.user.role?.toLowerCase();
+        let redirectPage = "student.html"; // default
+        if (role === "admin") redirectPage = "admin.html";
+        else if (role === "faculty") redirectPage = "faculty.html";
+        else if (role === "moderator") redirectPage = "moderator.html";
+        else if (role === "tester") redirectPage = "tester.html";
+
+        setTimeout(() => {
+          window.location.href = `/${redirectPage}`;
+        }, 1200);
       } else {
         statusDiv.textContent = `❌ ${data.error || "Invalid login"}`;
         statusDiv.style.color = "red";
