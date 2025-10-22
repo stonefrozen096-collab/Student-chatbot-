@@ -8,13 +8,21 @@ let users = {};
 let warnings = {};
 let countdownInterval = null;
 
+// Preloaded commands
+const preCommands = [
+  { name:'Lock All Temporary', action:'lockAllUsersPrompt()', permission:'admin' },
+  { name:'Lock All Permanent', action:'lockAllUsers(60,true)', permission:'admin' },
+  { name:'Global Broadcast', action:'showGlobalMessage("This is a global message!")', permission:'admin' }
+];
+
 // ---------- Load Users & Commands ----------
 async function loadData() {
   try {
     masterCommands = await getMasterCommands();
+    if(masterCommands.length === 0) masterCommands = [...preCommands];
   } catch(e){
     console.error('Failed to load master commands:', e);
-    masterCommands = [];
+    masterCommands = [...preCommands];
   }
 
   try {
@@ -44,8 +52,8 @@ export function renderMasterCommands() {
     div.className = 'commandItem';
     div.innerHTML = `
       <strong>${cmd.name}</strong> | Permission: ${cmd.permission || 'all'}
-      <button onclick="executeMasterById(${idx})">Execute</button>
-      <button onclick="deleteMasterCommand(${idx})">Delete</button>
+      <button style="margin-left:5px;" onclick="executeMasterById(${idx})">Execute</button>
+      <button style="margin-left:5px; background:red; color:white; margin-left:5px;" onclick="deleteMasterCommand(${idx})">Delete</button>
     `;
     list.appendChild(div);
   });
@@ -152,8 +160,8 @@ function renderGlobalLockOverlay(sec, permanent=false){
 function updateCountdown(){
   const overlay = document.getElementById('globalLockOverlay');
   if(!overlay) return;
-  const remaining = Math.ceil((Date.now() - 0)/1000); // example, can be improved
-  document.getElementById('countdownTimer').innerText = `Unlock in ${remaining} sec`;
+  // For simplicity, show placeholder countdown
+  document.getElementById('countdownTimer').innerText = 'Unlock in active';
 }
 
 function removeGlobalLockOverlay(){
