@@ -56,8 +56,11 @@ function renderMasterCommands() {
     div.id = `cmd-${cmd.id}`;
     div.innerHTML = `
       <strong>${cmd.name}</strong> | Permission: ${cmd.permission || 'all'}
-      <button onclick="executeCommand('${cmd.id}')">Execute</button>
-      <button onclick="deleteCommand('${cmd.id}')">Delete</button>
+      <div class="cmd-buttons">
+        <button onclick="executeCommand('${cmd.id}')">Execute</button>
+        <button onclick="editCommand('${cmd.id}')">Edit</button>
+        <button onclick="deleteCommand('${cmd.id}')">Delete</button>
+      </div>
     `;
     container.appendChild(div);
   });
@@ -73,7 +76,7 @@ window.addNewCommand = async function () {
   const action = prompt('JavaScript Action');
   if (!action) return;
 
-  const permission = prompt('Permission (all, badge, special access)', 'all');
+  const permission = prompt('Permission (all, admin, badge, special)', 'all');
 
   try {
     const newCmd = await addMasterCommand(name, action, permission);
@@ -83,6 +86,34 @@ window.addNewCommand = async function () {
   } catch (e) {
     console.error('Failed to add command', e);
     alert('Failed to add command!');
+  }
+};
+
+// ----------------------
+// Edit Command
+// ----------------------
+window.editCommand = async function (id) {
+  const cmd = masterCommands.find(c => c.id === id);
+  if (!cmd) return alert('Command not found');
+
+  const newName = prompt('Edit Command Name:', cmd.name) || cmd.name;
+  const newAction = prompt('Edit JavaScript Action:', cmd.action) || cmd.action;
+  const newPermission = prompt('Edit Permission (all, admin, badge, etc):', cmd.permission) || cmd.permission;
+
+  const updatedCmd = { ...cmd, name: newName, action: newAction, permission: newPermission };
+
+  try {
+    await fetch(`/api/masterCommands/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedCmd)
+    });
+    Object.assign(cmd, updatedCmd);
+    renderMasterCommands();
+    socket.emit('masterCommandUpdated', updatedCmd);
+  } catch (e) {
+    console.error('Failed to update command', e);
+    alert('Failed to edit command!');
   }
 };
 
@@ -126,6 +157,7 @@ window.executeCommand = async function (id, user = { username: 'admin', badges: 
   try {
     await executeMasterCommand(id, user.username);
     eval(cmd.action);
+    showGlobalMessage(`✅ Command "${cmd.name}" executed successfully!`);
     addLog(`Executed ${cmd.name} by ${user.username}`);
   } catch (e) {
     console.error('Command execution failed', e);
@@ -165,10 +197,12 @@ async function lockAllUsers(sec = 30, permanent = false) {
 }
 
 // ----------------------
-// Render Global Lock Overlay
+// Global Overlay + Broadcast
 // ----------------------
 function renderGlobalLockOverlay() {
   const overlay = document.getElementById('globalLockOverlay');
+  if (!overlay) return;
+
   if (lockData.globalLock.active) {
     overlay.style.display = 'flex';
     document.getElementById('lockMessage').innerText = '🔒 All Users Locked';
@@ -182,8 +216,29 @@ function updateCountdown() {
   if (!lockData.globalLock.unlockTime) return;
   const remaining = Math.ceil((lockData.globalLock.unlockTime - Date.now()) / 1000);
   const timer = document.getElementById('countdownTimer');
-  timer.innerText = remaining > 0 ? `Unlock in ${remaining} sec` : '';
+  if (timer) timer.innerText = remaining > 0 ? `Unlock in ${remaining}s` : '';
 }
+
+window.showGlobalMessage = function (text) {
+  let msgBox = document.getElementById('globalMessageBox');
+  if (!msgBox) {
+    msgBox = document.createElement('div');
+    msgBox.id = 'globalMessageBox';
+    msgBox.style.cssText = `
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex; justify-content: center; align-items: center;
+      background: rgba(0,0,0,0.7);
+      color: white; font-size: 1.8em; font-weight: bold;
+      z-index: 9999; text-align: center;
+      animation: fadeInOut 3s ease;
+    `;
+    document.body.appendChild(msgBox);
+  }
+  msgBox.innerText = text;
+  msgBox.style.display = 'flex';
+  setTimeout(() => (msgBox.style.display = 'none'), 3000);
+};
 
 // ----------------------
 // Logging
@@ -204,6 +259,7 @@ async function addLog(msg) {
 // Socket.IO Events
 // ----------------------
 socket.on('masterCommandAdded', loadData);
+socket.on('masterCommandUpdated', loadData);
 socket.on('masterCommandDeleted', loadData);
 socket.on('globalLockUpdated', (lock) => {
   lockData.globalLock = lock;
@@ -220,8 +276,15 @@ style.innerHTML = `
 }
 @keyframes pulse {
   0% { transform: scale(1); background-color: #fff; }
-  50% { transform: scale(1.05); background-color: #d0f0fd; }
+  50% { transform: scale(1.05); background-color: #c3f7d3; }
   100% { transform: scale(1); background-color: #fff; }
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
 }
 `;
 document.head.appendChild(style);
