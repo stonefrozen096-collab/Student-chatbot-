@@ -1,5 +1,5 @@
 // ----------------------
-// masterCommand.js — Fully Updated & Persistent
+// masterCommand.js — Fully Updated & Persistent + Broadcast/Full Overlay
 // ----------------------
 
 import { getMasterCommands, addMasterCommand, deleteMasterCommand, executeMasterCommand } from './api.js';
@@ -98,7 +98,7 @@ window.editCommand = async function (id) {
 
   const newName = prompt('Edit Command Name:', cmd.name) || cmd.name;
   const newAction = prompt('Edit JavaScript Action:', cmd.action) || cmd.action;
-  const newPermission = prompt('Edit Permission (all, admin, badge, etc):', cmd.permission) || cmd.permission;
+  const newPermission = prompt('Edit Permission (all, admin, badge, special):', cmd.permission) || cmd.permission;
 
   const updatedCmd = { ...cmd, name: newName, action: newAction, permission: newPermission };
 
@@ -134,6 +134,20 @@ window.deleteCommand = async function (id) {
 };
 
 // ----------------------
+// Delete All Commands
+// ----------------------
+window.deleteAllCommands = async function () {
+  if (!confirm('Delete ALL master commands?')) return;
+  for (const cmd of [...masterCommands]) {
+    await deleteMasterCommand(cmd.id);
+  }
+  masterCommands = [];
+  renderMasterCommands();
+  showGlobalMessage('🗑️ All commands deleted!', 2500, 'error');
+  socket.emit('masterCommandDeleted', 'all');
+};
+
+// ----------------------
 // Execute Command
 // ----------------------
 window.executeCommand = async function (id, user = { username: 'admin', badges: [], specialAccess: [] }) {
@@ -157,7 +171,7 @@ window.executeCommand = async function (id, user = { username: 'admin', badges: 
   try {
     await executeMasterCommand(id, user.username);
     eval(cmd.action);
-    showGlobalMessage(`✅ Command "${cmd.name}" executed successfully!`);
+    showGlobalMessage(`✅ Command "${cmd.name}" executed!`, 3000, 'success');
     addLog(`Executed ${cmd.name} by ${user.username}`);
   } catch (e) {
     console.error('Command execution failed', e);
@@ -219,7 +233,7 @@ function updateCountdown() {
   if (timer) timer.innerText = remaining > 0 ? `Unlock in ${remaining}s` : '';
 }
 
-window.showGlobalMessage = function (text) {
+window.showGlobalMessage = function (text, duration = 3000, type = 'info') {
   let msgBox = document.getElementById('globalMessageBox');
   if (!msgBox) {
     msgBox = document.createElement('div');
@@ -229,15 +243,17 @@ window.showGlobalMessage = function (text) {
       top: 0; left: 0; right: 0; bottom: 0;
       display: flex; justify-content: center; align-items: center;
       background: rgba(0,0,0,0.7);
-      color: white; font-size: 1.8em; font-weight: bold;
+      color: white; font-size: 2em; font-weight: bold;
       z-index: 9999; text-align: center;
-      animation: fadeInOut 3s ease;
+      animation: fadeInOut ${duration / 1000}s ease;
     `;
     document.body.appendChild(msgBox);
   }
   msgBox.innerText = text;
+  msgBox.style.background = type === 'error' ? 'rgba(200,0,0,0.85)' :
+                            type === 'success' ? 'rgba(0,150,0,0.85)' : 'rgba(0,0,0,0.75)';
   msgBox.style.display = 'flex';
-  setTimeout(() => (msgBox.style.display = 'none'), 3000);
+  setTimeout(() => (msgBox.style.display = 'none'), duration);
 };
 
 // ----------------------
