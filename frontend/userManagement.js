@@ -1,41 +1,27 @@
-// ---------- User Management (API + Socket.IO) ----------
-let users = [];
+// ---------- User Management (Local + Socket.IO + Multi-tab Sync) ----------
+let users = JSON.parse(localStorage.getItem('users')) || [];
 const rolesWithPassword = ['faculty', 'moderator', 'tester'];
 
-// ---------- Socket.IO Setup ----------
-const socket = io(); // assumes Socket.IO is served from server
-
-socket.on('user-updated', updatedUser => {
-  const idx = users.findIndex(u => u.email === updatedUser.email);
-  if (idx !== -1) {
-    users[idx] = updatedUser;
-    renderUsers();
-  }
-});
-
-socket.on('user-added', newUser => {
-  users.push(newUser);
-  renderUsers();
-});
-
-socket.on('user-deleted', email => {
-  users = users.filter(u => u.email !== email);
-  renderUsers();
-});
-
-// ---------- Fetch Users from API ----------
-async function fetchUsers() {
-  try {
-    const res = await fetch('/api/users');
-    if (!res.ok) throw new Error('Failed to fetch users');
-    users = await res.json();
-    renderUsers();
-  } catch (err) {
-    console.error(err);
-    document.querySelector('#userTable tbody').innerHTML =
-      '<tr><td colspan="6">Error loading users.</td></tr>';
-  }
+// ---------- Socket.IO (Optional, fallback if no server) ----------
+let socket;
+try {
+  socket = io(); // real connection if available
+} catch {
+  socket = { on: () => {}, emit: () => {} }; // dummy
 }
+
+// ---------- Save Users ----------
+function saveUsers() {
+  localStorage.setItem('users', JSON.stringify(users));
+}
+
+// ---------- Sync Across Tabs ----------
+window.addEventListener('storage', (event) => {
+  if (event.key === 'users') {
+    users = JSON.parse(event.newValue) || [];
+    renderUsers();
+  }
+});
 
 // ---------- Render Users ----------
 function renderUsers() {
@@ -66,7 +52,7 @@ function renderUsers() {
 }
 
 // ---------- Add User ----------
-document.getElementById('addUserForm').addEventListener('submit', async e => {
+document.getElementById('addUserForm').addEventListener('submit', e => {
   e.preventDefault();
   const username = document.getElementById('username').value.trim();
   const email = document.getElementById('email').value.trim();
@@ -76,84 +62,64 @@ document.getElementById('addUserForm').addEventListener('submit', async e => {
     : '';
 
   if (!username || !email || (rolesWithPassword.includes(role) && !password))
-    return showNotification('All required fields must be filled', 'error');
+    return showNotification('⚠️ Fill all required fields', 'error');
 
-  const newUser = { username, email, role, password: password || '', locked: false };
+  if (users.some(u => u.email === email))
+    return showNotification('⚠️ User already exists', 'error');
 
-  try {
-    const res = await fetch('/api/users/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newUser)
-    });
-    if (!res.ok) throw new Error('Failed to add user');
-
-    const savedUser = await res.json();
-    socket.emit('add-user', savedUser); // notify server to broadcast
-    e.target.reset();
-    showNotification('User added successfully!', 'success');
-  } catch (err) {
-    console.error(err);
-    showNotification('Error adding user', 'error');
-  }
+  const newUser = { username, email, role, password, locked: false };
+  users.push(newUser);
+  saveUsers();
+  renderUsers();
+  socket.emit('add-user', newUser);
+  e.target.reset();
+  showNotification('✅ User added successfully!', 'success');
 });
 
 // ---------- Edit User ----------
 function editUser(index) {
   const user = users[index];
   const newEmail = prompt(`Edit email for ${user.username}:`, user.email);
-  let newPassword = '';
+  if (!newEmail) return;
+
+  let newPassword = user.password;
   if (rolesWithPassword.includes(user.role)) {
     newPassword = prompt(`Edit password for ${user.username}:`, user.password || '');
   }
 
-  if (newEmail) user.email = newEmail;
-  if (rolesWithPassword.includes(user.role) && newPassword) user.password = newPassword;
+  user.email = newEmail;
+  if (rolesWithPassword.includes(user.role)) user.password = newPassword;
 
-  fetch('/api/users/update', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(user)
-  })
-    .then(res => res.ok ? socket.emit('update-user', user) : showNotification('Update failed', 'error'))
-    .then(() => showNotification(`User ${user.username} updated`, 'success'))
-    .catch(() => showNotification('Error updating user', 'error'));
+  users[index] = user;
+  saveUsers();
+  socket.emit('update-user', user);
+  renderUsers();
+  showNotification(`✏️ User ${user.username} updated`, 'success');
 }
 
 // ---------- Delete User ----------
 function deleteUser(index) {
   const user = users[index];
-  if (!confirm(`Delete user ${user.username}?`)) return;
-
-  fetch('/api/users/delete', {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: user.email })
-  })
-    .then(res => {
-      if (!res.ok) throw new Error('Delete failed');
-      socket.emit('delete-user', user.email); // broadcast deletion
-      showNotification(`User ${user.username} deleted`, 'success');
-    })
-    .catch(() => showNotification('Error deleting user', 'error'));
+  if (!confirm(`🗑️ Delete user ${user.username}?`)) return;
+  users.splice(index, 1);
+  saveUsers();
+  renderUsers();
+  socket.emit('delete-user', user.email);
+  showNotification(`✅ User ${user.username} deleted`, 'info');
 }
 
 // ---------- Lock/Unlock ----------
 function toggleLock(index) {
   const user = users[index];
   user.locked = !user.locked;
-
-  fetch('/api/users/lock-toggle', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: user.email, locked: user.locked })
-  })
-    .then(res => {
-      if (!res.ok) throw new Error('Toggle lock failed');
-      socket.emit('update-user', user);
-      showNotification(`User ${user.username} ${user.locked ? 'locked' : 'unlocked'}`, 'info');
-    })
-    .catch(() => showNotification('Error changing lock status', 'error'));
+  users[index] = user;
+  saveUsers();
+  renderUsers();
+  socket.emit('update-user', user);
+  showNotification(
+    `🔐 User ${user.username} ${user.locked ? 'locked' : 'unlocked'}`,
+    'info'
+  );
 }
 
 // ---------- Notifications ----------
@@ -163,16 +129,18 @@ function showNotification(message, type = 'info') {
   banner.innerText = message;
   document.body.appendChild(banner);
 
-  banner.animate([
-    { transform: 'translateY(-50px)', opacity: 0 },
-    { transform: 'translateY(0)', opacity: 1 }
-  ], { duration: 400 });
+  banner.animate(
+    [{ transform: 'translateY(-50px)', opacity: 0 },
+     { transform: 'translateY(0)', opacity: 1 }],
+    { duration: 400 }
+  );
 
   setTimeout(() => {
-    banner.animate([
-      { transform: 'translateY(0)', opacity: 1 },
-      { transform: 'translateY(-50px)', opacity: 0 }
-    ], { duration: 400 }).onfinish = () => banner.remove();
+    banner.animate(
+      [{ transform: 'translateY(0)', opacity: 1 },
+       { transform: 'translateY(-50px)', opacity: 0 }],
+      { duration: 400 }
+    ).onfinish = () => banner.remove();
   }, 3000);
 }
 
@@ -215,4 +183,4 @@ function renderFilteredUsers(list) {
 }
 
 // ---------- Initialize ----------
-document.addEventListener('DOMContentLoaded', fetchUsers);
+document.addEventListener('DOMContentLoaded', renderUsers);
