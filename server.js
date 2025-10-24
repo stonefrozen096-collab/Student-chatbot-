@@ -339,8 +339,6 @@ app.post('/api/master/:id/execute', (req, res) => {
 });
 
 // ---------------- LOCK SYSTEM ----------------
-let lockData = readJSON(LOCKS_FILE, { allLocked: false, lockedUsers: [] });
-
 app.get('/api/locks', (req, res) => res.json(lockData));
 
 app.post('/api/locks', (req, res) => {
