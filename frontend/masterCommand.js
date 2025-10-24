@@ -1,5 +1,5 @@
 // ----------------------
-// masterCommand.js — Fully Updated + API-based + Broadcast/Overlay
+// masterCommand.js — Fully Upgraded + API + Broadcast + Overlay + Lock
 // ----------------------
 
 import { 
@@ -130,7 +130,7 @@ window.deleteCommand = async function (id) {
     masterCommands = masterCommands.filter(c => c.id !== id);
     renderMasterCommands();
     socket.emit('masterCommandDeleted', id);
-    showGlobalMessage(`🗑️ Command deleted!`, 2000, 'error');
+    showGlobalMessage('🗑️ Command deleted!', 2500, 'error');
   } catch (e) {
     console.error('Failed to delete command', e);
     alert('Failed to delete command!');
@@ -141,16 +141,15 @@ window.deleteCommand = async function (id) {
 // Delete All Commands
 // ----------------------
 window.deleteAllCommands = async function () {
-  if (!confirm('Delete ALL master commands?')) return;
+  if (!confirm('Delete ALL commands?')) return;
 
   for (const cmd of [...masterCommands]) {
     await deleteMasterCommand(cmd.id);
   }
-
   masterCommands = [];
   renderMasterCommands();
-  showGlobalMessage('🗑️ All commands deleted!', 2500, 'error');
   socket.emit('masterCommandDeleted', 'all');
+  showGlobalMessage('🗑️ All commands deleted!', 2500, 'error');
 };
 
 // ----------------------
@@ -162,28 +161,27 @@ window.executeCommand = async function (id, user = { username: 'admin', badges: 
 
   const isAdmin = user.username === 'admin';
   const globalLockActive = globalLock.active && !isAdmin;
+
   const hasAccess = isAdmin || user.badges.includes(cmd.permission) || user.specialAccess.includes(cmd.permission);
   if (!hasAccess) return alert('Access denied! Insufficient permission');
   if (globalLockActive) return alert(`Access denied! Global lock active`);
 
-  try {
-    await executeMasterCommand(id, user.username);
-    eval(cmd.action); // executes on this client
-    showGlobalMessage(`✅ Command "${cmd.name}" executed!`, 3000, 'success');
-    socket.emit('masterCommandExecuted', { id, user: user.username, action: cmd.action });
-  } catch (e) {
-    console.error('Command execution failed', e);
-  }
-};
-
-// Broadcast received executions
-socket.on('masterCommandExecuted', ({ id, action }) => {
   const cmdDiv = document.getElementById(`cmd-${id}`);
   if (cmdDiv) {
     cmdDiv.classList.add('command-run');
     setTimeout(() => cmdDiv.classList.remove('command-run'), 1500);
   }
-});
+
+  try {
+    await executeMasterCommand(id, user.username);
+    eval(cmd.action);
+    showGlobalMessage(`✅ Command "${cmd.name}" executed!`, 3000, 'success');
+    addLog(`Executed ${cmd.name} by ${user.username}`);
+  } catch (e) {
+    console.error('Command execution failed', e);
+    showGlobalMessage(`⚠️ Command "${cmd.name}" failed`, 3000, 'error');
+  }
+};
 
 // ----------------------
 // Global Lock
@@ -215,13 +213,17 @@ async function lockAllUsers(sec = 30) {
   }, sec * 1000);
 }
 
+// ----------------------
+// Global Overlay
+// ----------------------
 function renderGlobalLockOverlay() {
   const overlay = document.getElementById('globalLockOverlay');
   if (!overlay) return;
 
   if (globalLock.active) {
     overlay.style.display = 'flex';
-    document.getElementById('lockMessage').innerText = '🔒 All Users Locked';
+    const msgEl = document.getElementById('lockMessage');
+    if (msgEl) msgEl.innerText = '🔒 All Users Locked';
     updateCountdown();
   } else {
     overlay.style.display = 'none';
@@ -236,22 +238,20 @@ function updateCountdown() {
 }
 
 // ----------------------
-// Global Message Overlay
+// Overlay Messages
 // ----------------------
 window.showGlobalMessage = function (text, duration = 3000, type = 'info') {
   let msgBox = document.getElementById('globalMessageBox');
   if (!msgBox) {
     msgBox = document.createElement('div');
     msgBox.id = 'globalMessageBox';
-    msgBox.style.cssText = `
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      display: flex; justify-content: center; align-items: center;
-      background: rgba(0,0,0,0.7);
-      color: white; font-size: 2em; font-weight: bold;
-      z-index: 9999; text-align: center;
-      animation: fadeInOut ${duration / 1000}s ease;
-    `;
+    Object.assign(msgBox.style, {
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      display: 'flex', justifyContent: 'center', alignItems: 'center',
+      background: 'rgba(0,0,0,0.75)',
+      color: 'white', fontSize: '2em', fontWeight: 'bold',
+      zIndex: 9999, textAlign: 'center'
+    });
     document.body.appendChild(msgBox);
   }
   msgBox.innerText = text;
@@ -262,18 +262,22 @@ window.showGlobalMessage = function (text, duration = 3000, type = 'info') {
 };
 
 // ----------------------
-// Animations
+// Logging
 // ----------------------
-const style = document.createElement('style');
-style.innerHTML = `
-.command-run { animation: pulse 1s ease; }
-@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); background-color:#c3f7d3;} 100% { transform: scale(1); } }
-@keyframes fadeInOut { 0% {opacity:0;} 10% {opacity:1;} 90% {opacity:1;} 100% {opacity:0;} }
-`;
-document.head.appendChild(style);
+async function addLog(msg) {
+  try {
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ msg, user: 'system' })
+    });
+  } catch (e) {
+    console.error('Failed to add log', e);
+  }
+}
 
 // ----------------------
-// Socket.IO Listeners
+// Socket.IO Events
 // ----------------------
 socket.on('masterCommandAdded', loadData);
 socket.on('masterCommandUpdated', loadData);
@@ -282,3 +286,19 @@ socket.on('globalLockUpdated', (lock) => {
   globalLock = lock;
   renderGlobalLockOverlay();
 });
+
+// ----------------------
+// Animations CSS Injection
+// ----------------------
+const style = document.createElement('style');
+style.innerHTML = `
+.command-run {
+  animation: pulse 1s ease;
+}
+@keyframes pulse {
+  0% { transform: scale(1); background-color: #fff; }
+  50% { transform: scale(1.05); background-color: #c3f7d3; }
+  100% { transform: scale(1); background-color: #fff; }
+}
+`;
+document.head.appendChild(style);
