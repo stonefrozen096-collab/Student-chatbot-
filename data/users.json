@@ -12,3 +12,13 @@
     "lastLogin": null
   }
 }
+{
+  "username": "no-reply-bot",
+  "email": "no-reply@feathers-app.com",
+  "role": "system",
+  "password": "",
+  "locked": false,
+  "badges": [],
+  "specialAccess": [],
+  "bot": true
+}
