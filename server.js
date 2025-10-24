@@ -1,4 +1,4 @@
-// server.js — Full backend for Student Assistant
+// server.js — Full backend for Student Assistant (Part 1)
 // Node >= 14 required
 
 const express = require('express');
@@ -34,6 +34,7 @@ const ATTENDANCE_FILE = path.join(DATA_DIR, 'attendance.json');
 const LOGS_FILE = path.join(DATA_DIR, 'logs.json');
 const ANALYTICS_FILE = path.join(DATA_DIR, 'analytics.json');
 const CHAT_HISTORY_FILE = path.join(DATA_DIR, 'chat_history.json');
+const LOCKS_FILE = path.join(DATA_DIR, 'locks.json');
 
 // ---------------- HELPERS ----------------
 function readJSON(filePath, defaultValue) {
@@ -73,6 +74,7 @@ function persistAll() {
   writeJSON(LOGS_FILE, logs);
   writeJSON(ANALYTICS_FILE, analytics);
   writeJSON(CHAT_HISTORY_FILE, chatHistory);
+  writeJSON(LOCKS_FILE, lockData);
 }
 
 // ---------------- LOAD INITIAL DATA ----------------
@@ -86,6 +88,7 @@ let attendance = readJSON(ATTENDANCE_FILE, []);
 let logs = readJSON(LOGS_FILE, []);
 let analytics = readJSON(ANALYTICS_FILE, []);
 let chatHistory = readJSON(CHAT_HISTORY_FILE, []);
+let lockData = readJSON(LOCKS_FILE, { allLocked: false, lockedUsers: [] });
 
 // ---------------- EMAIL ----------------
 const EMAIL_USER = process.env.EMAIL_USER || '';
@@ -98,11 +101,14 @@ if (!EMAIL_USER || !EMAIL_PASS) console.warn('EMAIL_USER or EMAIL_PASS not set. 
 // ---------------- SOCKET.IO ----------------
 io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
-  socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
-});
 
-// ---------------- ROUTES ----------------
-// Health check
+  socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
+
+  // Chat message handling will go in next part
+});
+// ---------------- ROUTES — Part 2 ----------------
+
+// --- HEALTH CHECK ---
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
 // --- USERS CRUD ---
@@ -145,6 +151,7 @@ app.delete('/api/users/:email', (req, res) => {
   res.json({ deleted: true });
 });
 
+// --- LOCK / UNLOCK USERS ---
 app.patch('/api/users/:email/lock', (req, res) => {
   const key = req.params.email;
   const { locked } = req.body;
@@ -180,7 +187,7 @@ app.post('/api/login', async (req, res) => {
   res.json({ success: true, message: 'Login successful', user: { email: user.email, name: user.name, role: user.role, badges: user.badges, specialAccess: user.specialAccess } });
 });
 
-// --- 2FA & PASSWORD RESET START ---
+// --- 2FA & PASSWORD RESET ---
 const twoFactorStore = {}; // email -> { code, expiresAt }
 function gen2FACode() { return Math.floor(100000 + Math.random() * 900000).toString(); }
 
@@ -205,7 +212,7 @@ app.post('/api/send-2fa', async (req, res) => {
     res.status(500).json({ sent: false, error: err.message });
   }
 });
-// --- RESET PASSWORD ---
+
 app.post('/api/reset-password', async (req, res) => {
   const { email, code, newPassword } = req.body;
   if (!email || !code || !newPassword) 
@@ -222,6 +229,25 @@ app.post('/api/reset-password', async (req, res) => {
   addLog(`Password reset for ${email}`, 'system');
   res.json({ success: true, message: 'Password reset OK' });
 });
+
+// --- CHAT & BOT TEST ---
+app.get('/api/chat/history', (req, res) => res.json(chatHistory));
+
+app.post('/api/chat/history', (req, res) => {
+  const entry = { id: genId('ch_'), ...req.body, time: new Date().toISOString() };
+  chatHistory.push(entry);
+  writeJSON(CHAT_HISTORY_FILE, chatHistory);
+  io.emit('chat:message', entry);
+  res.json(entry);
+});
+
+// Bot test endpoint
+app.get('/bot-test', (req, res) => {
+  const bot = Object.values(users).find(u => u.bot);
+  if (!bot) return res.status(404).send('No bot found');
+  res.send(`Bot running: ${bot.username}`);
+});
+// ---------------- ROUTES — Part 3 ----------------
 
 // ---------------- BADGES CRUD ----------------
 app.get('/api/badges', (req, res) => res.json(badges));
@@ -311,6 +337,7 @@ app.post('/api/master/:id/execute', (req, res) => {
   addLog(`Master executed: ${cmd.name} by ${actor}`, actor);
   res.json({ executed: true, id: cmd.id });
 });
+
 // ---------------- LOCK SYSTEM ----------------
 const LOCKS_FILE = path.join(DATA_DIR, 'locks.json');
 let lockData = readJSON(LOCKS_FILE, { allLocked: false, lockedUsers: [] });
@@ -374,9 +401,9 @@ app.get('/api/attendance/export', (req, res) => {
   const result = date ? attendance.filter(a => a.date === date) : attendance;
   res.json(result);
 });
-
 // ---------------- CHAT & ANALYTICS ----------------
 app.get('/api/chat/history', (req, res) => res.json(chatHistory));
+
 app.post('/api/chat/history', (req, res) => {
   const entry = { id: genId('ch_'), ...req.body, time: new Date().toISOString() };
   chatHistory.push(entry);
@@ -386,6 +413,7 @@ app.post('/api/chat/history', (req, res) => {
 });
 
 app.get('/api/analytics', (req, res) => res.json(analytics));
+
 app.post('/api/analytics', (req, res) => {
   const ev = { id: genId('an_'), ...req.body, time: new Date().toISOString() };
   analytics.push(ev);
@@ -395,7 +423,9 @@ app.post('/api/analytics', (req, res) => {
 });
 
 // ---------------- EXPORT / IMPORT ----------------
-app.get('/api/export', (req, res) => res.json({ users, badges, masterCommands, chatbotTriggers, notices, tests, attendance, logs, analytics, chatHistory }));
+app.get('/api/export', (req, res) => res.json({
+  users, badges, masterCommands, chatbotTriggers, notices, tests, attendance, logs, analytics, chatHistory
+}));
 
 app.post('/api/import', (req, res) => {
   const d = req.body || {};
