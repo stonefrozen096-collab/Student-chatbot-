@@ -22,21 +22,22 @@ async function loadBadgeData() {
 }
 
 // ---------- CREATE BADGE ----------
-document.getElementById('addBadgeForm').addEventListener('submit', async e => {
+document.getElementById('addBadgeForm')?.addEventListener('submit', async e => {
   e.preventDefault();
+
   const name = document.getElementById('badgeName').value.trim();
   const effects = Array.from(document.getElementById('badgeEffects').selectedOptions).map(o => o.value);
 
   if (!name) return showBadgeStatus('Enter badge name', 'error');
 
-  // Create special access popup
-  const userSelect = document.createElement('div');
-  userSelect.className = 'popup';
-  userSelect.innerHTML = `
+  // Create popup for special access selection
+  const popup = document.createElement('div');
+  popup.className = 'popup';
+  popup.innerHTML = `
     <div class="popupContent">
       <h3>Select users for special access:</h3>
       <select id="specialAccessSelect" multiple>
-        ${users.map(u => `<option value="${u.username}">${u.name} (${u.username})</option>`).join('')}
+        ${users.map(u => `<option value="${u.username}">${u.username}</option>`).join('')}
       </select>
       <div class="popupBtns">
         <button type="button" id="confirmAccessBtn">Confirm</button>
@@ -44,18 +45,17 @@ document.getElementById('addBadgeForm').addEventListener('submit', async e => {
       </div>
     </div>
   `;
-  document.body.appendChild(userSelect);
+  document.body.appendChild(popup);
 
-  const confirmBtn = userSelect.querySelector('#confirmAccessBtn');
-  const cancelBtn = userSelect.querySelector('#cancelAccessBtn');
+  const confirmBtn = popup.querySelector('#confirmAccessBtn');
+  const cancelBtn = popup.querySelector('#cancelAccessBtn');
 
   confirmBtn.addEventListener('click', async () => {
-    const selectedOptions = Array.from(userSelect.querySelector('#specialAccessSelect').selectedOptions);
-    const access = selectedOptions.map(o => o.value);
-    document.body.removeChild(userSelect);
+    const selected = Array.from(popup.querySelector('#specialAccessSelect').selectedOptions).map(o => o.value);
+    document.body.removeChild(popup);
 
     try {
-      const newBadge = await api.createBadge(name, effects, access);
+      const newBadge = await api.createBadge(name, effects, selected);
       badges.push(newBadge);
       renderBadges();
       document.getElementById('addBadgeForm').reset();
@@ -67,62 +67,75 @@ document.getElementById('addBadgeForm').addEventListener('submit', async e => {
     }
   });
 
-  cancelBtn.addEventListener('click', () => {
-    document.body.removeChild(userSelect);
-  });
+  cancelBtn.addEventListener('click', () => document.body.removeChild(popup));
 });
 
 // ---------- RENDER BADGES ----------
 function renderBadges() {
   const div = document.getElementById('badgeList');
+  if (!div) return;
+
   div.innerHTML = '';
+
   if (!badges.length) {
     div.innerHTML = '<div class="placeholder">No badges yet.</div>';
     return;
   }
 
   badges.forEach(b => {
-    const d = document.createElement('div');
-    d.className = 'badgeItem';
-    d.innerHTML = `
-      <span class="${b.effects.join(' ')}">${b.name}</span>
-      [Effects: ${b.effects.join(', ')} | Access: ${b.access.join(', ')}]
-      <button type="button" onclick="deleteBadge('${b.id}')">🗑️ Delete</button>
+    const badgeEl = document.createElement('div');
+    badgeEl.className = 'badgeItem';
+    badgeEl.innerHTML = `
+      <span class="${b.effects?.join(' ') || ''}">${b.name}</span>
+      [Effects: ${b.effects?.join(', ') || 'None'} | Access: ${b.access?.join(', ') || 'None'}]
+      <button type="button" data-id="${b.id}" class="deleteBadgeBtn">🗑️ Delete</button>
     `;
-    div.appendChild(d);
+    div.appendChild(badgeEl);
   });
 }
 
 // ---------- DELETE BADGE ----------
-window.deleteBadge = async (id) => {
+document.getElementById('badgeList')?.addEventListener('click', async e => {
+  const btn = e.target.closest('.deleteBadgeBtn');
+  if (!btn) return;
+
+  const id = btn.dataset.id;
   if (!confirm('Delete this badge?')) return;
+
   try {
     await api.removeBadge(id);
     badges = badges.filter(b => b.id !== id);
     renderBadges();
-    socket.emit('badgeUpdated');
     showBadgeStatus('✅ Badge deleted', 'success');
+    socket.emit('badgeUpdated');
   } catch (err) {
     console.error('Error deleting badge:', err);
     showBadgeStatus('Failed to delete badge!', 'error');
   }
-}
+});
 
 // ---------- ASSIGN BADGE ----------
 function updateAssignBadgeUser() {
   const sel = document.getElementById('assignBadgeUser');
+  if (!sel) return;
   sel.innerHTML = '<option value="">Select User</option>';
-  users.forEach(u => sel.insertAdjacentHTML('beforeend', `<option value="${u.username}">${u.name} (${u.username})</option>`));
+  users.forEach(u => {
+    sel.insertAdjacentHTML('beforeend', `<option value="${u.username}">${u.username}</option>`);
+  });
 }
 
 function updateAssignBadgeSelect() {
   const sel = document.getElementById('assignBadgeSelect');
+  if (!sel) return;
   sel.innerHTML = '<option value="">Select Badge</option>';
-  badges.forEach(b => sel.insertAdjacentHTML('beforeend', `<option value="${b.name}">${b.name}</option>`));
+  badges.forEach(b => {
+    sel.insertAdjacentHTML('beforeend', `<option value="${b.name}">${b.name}</option>`);
+  });
 }
 
-document.getElementById('assignBadgeBtn').addEventListener('click', async (e) => {
+document.getElementById('assignBadgeBtn')?.addEventListener('click', async e => {
   e.preventDefault();
+
   const userName = document.getElementById('assignBadgeUser').value;
   const badgeName = document.getElementById('assignBadgeSelect').value;
   if (!userName || !badgeName) return showBadgeStatus('Select user and badge', 'error');
@@ -135,8 +148,8 @@ document.getElementById('assignBadgeBtn').addEventListener('click', async (e) =>
     await api.assignBadge(user.username, badge.name);
     if (!user.badges) user.badges = [];
     if (!user.badges.includes(badgeName)) user.badges.push(badgeName);
-    user.specialAccess = [...new Set([...(user.specialAccess || []), ...badge.access])];
-    showBadgeStatus(`✅ Badge "${badgeName}" assigned to ${user.name}`, 'success');
+    user.specialAccess = [...new Set([...(user.specialAccess || []), ...(badge.access || [])])];
+    showBadgeStatus(`✅ Badge "${badgeName}" assigned to ${user.username}`, 'success');
     socket.emit('badgeUpdated');
   } catch (err) {
     console.error('Error assigning badge:', err);
@@ -145,11 +158,14 @@ document.getElementById('assignBadgeBtn').addEventListener('click', async (e) =>
 });
 
 // ---------- STATUS ANIMATION ----------
-function showBadgeStatus(msg, type='info') {
+function showBadgeStatus(msg, type = 'info') {
   const status = document.getElementById('badgeStatus');
+  if (!status) return;
+
   status.innerText = msg;
   status.className = `badgeAnimation ${type}`;
-  setTimeout(() => status.className = '', 2000);
+  clearTimeout(status._timeout);
+  status._timeout = setTimeout(() => (status.className = ''), 2000);
 }
 
 // ---------- SOCKET.IO LISTENER ----------
