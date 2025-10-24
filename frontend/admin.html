@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard</title>
 <link rel="stylesheet" href="admin.css">
 <link rel="stylesheet" href="chatbot.css">
@@ -287,166 +288,27 @@ h2 { margin-top: 0; }
   </div>
 
   <!-- Master Command Section -->
-  <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Master Command System</title>
-<style>
-  body { font-family: 'Poppins', sans-serif; margin:0; background:#fff; color:#000; }
-  h1 { text-align:center; margin-top:20px; color:#000; }
-  .container { display:flex; flex-wrap:wrap; padding:20px; gap:20px; justify-content:center; }
-
-  #adminControls { text-align:center; margin-bottom:20px; display:none; }
-  #adminControls button { margin:0 5px; padding:10px 15px; border-radius:8px; border:none; cursor:pointer; background:#4caf50; color:#fff; }
-
-  #commandInputContainer { display:flex; justify-content:center; margin-bottom:20px; }
-  #masterCommandInput { width:60%; padding:10px; border-radius:8px; border:1px solid #ccc; font-size:16px; color:#000; background:#fff; }
-
-  #masterList { background: #f5f5f5; color: #000; padding:20px; border-radius:12px; width:300px; max-height:70vh; overflow-y:auto; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
-  .commandItem { display:flex; justify-content:space-between; align-items:center; padding:8px 5px; border-bottom:1px solid rgba(0,0,0,0.1); }
-  .commandItem button { margin-left:5px; padding:4px 8px; border-radius:5px; border:none; cursor:pointer; background:#2196f3; color:#fff; }
-
-  #globalLockOverlay {
-    position: fixed;
-    top:0; left:0; width:100%; height:100%;
-    background: rgba(0,0,0,0.85);
-    display: none;
-    justify-content:center;
-    align-items:center;
-    flex-direction: column;
-    z-index:9999;
-  }
-  .lockContainer { text-align:center; padding:40px; border-radius:20px; background:#fff; color:#000; box-shadow:0 0 30px rgba(0,0,0,0.3); animation:pulse 2s infinite; }
-  .lockIcon { font-size:80px; margin-bottom:20px; color:#000; animation:rotateLock 2s linear infinite; }
-  .lockMessage { font-size:32px; font-weight:600; margin-bottom:10px; color:#000; }
-  .countdownTimer { font-size:24px; opacity:0.8; color:#000; }
-
-  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
-  @keyframes rotateLock { 0% { transform: rotate(0deg); } 50% { transform: rotate(15deg); } 100% { transform: rotate(0deg); } }
-</style>
-</head>
-<body>
-
-<h1>Master Command System</h1>
-
-<div id="adminControls">
-  <button id="createCommandBtn">➕ Create Command</button>
-  <button id="lockUsersBtn">🔒 Lock Users</button>
-</div>
-
-<div id="commandInputContainer">
-  <input type="text" id="masterCommandInput" placeholder="Type command name and press Enter">
-</div>
-
-<div class="container">
-  <div id="masterList"></div>
-</div>
-
-<div id="globalLockOverlay">
-  <div class="lockContainer">
-    <div class="lockIcon">🔒</div>
-    <div class="lockMessage" id="lockMessage">All Users Locked</div>
-    <div class="countdownTimer" id="countdownTimer">Unlock in 30 sec</div>
+  <div id="masterCommandSection" class="admin-section">
+    <h2>⚡ Master Command System</h2>
+    <div id="adminControls" style="display:none;">
+      <button id="createCommandBtn">➕ Create Command</button>
+      <button id="lockUsersBtn" onclick="lockAllUsers(30)">🔒 Lock Users</button>
+    </div>
+    <div id="commandInputContainer">
+      <input type="text" id="masterCommandInput" placeholder="Type command name and press Enter">
+    </div>
+    <div class="container">
+      <div id="masterList"></div>
+    </div>
+    <div id="globalLockOverlay">
+      <div class="lockContainer">
+        <div class="lockIcon">🔒</div>
+        <div class="lockMessage" id="lockMessage">All Users Locked</div>
+        <div class="countdownTimer" id="countdownTimer">Unlock in 30 sec</div>
+      </div>
+    </div>
   </div>
-</div>
 
-<script type="module">
-import {
-  getMasterCommands,
-  addMasterCommand,
-  executeMasterCommand
-} from './api.js'; // Make sure api.js uses deployed backend
-
-const currentUser = { role:'admin', badges:['master'], specialAccess:['all'] };
-if(currentUser.role==='admin') document.getElementById('adminControls').style.display='block';
-
-let masterCommandsData = [];
-
-// Fetch and render commands
-async function loadCommands() {
-  masterCommandsData = await getMasterCommands();
-  renderCommands();
-}
-
-function renderCommands(){
-  const list = document.getElementById('masterList');
-  list.innerHTML='';
-  masterCommandsData.forEach((cmd, idx)=>{
-    const div=document.createElement('div');
-    div.className='commandItem';
-    div.innerHTML=`<span>${cmd.name}</span>
-      <div>
-        <button onclick="executeCommand('${cmd.id}')">Execute</button>
-      </div>`;
-    list.appendChild(div);
-  });
-}
-
-window.executeCommand = async function(id){
-  const cmd = masterCommandsData.find(c=>c.id===id);
-  if(!cmd) return alert('Command not found');
-  try{
-    await executeMasterCommand(id, currentUser.role);
-    eval(cmd.action);
-    alert(`✅ Executed: ${cmd.name}`);
-  }catch(e){
-    console.error(e);
-    alert('❌ Error executing command');
-  }
-};
-
-// Create new command
-document.getElementById('createCommandBtn').addEventListener('click', async ()=>{
-  const name = prompt('Command Name'); if(!name) return;
-  const action = prompt('JS Action'); if(!action) return;
-  const permission = prompt('Permission badge/special access') || 'all';
-  const newCmd = await addMasterCommand(name, action, permission);
-  masterCommandsData.push(newCmd);
-  renderCommands();
-});
-
-// Input box execution by name
-document.getElementById('masterCommandInput').addEventListener('keypress', e=>{
-  if(e.key==='Enter'){
-    const cmdName = e.target.value.trim();
-    const cmd = masterCommandsData.find(c=>c.name===cmdName);
-    if(cmd) executeCommand(cmd.id);
-    else alert('Command not found');
-    e.target.value='';
-  }
-});
-
-// Global Lock command
-window.lockAllUsers = function(sec=30){
-  const overlay=document.getElementById('globalLockOverlay');
-  overlay.style.display='flex';
-  document.getElementById('lockMessage').innerText = `🔒 All Users Locked for ${sec} sec`;
-  let endTime=Date.now()+sec*1000;
-  const timer = setInterval(()=>{
-    const remaining = Math.ceil((endTime-Date.now())/1000);
-    document.getElementById('countdownTimer').innerText = remaining>0?`Unlock in ${remaining} sec`:'';
-    if(remaining<=0){ clearInterval(timer); overlay.style.display='none'; }
-  },1000);
-};
-
-window.showGlobalMessage = function(msg){
-  const overlay=document.getElementById('globalLockOverlay');
-  overlay.style.display='flex';
-  document.getElementById('lockMessage').innerText=msg;
-  document.getElementById('countdownTimer').innerText='';
-  setTimeout(()=>{ overlay.style.display='none'; },3000);
-};
-
-// Initialize
-loadCommands();
-</script>
-</body>
-</html>
-  
-    
- 
   <!-- Notice Section -->
   <div id="noticeSection" class="admin-section">
     <h2>📢 Notice Management</h2>
@@ -523,7 +385,6 @@ loadCommands();
 <script type="module" src="notice.js"></script>
 <script type="module" src="profile.js"></script>
 
-<!-- Sidebar Navigation Script -->
 <script>
 const menuBtns = document.querySelectorAll('.menuBtn');
 const sections = document.querySelectorAll('.admin-section');
