@@ -1,171 +1,96 @@
-// ---------- Notice Management (API + Socket.IO Version) ----------
 import { io } from "/socket.io/socket.io.js";
+let notices=[]; let users=[];
+const socket=io();
 
-let notices = [];  // All notices fetched from server
-let users = [];    // All users fetched for student selection
-const socket = io(); // Initialize Socket.IO client
-
-// ---------- Fetch Data from API ----------
-async function loadNoticeData() {
-  try {
-    users = await fetchUsers();       // API: returns all users
-    notices = await fetchNotices();   // API: returns all notices
+async function loadNoticeData(){
+  try{
+    users = await fetchUsers();
+    notices = await fetchNotices();
     renderNoticeTable();
-  } catch (err) {
-    console.error('Failed to load notices/users from API', err);
-  }
+  } catch(err){console.error(err);}
 }
 
-// ---------- Elements ----------
 const form = document.getElementById('addNoticeForm');
 const publishSelect = document.getElementById('noticePublishSelect');
 const studentContainer = document.getElementById('noticeStudentContainer');
 const studentSelect = document.getElementById('noticeStudentSelect');
 const tableBody = document.querySelector('#noticeTable tbody');
 
-// ---------- Show/hide student select ----------
-publishSelect.addEventListener('change', () => {
-  if (publishSelect.value === 'specific') {
-    studentContainer.style.display = 'block';
-    renderStudentOptions();
-  } else {
-    studentContainer.style.display = 'none';
-  }
+publishSelect.addEventListener('change',()=>{
+  if(publishSelect.value==='specific'){studentContainer.style.display='block'; renderStudentOptions();}
+  else studentContainer.style.display='none';
 });
 
-function renderStudentOptions() {
-  studentSelect.innerHTML = '';
-  users.filter(u => u.role === 'student').forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.username;
-    opt.textContent = `${s.username} (${s.email})`;
+function renderStudentOptions(){
+  studentSelect.innerHTML='';
+  users.filter(u=>u.role==='student').forEach(s=>{
+    const opt=document.createElement('option');
+    opt.value=s.username;
+    opt.textContent=`${s.username} (${s.email})`;
     studentSelect.appendChild(opt);
   });
 }
 
-// ---------- Add Notice ----------
-form.addEventListener('submit', async e => {
+form.addEventListener('submit', async e=>{
   e.preventDefault();
-  const title = document.getElementById('noticeTitle').value.trim();
-  const message = document.getElementById('noticeMessage').value.trim();
-  const publishTo = publishSelect.value;
-
-  if (!title || !message) return alert('All fields are required.');
-
-  let assignedStudents = [];
-  if (publishTo === 'all') {
-    assignedStudents = users.filter(u => u.role === 'student').map(s => s.username);
-  } else {
-    assignedStudents = Array.from(studentSelect.selectedOptions).map(o => o.value);
-  }
-
-  const notice = { title, message, assignedStudents };
-
-  try {
-    const savedNotice = await addNotice(notice); // API call
-    notices.push(savedNotice);
-    form.reset();
-    studentContainer.style.display = 'none';
-    renderNoticeTable();
-    showFloatingNotification('Notice published successfully!');
-
-    // Emit socket event for real-time update
-    socket.emit('newNotice', savedNotice);
-  } catch (err) {
-    console.error('Failed to save notice', err);
-    alert('Failed to publish notice!');
-  }
+  const title=document.getElementById('noticeTitle').value.trim();
+  const message=document.getElementById('noticeMessage').value.trim();
+  const publishTo=publishSelect.value;
+  if(!title||!message) return alert('All fields are required.');
+  let assignedStudents=[];
+  if(publishTo==='all') assignedStudents=users.filter(u=>u.role==='student').map(s=>s.username);
+  else assignedStudents=Array.from(studentSelect.selectedOptions).map(o=>o.value);
+  const notice={title,message,assignedStudents};
+  try{
+    const savedNotice=await addNotice(notice);
+    notices.push(savedNotice); form.reset(); studentContainer.style.display='none';
+    renderNoticeTable(); showFloatingNotification('Notice published successfully!');
+    socket.emit('newNotice',savedNotice);
+  }catch(err){console.error(err); alert('Failed to publish notice!');}
 });
 
-// ---------- Render Notice Table ----------
-function renderNoticeTable() {
-  tableBody.innerHTML = '';
-  notices.forEach((n) => {
-    const publishedToText = n.assignedStudents.length === users.filter(u => u.role === 'student').length
-                            ? 'All Students'
-                            : n.assignedStudents.join(', ');
-
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${n.title}</td>
-      <td>${n.message}</td>
-      <td>${publishedToText}</td>
-      <td>
-        <button onclick="editNoticeAPI('${n.id}')">✏️ Edit</button>
-        <button onclick="deleteNoticeAPI('${n.id}')">🗑️ Delete</button>
-      </td>
-    `;
+function renderNoticeTable(){
+  tableBody.innerHTML='';
+  notices.forEach(n=>{
+    const publishedToText=n.assignedStudents.length===users.filter(u=>u.role==='student').length?'All Students':n.assignedStudents.join(',');
+    const row=document.createElement('tr');
+    row.innerHTML=`<td>${n.title}</td><td>${n.message}</td><td>${publishedToText}</td>
+    <td><button onclick="editNoticeAPI('${n.id}')">✏️ Edit</button>
+        <button onclick="deleteNoticeAPI('${n.id}')">🗑️ Delete</button></td>`;
     tableBody.appendChild(row);
   });
 }
 
-// ---------- Edit Notice ----------
-async function editNoticeAPI(id) {
-  const n = notices.find(n => n.id === id);
-  if (!n) return;
-  const newTitle = prompt('Edit Title:', n.title);
-  const newMessage = prompt('Edit Message:', n.message);
-  if (newTitle && newMessage) {
-    try {
-      const updated = await editNotice(id, { title: newTitle, message: newMessage }); // API
-      const idx = notices.findIndex(n => n.id === id);
-      notices[idx] = updated;
-      renderNoticeTable();
-      showFloatingNotification('Notice updated successfully!');
-
-      // Emit socket event
-      socket.emit('updateNotice', updated);
-    } catch (err) {
-      console.error('Failed to update notice', err);
-      alert('Failed to update notice!');
-    }
+async function editNoticeAPI(id){
+  const n=notices.find(n=>n.id===id); if(!n) return;
+  const newTitle=prompt('Edit Title:',n.title); const newMessage=prompt('Edit Message:',n.message);
+  if(newTitle && newMessage){
+    try{
+      const updated=await editNotice(id,{title:newTitle,message:newMessage});
+      const idx=notices.findIndex(n=>n.id===id); notices[idx]=updated;
+      renderNoticeTable(); showFloatingNotification('Notice updated successfully!');
+      socket.emit('updateNotice',updated);
+    }catch(err){console.error(err); alert('Failed to update notice!');}
   }
 }
 
-// ---------- Delete Notice ----------
-async function deleteNoticeAPI(id) {
-  if (!confirm('Delete this notice?')) return;
-  try {
-    await deleteNotice(id); // API call
-    notices = notices.filter(n => n.id !== id);
-    renderNoticeTable();
-    showFloatingNotification('Notice deleted!');
-
-    // Emit socket event
-    socket.emit('deleteNotice', id);
-  } catch (err) {
-    console.error('Failed to delete notice', err);
-    alert('Failed to delete notice!');
-  }
+async function deleteNoticeAPI(id){
+  if(!confirm('Delete this notice?')) return;
+  try{
+    await deleteNotice(id);
+    notices=notices.filter(n=>n.id!==id); renderNoticeTable(); showFloatingNotification('Notice deleted!');
+    socket.emit('deleteNotice',id);
+  }catch(err){console.error(err); alert('Failed to delete notice!');}
 }
 
-// ---------- Floating Notification ----------
-function showFloatingNotification(msg) {
-  const notif = document.createElement('div');
-  notif.className = 'floatingNotification';
-  notif.innerText = msg;
+function showFloatingNotification(msg){
+  const notif=document.createElement('div'); notif.className='floatingNotification'; notif.innerText=msg;
   document.getElementById('floatingContainer').appendChild(notif);
-  setTimeout(() => notif.remove(), 3000);
+  setTimeout(()=>notif.remove(),3000);
 }
 
-// ---------- Socket.IO Real-Time Updates ----------
-socket.on('noticeAdded', notice => {
-  notices.push(notice);
-  renderNoticeTable();
-});
+socket.on('noticeAdded',notice=>{notices.push(notice); renderNoticeTable();});
+socket.on('noticeUpdated',notice=>{const idx=notices.findIndex(n=>n.id===notice.id); if(idx!==-1){notices[idx]=notice; renderNoticeTable();}});
+socket.on('noticeDeleted',id=>{notices=notices.filter(n=>n.id!==id); renderNoticeTable();});
 
-socket.on('noticeUpdated', notice => {
-  const idx = notices.findIndex(n => n.id === notice.id);
-  if (idx !== -1) {
-    notices[idx] = notice;
-    renderNoticeTable();
-  }
-});
-
-socket.on('noticeDeleted', id => {
-  notices = notices.filter(n => n.id !== id);
-  renderNoticeTable();
-});
-
-// ---------- Initialize ----------
-document.addEventListener('DOMContentLoaded', loadNoticeData);
+document.addEventListener('DOMContentLoaded',loadNoticeData);
