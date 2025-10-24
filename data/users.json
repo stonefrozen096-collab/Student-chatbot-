@@ -10,15 +10,15 @@
     "locked": false,
     "createdAt": "2025-10-10T08:00:00.000Z",
     "lastLogin": null
+  },
+  "no-reply@feathers-app.com": {
+    "username": "no-reply-bot",
+    "email": "no-reply@feathers-app.com",
+    "role": "system",
+    "password": "",
+    "locked": false,
+    "badges": [],
+    "specialAccess": [],
+    "bot": true
   }
-}
-{
-  "username": "no-reply-bot",
-  "email": "no-reply@feathers-app.com",
-  "role": "system",
-  "password": "",
-  "locked": false,
-  "badges": [],
-  "specialAccess": [],
-  "bot": true
 }
