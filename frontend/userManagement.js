@@ -1,11 +1,11 @@
 // ----------------------
-// userManagement.js — Fully Real-Time, No Local Storage
+// user-management.js — Fully Updated & Compatible with api.js
 // ----------------------
+import { getUsers, addUser, editUser, deleteUser, toggleUserLock } from './api.js';
 
 let users = [];
 const rolesWithPassword = ['faculty', 'moderator', 'tester'];
-
-const socket = io(); // Assumes Socket.IO is served from server
+const socket = io(); // Socket.IO
 
 // ----------------------
 // Socket.IO Events
@@ -29,24 +29,14 @@ socket.on('user-deleted', email => {
 });
 
 // ----------------------
-// Fetch Users
+// Fetch & Render Users
 // ----------------------
-async function fetchUsers() {
-  try {
-    const res = await fetch('/api/users');
-    if (!res.ok) throw new Error('Failed to fetch users');
-    users = await res.json();
-    renderUsers();
-  } catch (err) {
-    console.error(err);
-    document.querySelector('#userTable tbody').innerHTML =
-      '<tr><td colspan="6">Error loading users.</td></tr>';
-  }
+async function fetchAndRenderUsers() {
+  const data = await getUsers();
+  if (!data.error) users = data;
+  renderUsers();
 }
 
-// ----------------------
-// Render Users
-// ----------------------
 function renderUsers(list = users) {
   const tbody = document.querySelector('#userTable tbody');
   tbody.innerHTML = '';
@@ -65,9 +55,9 @@ function renderUsers(list = users) {
       <td>${rolesWithPassword.includes(user.role) ? '●●●●●' : '-'}</td>
       <td>${user.locked ? '🔒 Locked' : '✅ Active'}</td>
       <td>
-        <button onclick="editUser(${index})">✏️ Edit</button>
-        <button onclick="deleteUser(${index})">🗑️ Delete</button>
-        <button onclick="toggleLock(${index})">${user.locked ? '🔓 Unlock' : '🔒 Lock'}</button>
+        <button onclick="editUserHandler(${index})">✏️ Edit</button>
+        <button onclick="deleteUserHandler(${index})">🗑️ Delete</button>
+        <button onclick="toggleLockHandler(${index})">${user.locked ? '🔓 Unlock' : '🔒 Lock'}</button>
       </td>
     `;
     tbody.appendChild(row);
@@ -79,6 +69,7 @@ function renderUsers(list = users) {
 // ----------------------
 document.getElementById('addUserForm').addEventListener('submit', async e => {
   e.preventDefault();
+
   const username = document.getElementById('username').value.trim();
   const email = document.getElementById('email').value.trim();
   const role = document.getElementById('role').value;
@@ -91,21 +82,15 @@ document.getElementById('addUserForm').addEventListener('submit', async e => {
   }
 
   const newUser = { username, email, role, password: password || '', locked: false };
+  const result = await addUser(newUser);
 
-  try {
-    const res = await fetch('/api/users/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newUser)
-    });
-    if (!res.ok) throw new Error('Failed to add user');
-
-    const savedUser = await res.json();
-    socket.emit('add-user', savedUser); // Broadcast to all clients
-    e.target.reset();
+  if (!result.error) {
+    users.push(result);
+    renderUsers();
+    socket.emit('user-added', result);
     showNotification('User added successfully!', 'success');
-  } catch (err) {
-    console.error(err);
+    e.target.reset();
+  } else {
     showNotification('Error adding user', 'error');
   }
 });
@@ -113,7 +98,7 @@ document.getElementById('addUserForm').addEventListener('submit', async e => {
 // ----------------------
 // Edit User
 // ----------------------
-function editUser(index) {
+window.editUserHandler = async function (index) {
   const user = users[index];
   const newEmail = prompt(`Edit email for ${user.username}:`, user.email);
   let newPassword = '';
@@ -121,61 +106,69 @@ function editUser(index) {
     newPassword = prompt(`Edit password for ${user.username}:`, user.password || '');
   }
 
-  if (newEmail) user.email = newEmail;
-  if (rolesWithPassword.includes(user.role) && newPassword) user.password = newPassword;
+  if (!newEmail) return;
 
-  fetch('/api/users/update', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(user)
-  })
-    .then(res => res.ok ? socket.emit('update-user', user) : showNotification('Update failed', 'error'))
-    .then(() => showNotification(`User ${user.username} updated`, 'success'))
-    .catch(() => showNotification('Error updating user', 'error'));
-}
+  const updates = { ...user, email: newEmail };
+  if (rolesWithPassword.includes(user.role) && newPassword) updates.password = newPassword;
+
+  const result = await editUser(user.email, updates);
+  if (!result.error) {
+    users[index] = result;
+    renderUsers();
+    socket.emit('user-updated', result);
+    showNotification(`User ${user.username} updated`, 'success');
+  } else {
+    showNotification('Error updating user', 'error');
+  }
+};
 
 // ----------------------
 // Delete User
 // ----------------------
-function deleteUser(index) {
+window.deleteUserHandler = async function (index) {
   const user = users[index];
   if (!confirm(`Delete user ${user.username}?`)) return;
 
-  fetch('/api/users/delete', {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: user.email })
-  })
-    .then(res => {
-      if (!res.ok) throw new Error('Delete failed');
-      socket.emit('delete-user', user.email); // Broadcast deletion
-      showNotification(`User ${user.username} deleted`, 'success');
-    })
-    .catch(() => showNotification('Error deleting user', 'error'));
-}
+  const result = await deleteUser(user.email);
+  if (!result.error) {
+    users.splice(index, 1);
+    renderUsers();
+    socket.emit('user-deleted', user.email);
+    showNotification(`User ${user.username} deleted`, 'success');
+  } else {
+    showNotification('Error deleting user', 'error');
+  }
+};
 
 // ----------------------
-// Lock/Unlock
+// Lock / Unlock User
 // ----------------------
-function toggleLock(index) {
+window.toggleLockHandler = async function (index) {
   const user = users[index];
-  user.locked = !user.locked;
+  const result = await toggleUserLock(user.email, !user.locked);
 
-  fetch('/api/users/lock-toggle', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: user.email, locked: user.locked })
-  })
-    .then(res => {
-      if (!res.ok) throw new Error('Toggle lock failed');
-      socket.emit('update-user', user);
-      showNotification(`User ${user.username} ${user.locked ? 'locked' : 'unlocked'}`, 'info');
-    })
-    .catch(() => showNotification('Error changing lock status', 'error'));
-}
+  if (!result.error) {
+    user.locked = !user.locked;
+    renderUsers();
+    showNotification(`User ${user.username} ${user.locked ? 'locked' : 'unlocked'}`, 'info');
+  }
+};
 
 // ----------------------
-// Notifications
+// Search / Filter
+// ----------------------
+document.getElementById('profileSearch').addEventListener('input', e => {
+  const query = e.target.value.toLowerCase();
+  const filtered = users.filter(u =>
+    (u.username || '').toLowerCase().includes(query) ||
+    (u.email || '').toLowerCase().includes(query) ||
+    (u.role || '').toLowerCase().includes(query)
+  );
+  renderUsers(filtered);
+});
+
+// ----------------------
+// Notification Helper
 // ----------------------
 function showNotification(message, type = 'info') {
   const banner = document.createElement('div');
@@ -197,19 +190,6 @@ function showNotification(message, type = 'info') {
 }
 
 // ----------------------
-// Search Filter
-// ----------------------
-document.getElementById('profileSearch').addEventListener('input', e => {
-  const query = e.target.value.toLowerCase();
-  const filtered = users.filter(u =>
-    (u.username || '').toLowerCase().includes(query) ||
-    (u.email || '').toLowerCase().includes(query) ||
-    (u.role || '').toLowerCase().includes(query)
-  );
-  renderUsers(filtered);
-});
-
-// ----------------------
 // Initialize
 // ----------------------
-document.addEventListener('DOMContentLoaded', fetchUsers);
+document.addEventListener('DOMContentLoaded', fetchAndRenderUsers);
