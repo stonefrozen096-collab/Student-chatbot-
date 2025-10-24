@@ -1,22 +1,21 @@
-// ---------- Attendance Management (API + Socket.IO) ----------
+// ---------- Attendance Management (API + Socket.IO Version) ----------
 import * as api from './api.js';
-
 const socket = io();
 
 let students = [];
 let attendanceRecords = [];
 let isSaving = false;
 
-// ---------- Load Data from API ----------
+// ---------- Load Attendance ----------
 async function loadAttendanceData() {
   showLoading(true);
   try {
-    students = await api.getUsers(); // All users
-    attendanceRecords = await api.getAttendance(); // [{ username, date, status }]
+    students = await api.getUsers();
+    attendanceRecords = await api.getAttendance();
     renderAttendance();
   } catch (err) {
-    console.error('Error loading attendance data:', err);
-    alert('⚠️ Failed to load attendance data. Please check server connection.');
+    console.error('⚠️ Error loading attendance:', err);
+    showAttendanceMsg('❌ Failed to load data from server', 'error');
   } finally {
     showLoading(false);
   }
@@ -25,9 +24,10 @@ async function loadAttendanceData() {
 // ---------- Render Attendance Table ----------
 function renderAttendance() {
   const tbody = document.querySelector('#attendanceTable tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
-  const date = document.getElementById('attendanceDate').value || new Date().toISOString().split('T')[0];
 
+  const date = document.getElementById('attendanceDate').value || new Date().toISOString().split('T')[0];
   const studentList = students.filter(s => s.role === 'student');
 
   if (!studentList.length) {
@@ -36,7 +36,7 @@ function renderAttendance() {
   }
 
   studentList.forEach(student => {
-    const record = attendanceRecords.find(a => a.username === student.username && a.date === date) || {};
+    const record = attendanceRecords.find(r => r.username === student.username && r.date === date) || {};
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${student.name || student.username}</td>
@@ -44,13 +44,13 @@ function renderAttendance() {
       <td><input type="radio" name="att-${student.username}" value="absent" ${record.status === 'absent' ? 'checked' : ''}></td>
       <td><input type="radio" name="att-${student.username}" value="late" ${record.status === 'late' ? 'checked' : ''}></td>
       <td><input type="radio" name="att-${student.username}" value="onduty" ${record.status === 'onduty' ? 'checked' : ''}></td>
-      <td>${record.status ? record.status.toUpperCase() : '-'}</td>
+      <td class="statusCell">${record.status ? record.status.toUpperCase() : '-'}</td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-// ---------- Save Attendance to API ----------
+// ---------- Save Attendance ----------
 async function saveAttendance() {
   if (isSaving) return;
   isSaving = true;
@@ -60,83 +60,84 @@ async function saveAttendance() {
 
   const updatedRecords = students
     .filter(s => s.role === 'student')
-    .map(student => {
-      const radios = document.getElementsByName(`att-${student.username}`);
-      const selected = Array.from(radios).find(r => r.checked)?.value || null;
-      return { username: student.username, date, status: selected };
+    .map(s => {
+      const selected = document.querySelector(`input[name="att-${s.username}"]:checked`);
+      return { username: s.username, date, status: selected ? selected.value : null };
     });
 
   try {
     await api.saveAttendance(updatedRecords);
-    attendanceRecords = updatedRecords;
-    showAttendanceMsg('✅ Attendance saved successfully!');
+    attendanceRecords = attendanceRecords.filter(r => r.date !== date).concat(updatedRecords);
+
+    renderAttendance();
+    showAttendanceMsg('✅ Attendance saved successfully!', 'success');
     socket.emit('attendanceUpdated', { date, records: updatedRecords });
   } catch (err) {
     console.error('Error saving attendance:', err);
-    alert('❌ Failed to save attendance!');
+    showAttendanceMsg('❌ Failed to save attendance!', 'error');
   } finally {
     isSaving = false;
     showSaving(false);
   }
 }
 
-// ---------- Listen for Real-time Updates ----------
-socket.on('attendanceUpdated', data => {
-  if (data?.records) {
-    const currentDate = document.getElementById('attendanceDate').value || new Date().toISOString().split('T')[0];
-    if (data.date === currentDate) {
-      attendanceRecords = data.records;
-      renderAttendance();
-      showAttendanceMsg('🔁 Attendance updated (real-time)');
-    }
+// ---------- Socket.IO Sync ----------
+socket.on('attendanceUpdated', ({ date, records }) => {
+  const currentDate = document.getElementById('attendanceDate').value || new Date().toISOString().split('T')[0];
+  if (date === currentDate) {
+    attendanceRecords = attendanceRecords.filter(r => r.date !== date).concat(records);
+    renderAttendance();
+    showAttendanceMsg('🔄 Attendance updated (real-time)', 'info');
   }
 });
 
-// ---------- Quick Mark Buttons ----------
-function markAllPresent() {
+// ---------- Quick Buttons ----------
+window.markAllPresent = () => {
   document.querySelectorAll('input[type=radio][value=present]').forEach(r => (r.checked = true));
-}
-function markAllAbsent() {
+};
+window.markAllAbsent = () => {
   document.querySelectorAll('input[type=radio][value=absent]').forEach(r => (r.checked = true));
-}
+};
 
-// ---------- Visual Indicators ----------
+// ---------- UI Feedback ----------
 function showLoading(show) {
-  let loader = document.getElementById('loadingIndicator');
-  if (!loader) {
-    loader = document.createElement('div');
-    loader.id = 'loadingIndicator';
-    loader.className = 'overlayLoader';
-    loader.innerHTML = '<div class="spinner"></div><span>Loading attendance...</span>';
-    document.body.appendChild(loader);
+  let el = document.getElementById('loadingIndicator');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'loadingIndicator';
+    el.className = 'overlayLoader';
+    el.innerHTML = '<div class="spinner"></div><span>Loading attendance...</span>';
+    document.body.appendChild(el);
   }
-  loader.style.display = show ? 'flex' : 'none';
+  el.style.display = show ? 'flex' : 'none';
 }
 
 function showSaving(show) {
-  let saving = document.getElementById('savingIndicator');
-  if (!saving) {
-    saving = document.createElement('div');
-    saving.id = 'savingIndicator';
-    saving.className = 'savingOverlay';
-    saving.innerHTML = '<div class="spinner"></div><span>Saving attendance...</span>';
-    document.body.appendChild(saving);
+  let el = document.getElementById('savingIndicator');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'savingIndicator';
+    el.className = 'savingOverlay';
+    el.innerHTML = '<div class="spinner"></div><span>Saving attendance...</span>';
+    document.body.appendChild(el);
   }
-  saving.style.display = show ? 'flex' : 'none';
+  el.style.display = show ? 'flex' : 'none';
 }
 
-function showAttendanceMsg(msg) {
+function showAttendanceMsg(msg, type = 'info') {
   const msgDiv = document.createElement('div');
-  msgDiv.className = 'successMsg';
+  msgDiv.className = `attendanceMsg ${type}`;
   msgDiv.innerText = msg;
   document.body.appendChild(msgDiv);
-  setTimeout(() => msgDiv.remove(), 2000);
+  msgDiv.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
+
+  setTimeout(() => {
+    msgDiv.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400 }).onfinish = () => msgDiv.remove();
+  }, 2000);
 }
 
-// ---------- Expose functions ----------
+// ---------- Expose ----------
 window.saveAttendance = saveAttendance;
-window.markAllPresent = markAllPresent;
-window.markAllAbsent = markAllAbsent;
 
 // ---------- Initialize ----------
 document.addEventListener('DOMContentLoaded', loadAttendanceData);
