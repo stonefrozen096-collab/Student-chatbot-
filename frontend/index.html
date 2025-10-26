@@ -3,309 +3,180 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Assistant Login</title>
+  <title>Student Assistant — Login</title>
   <link rel="stylesheet" href="css/common.css">
   <link rel="stylesheet" href="css/animation.css">
-  <style>
-    /* === Moving background canvas === */
-    #bg-canvas {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 0;
-      pointer-events: none;
-      background: linear-gradient(120deg, #0f172a 0%, #0b1320 50%, #061026 100%);
-      opacity: 0.55;
-    }
-
-    .login-container {
-      position: relative;
-      z-index: 2;
-      max-width: 400px;
-      margin: 12vh auto;
-      padding: 30px;
-      background: rgba(255, 255, 255, 0.07);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      color: #fff;
-      text-align: center;
-    }
-
-    h1#animated-header {
-      font-size: 2rem;
-      margin-bottom: 10px;
-      letter-spacing: 2px;
-    }
-
-    .role-tabs {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .role-btn {
-      background: rgba(255,255,255,0.1);
-      border: none;
-      padding: 10px 15px;
-      border-radius: 8px;
-      color: #fff;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    .role-btn:hover {
-      background: rgba(255,255,255,0.2);
-      transform: translateY(-2px);
-    }
-
-    .role-btn.active {
-      background: #4f46e5;
-    }
-
-    input {
-      width: 100%;
-      margin-bottom: 15px;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      outline: none;
-      background: rgba(0,0,0,0.25);
-      color: #e0e0e0;
-      font-size: 14px;
-    }
-
-    input::placeholder {
-      color: #ccc;
-    }
-
-    .primary-btn {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      background: linear-gradient(90deg, #4f46e5, #3b82f6);
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    .primary-btn:hover {
-      transform: scale(1.03);
-    }
-
-    .forgot-password a {
-      color: #a5b4fc;
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-
-    #loginMsg {
-      margin-top: 15px;
-      font-weight: bold;
-      min-height: 24px;
-    }
-
-    @keyframes fadeInUp {
-      from { transform: translateY(40px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    @media (max-width: 480px) {
-      #bg-canvas { display: none; }
-      .login-container { margin: 8vh 20px; padding: 20px; }
-    }
-  </style>
 </head>
 <body>
-  <!-- Animated background -->
-  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+  <div class="container">
+    <h1>Student Assistant</h1>
 
-  <!-- Login Container -->
-  <div class="login-container">
-    <!-- Animated Feathers Header -->
-    <h1 id="animated-header">Feathers</h1>
-    <p>Please enter your email and password to login:</p>
+    <!-- Login / Signup -->
+    <section id="auth-section">
+      <input type="text" id="authName" placeholder="Full Name (for signup)">
+      <input type="email" id="authEmail" placeholder="Email">
+      <input type="password" id="authPassword" placeholder="Password">
+      <button id="loginBtn">Login</button>
+      <button id="signupBtn">Sign Up</button>
+      <p><a href="#" id="forgotLink">Forgot Password?</a></p>
+      <p id="authMsg" class="feedback-msg"></p>
+    </section>
 
-    <!-- Role Tabs -->
-    <div class="role-tabs">
-      <button class="role-btn active" data-role="admin">Admin</button>
-      <button class="role-btn" data-role="moderator">Moderator</button>
-      <button class="role-btn" data-role="tester">Tester</button>
-      <button class="role-btn" data-role="faculty">Faculty</button>
-      <button class="role-btn" data-role="student">Student</button>
-    </div>
+    <!-- Forgot Password -->
+    <section id="forgot-section" style="display:none">
+      <h2>Forgot Password</h2>
+      <input type="email" id="fpEmail" placeholder="Registered Email">
+      <button id="sendTokenBtn">Send Reset Token</button>
+      <p id="fpMsg"></p>
+      <p><a href="#" id="backToAuth">Back</a></p>
+    </section>
 
-    <!-- Login Form -->
-    <form id="loginForm">
-      <input type="email" id="email" placeholder="Email" required>
-      <input type="password" id="password" placeholder="Password">
-      <button type="submit" class="primary-btn">Login</button>
-      <p class="forgot-password"><a href="forgot-password.html">Forgot Password?</a></p>
-      <p id="loginMsg" class="feedback-msg"></p>
-    </form>
+    <!-- Reset Password -->
+    <section id="reset-section" style="display:none">
+      <h2>Reset Password</h2>
+      <input type="text" id="resetToken" placeholder="Enter token">
+      <input type="password" id="newPassword" placeholder="New Password">
+      <input type="password" id="confirmPassword" placeholder="Confirm Password">
+      <button id="resetBtn">Reset Password</button>
+      <p id="resetMsg"></p>
+    </section>
   </div>
 
   <script>
-    // --- Animated header ---
-    const header = document.getElementById("animated-header");
-    let chars = header.innerText.split("");
-    header.innerHTML = "";
-    chars.forEach((c, i) => {
-      const span = document.createElement("span");
-      span.innerText = c;
-      span.style.animation = `fadeInUp 0.6s ease forwards`;
-      span.style.animationDelay = `${i * 0.08}s`;
-      header.appendChild(span);
+    const authSection = document.getElementById('auth-section');
+    const forgotSection = document.getElementById('forgot-section');
+    const resetSection = document.getElementById('reset-section');
+
+    const authMsg = document.getElementById('authMsg');
+    const fpMsg = document.getElementById('fpMsg');
+    const resetMsg = document.getElementById('resetMsg');
+
+    // Toggle sections
+    document.getElementById('forgotLink').addEventListener('click', () => {
+      authSection.style.display = 'none';
+      forgotSection.style.display = 'block';
+    });
+    document.getElementById('backToAuth').addEventListener('click', () => {
+      forgotSection.style.display = 'none';
+      resetSection.style.display = 'none';
+      authSection.style.display = 'block';
     });
 
-    // --- Role switch & password visibility ---
-    const roleButtons = document.querySelectorAll('.role-btn');
-    const passwordInput = document.getElementById('password');
-    let selectedRole = 'admin';
-
-    function updatePasswordVisibility() {
-      if(selectedRole === 'student') {
-        passwordInput.style.display = 'none';
-        passwordInput.value = '';
-      } else {
-        passwordInput.style.display = 'block';
-        passwordInput.type = 'password';
-      }
-    }
-
-    roleButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        roleButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedRole = btn.dataset.role;
-        updatePasswordVisibility();
-      });
-    });
-
-    updatePasswordVisibility();
-
-    // --- Login logic ---
-    const loginForm = document.getElementById("loginForm");
-    const loginMsg = document.getElementById("loginMsg");
-
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value.trim();
-      const password = passwordInput.value.trim();
-
-      loginMsg.style.color = "#555";
-      loginMsg.textContent = "Logging in...";
+    // ------------------- Login -------------------
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value.trim();
+      authMsg.textContent = '';
 
       try {
-        const res = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
         });
         const data = await res.json();
-
-        if(res.ok && data.success) {
-          loginMsg.style.color = "green";
-          loginMsg.textContent = "✅ Login successful! Redirecting...";
-          localStorage.setItem("user", JSON.stringify(data.user));
-          setTimeout(() => window.location.href = "/dashboard.html", 1200);
+        if (res.ok) {
+          authMsg.style.color = 'green';
+          authMsg.textContent = '✅ Login successful! Redirecting...';
+          setTimeout(() => window.location.href = 'dashboard.html', 1000);
         } else {
-          loginMsg.style.color = "red";
-          loginMsg.textContent = data.error || "❌ Invalid login";
+          authMsg.style.color = 'red';
+          authMsg.textContent = data.error || 'Login failed';
         }
       } catch (err) {
-        loginMsg.style.color = "red";
-        loginMsg.textContent = "⚠️ Server error. Please try again later.";
-        console.error("Login error:", err);
+        authMsg.style.color = 'red';
+        authMsg.textContent = 'Error connecting to server.';
       }
     });
 
-    // --- Moving background animation ---
-    (() => {
-      const canvas = document.getElementById('bg-canvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d', { alpha: true });
-      let width = canvas.width = window.innerWidth;
-      let height = canvas.height = window.innerHeight;
-      const baseCount = Math.round((width * height) / 60000);
-      let PARTICLE_COUNT = Math.min(120, Math.max(25, baseCount * 40));
-      if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
-      const particles = [];
+    // ------------------- Signup -------------------
+    document.getElementById('signupBtn').addEventListener('click', async () => {
+      const name = document.getElementById('authName').value.trim();
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value.trim();
+      authMsg.textContent = '';
 
-      function rand(min, max) { return Math.random() * (max - min) + min; }
+      if (!name || !email || !password) {
+        authMsg.style.color = 'red';
+        authMsg.textContent = 'All fields are required for signup.';
+        return;
+      }
 
-      function initParticles() {
-        particles.length = 0;
-        for (let i = 0; i < PARTICLE_COUNT; i++) {
-          const size = rand(1, 3.2);
-          particles.push({
-            x: rand(0, width),
-            y: rand(0, height),
-            vx: rand(-0.12, 0.12),
-            vy: rand(-0.02, 0.6),
-            size,
-            alpha: rand(0.06, 0.22),
-            hue: rand(200, 240)
-          });
+      try {
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
+        });
+        const data = await res.json();
+        if (!data.error) {
+          authMsg.style.color = 'green';
+          authMsg.textContent = '✅ Signup successful! You can login now.';
+          document.getElementById('authName').value = '';
+          document.getElementById('authPassword').value = '';
+        } else {
+          authMsg.style.color = 'red';
+          authMsg.textContent = data.error;
         }
+      } catch (err) {
+        authMsg.style.color = 'red';
+        authMsg.textContent = 'Error connecting to server.';
+      }
+    });
+
+    // ------------------- Forgot Password -------------------
+    document.getElementById('sendTokenBtn').addEventListener('click', async () => {
+      const email = document.getElementById('fpEmail').value.trim();
+      fpMsg.textContent = '';
+      try {
+        const res = await fetch('/admin/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        fpMsg.style.color = res.ok ? 'green' : 'red';
+        fpMsg.textContent = data.msg;
+        if (res.ok) resetSection.style.display = 'block';
+      } catch (err) {
+        fpMsg.style.color = 'red';
+        fpMsg.textContent = 'Error sending request.';
+      }
+    });
+
+    // ------------------- Reset Password -------------------
+    document.getElementById('resetBtn').addEventListener('click', async () => {
+      const token = document.getElementById('resetToken').value.trim();
+      const newPassword = document.getElementById('newPassword').value.trim();
+      const confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+      resetMsg.textContent = '';
+
+      if (newPassword !== confirmPassword) {
+        resetMsg.style.color = 'red';
+        resetMsg.textContent = 'Passwords do not match.';
+        return;
       }
 
-      function resize() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
-        const newBase = Math.round((width * height) / 60000);
-        PARTICLE_COUNT = Math.min(120, Math.max(25, newBase * 40));
-        if (width < 800) PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 45);
-        initParticles();
-      }
-
-      window.addEventListener('resize', () => {
-        clearTimeout(window._bgResizeTimer);
-        window._bgResizeTimer = setTimeout(resize, 120);
-      });
-
-      function draw() {
-        ctx.clearRect(0, 0, width, height);
-        for (let i = 0; i < particles.length; i++) {
-          const p = particles[i];
-          p.x += p.vx;
-          p.y -= p.vy * 0.3;
-          if (p.x < -50) p.x = width + 50;
-          if (p.x > width + 50) p.x = -50;
-          if (p.y < -50) p.y = height + 50;
-          if (p.y > height + 50) p.y = -50;
-
-          ctx.beginPath();
-          ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
-
-          for (let j = i + 1; j < particles.length && j < i + 6; j++) {
-            const p2 = particles[j];
-            const dx = p.x - p2.x;
-            const dy = p.y - p2.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 120) {
-              ctx.beginPath();
-              ctx.strokeStyle = `hsla(${(p.hue + p2.hue) / 2}, 70%, 60%, ${Math.max(0, 0.08 - dist / 1500)})`;
-              ctx.lineWidth = 0.6;
-              ctx.moveTo(p.x, p.y);
-              ctx.lineTo(p2.x, p2.y);
-              ctx.stroke();
-            }
-          }
+      try {
+        const res = await fetch('/admin/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, newPassword })
+        });
+        const data = await res.json();
+        resetMsg.style.color = res.ok ? 'green' : 'red';
+        resetMsg.textContent = data.msg;
+        if (res.ok) {
+          document.getElementById('resetToken').value = '';
+          document.getElementById('newPassword').value = '';
+          document.getElementById('confirmPassword').value = '';
         }
-        window.requestAnimationFrame(draw);
+      } catch (err) {
+        resetMsg.style.color = 'red';
+        resetMsg.textContent = 'Error resetting password.';
       }
-
-      initParticles();
-      draw();
-    })();
+    });
   </script>
 </body>
 </html>
