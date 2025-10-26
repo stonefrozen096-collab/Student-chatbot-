@@ -3,7 +3,6 @@
   "version": "2.1.0",
   "description": "Full backend API for Student Assistant system with secure login, password reset, user roles, master command system, and real-time dashboard features.",
   "main": "server.js",
-  "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
