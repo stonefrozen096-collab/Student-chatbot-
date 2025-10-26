@@ -77,8 +77,6 @@ io.on('connection', (socket) => {
 
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date() }));
 // ---------------- PART 2: AUTH, USERS, BADGES, MASTER COMMANDS, & 2FA ----------------
-
-const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 
 // ---------- MODELS (additional) ----------
