@@ -1,217 +1,241 @@
-// ----------------------
-// User Management — Updated to Use api.js
-// ----------------------
+// frontend/js/api.js
+// Production-ready fetch wrapper returning parsed JSON and { error } on failure
 
-import { getUsers, addUser, editUser, deleteUser, toggleUserLock } from './api.js';
+const base = '/api';
 
-let users = [];
-const rolesWithPassword = ['faculty', 'moderator', 'tester'];
-
-// ----------------------
-// Socket.IO Setup
-// ----------------------
-const socket = io();
-
-socket.on('user-updated', updatedUser => {
-  const idx = users.findIndex(u => u.email === updatedUser.email);
-  if (idx !== -1) {
-    users[idx] = updatedUser;
-    renderUsers();
-  }
-});
-
-socket.on('user-added', newUser => {
-  users.push(newUser);
-  renderUsers();
-});
-
-socket.on('user-deleted', email => {
-  users = users.filter(u => u.email !== email);
-  renderUsers();
-});
-
-// ----------------------
-// Fetch Users
-// ----------------------
-async function fetchAndRenderUsers() {
-  const res = await getUsers();
-  if (!res.error) {
-    users = res;
-    renderUsers();
-  } else {
-    document.querySelector('#userTable tbody').innerHTML =
-      '<tr><td colspan="6">Error loading users.</td></tr>';
-  }
-}
-
-// ----------------------
-// Render Users
-// ----------------------
-function renderUsers() {
-  const tbody = document.querySelector('#userTable tbody');
-  tbody.innerHTML = '';
-
-  if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="6">No users found.</td></tr>';
-    return;
-  }
-
-  users.forEach((user, index) => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${user.username}</td>
-      <td>${user.email}</td>
-      <td>${user.role}</td>
-      <td>${rolesWithPassword.includes(user.role) ? '●●●●●' : '-'}</td>
-      <td>${user.locked ? '🔒 Locked' : '✅ Active'}</td>
-      <td>
-        <button onclick="editUserHandler(${index})">✏️ Edit</button>
-        <button onclick="deleteUserHandler(${index})">🗑️ Delete</button>
-        <button onclick="toggleLockHandler(${index})">${user.locked ? '🔓 Unlock' : '🔒 Lock'}</button>
-      </td>
-    `;
-    tbody.appendChild(row);
+/* --- AUTH HELPERS --- */
+export async function login(email, password) {
+  const res = await fetch(`${base}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
   });
+  const json = await res.json();
+  return json;
 }
 
-// ----------------------
-// Add User
-// ----------------------
-document.getElementById('addUserForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const username = document.getElementById('username').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const role = document.getElementById('role').value;
-  const password = rolesWithPassword.includes(role) ? document.getElementById('password').value.trim() : '';
+export function logout() {
+  localStorage.removeItem('token'); // currently unused
+}
 
-  if (!username || !email || (rolesWithPassword.includes(role) && !password)) {
-    return showNotification('All required fields must be filled', 'error');
-  }
+function getAuthHeaders() {
+  // Placeholder for future JWT
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
-  const newUser = { username, email, role, password: password || '', locked: false };
+async function handle(res) {
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: json.error || json.message || 'HTTP Error', status: res.status, data: json };
+  return json;
+}
 
-  const res = await addUser(newUser);
-  if (!res.error) {
-    socket.emit('add-user', res); // broadcast
-    e.target.reset();
-    showNotification('User added successfully!', 'success');
-    fetchAndRenderUsers();
-  }
-});
+/* --- USERS --- */
+export async function getUsers() {
+  const res = await fetch(`${base}/users`, { headers: { ...getAuthHeaders() } });
+  return handle(res);
+}
 
-// ----------------------
-// Edit User
-// ----------------------
-window.editUserHandler = async function(index) {
-  const user = users[index];
-  const newEmail = prompt(`Edit email for ${user.username}:`, user.email);
-  let newPassword = '';
-  if (rolesWithPassword.includes(user.role)) {
-    newPassword = prompt(`Edit password for ${user.username}:`, user.password || '');
-  }
-
-  if (newEmail) user.email = newEmail;
-  if (rolesWithPassword.includes(user.role) && newPassword) user.password = newPassword;
-
-  const res = await editUser(user.email, user);
-  if (!res.error) {
-    socket.emit('update-user', user);
-    showNotification(`User ${user.username} updated`, 'success');
-    fetchAndRenderUsers();
-  }
-};
-
-// ----------------------
-// Delete User
-// ----------------------
-window.deleteUserHandler = async function(index) {
-  const user = users[index];
-  if (!confirm(`Delete user ${user.username}?`)) return;
-
-  const res = await deleteUser(user.email);
-  if (!res.error) {
-    socket.emit('delete-user', user.email);
-    showNotification(`User ${user.username} deleted`, 'success');
-    fetchAndRenderUsers();
-  }
-};
-
-// ----------------------
-// Lock/Unlock User
-// ----------------------
-window.toggleLockHandler = async function(index) {
-  const user = users[index];
-  const res = await toggleUserLock(user.email, !user.locked);
-  if (!res.error) {
-    user.locked = !user.locked;
-    socket.emit('update-user', user);
-    fetchAndRenderUsers();
-  }
-};
-
-// ----------------------
-// Search Filter
-// ----------------------
-document.getElementById('profileSearch').addEventListener('input', e => {
-  const query = e.target.value.toLowerCase();
-  const filtered = users.filter(u =>
-    (u.username || '').toLowerCase().includes(query) ||
-    (u.email || '').toLowerCase().includes(query) ||
-    (u.role || '').toLowerCase().includes(query)
-  );
-  renderFilteredUsers(filtered);
-});
-
-function renderFilteredUsers(list) {
-  const tbody = document.querySelector('#userTable tbody');
-  tbody.innerHTML = '';
-
-  if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="6">No users found.</td></tr>';
-    return;
-  }
-
-  list.forEach((user, index) => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${user.username}</td>
-      <td>${user.email}</td>
-      <td>${user.role}</td>
-      <td>${rolesWithPassword.includes(user.role) ? '●●●●●' : '-'}</td>
-      <td>${user.locked ? '🔒 Locked' : '✅ Active'}</td>
-      <td>
-        <button onclick="editUserHandler(${index})">✏️ Edit</button>
-        <button onclick="deleteUserHandler(${index})">🗑️ Delete</button>
-        <button onclick="toggleLockHandler(${index})">${user.locked ? '🔓 Unlock' : '🔒 Lock'}</button>
-      </td>
-    `;
-    tbody.appendChild(row);
+export async function addUser(user) {
+  const res = await fetch(`${base}/users`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(user)
   });
+  return handle(res);
 }
 
-// ----------------------
-// Notifications
-// ----------------------
-function showNotification(message, type = 'info') {
-  const banner = document.createElement('div');
-  banner.className = `notification ${type}`;
-  banner.innerText = message;
-  document.body.appendChild(banner);
-
-  banner.animate([
-    { transform: 'translateY(-50px)', opacity: 0 },
-    { transform: 'translateY(0)', opacity: 1 }
-  ], { duration: 400 });
-
-  setTimeout(() => {
-    banner.animate([
-      { transform: 'translateY(0)', opacity: 1 },
-      { transform: 'translateY(-50px)', opacity: 0 }
-    ], { duration: 400 }).onfinish = () => banner.remove();
-  }, 3000);
+export async function editUser(email, data) {
+  const res = await fetch(`${base}/users/${encodeURIComponent(email)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(data)
+  });
+  return handle(res);
 }
 
-// ----------------------
-// Initialize
-// ----------------------
-document.addEventListener('DOMContentLoaded', fetchAndRenderUsers);
+export async function deleteUser(email) {
+  const res = await fetch(`${base}/users/${encodeURIComponent(email)}`, { method: 'DELETE', headers: { ...getAuthHeaders() } });
+  return handle(res);
+}
+
+export async function toggleUserLock(email, locked) {
+  const res = await fetch(`${base}/users/${encodeURIComponent(email)}/lock`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ locked })
+  });
+  return handle(res);
+}
+
+/* --- BADGES --- */
+export async function getBadges() {
+  const res = await fetch(`${base}/badges`, { headers: { ...getAuthHeaders() } });
+  return handle(res);
+}
+
+export async function createBadge(name, effects = [], access = []) {
+  const res = await fetch(`${base}/badges`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ name, effects, access })
+  });
+  return handle(res);
+}
+
+export async function removeBadge(id) {
+  const res = await fetch(`${base}/badges/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { ...getAuthHeaders() } });
+  return handle(res);
+}
+
+export async function assignBadge(email, badgeId) {
+  const res = await fetch(`${base}/badges/assign`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ email, badgeId })
+  });
+  return handle(res);
+}
+
+/* --- MASTER COMMANDS --- */
+export async function getMasterCommands() {
+  const res = await fetch(`${base}/master`, { headers: { ...getAuthHeaders() } });
+  return handle(res);
+}
+
+export async function addMasterCommand(name, action, permission = 'all', dangerous = false) {
+  const res = await fetch(`${base}/master`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ name, action, permission, dangerous })
+  });
+  return handle(res);
+}
+
+export async function editMasterCommand(id, updates) {
+  const res = await fetch(`${base}/master/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(updates)
+  });
+  return handle(res);
+}
+
+export async function deleteMasterCommand(id) {
+  const res = await fetch(`${base}/master/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { ...getAuthHeaders() } });
+  return handle(res);
+}
+
+export async function executeMasterCommand(id, body = {}) {
+  const res = await fetch(`${base}/master/${encodeURIComponent(id)}/execute`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(body)
+  });
+  return handle(res);
+}
+
+/* --- TESTS --- */
+export async function getTests() {
+  const res = await fetch(`${base}/tests`, { headers: { ...getAuthHeaders() } });
+  return handle(res);
+}
+
+export async function createTest(payload) {
+  const res = await fetch(`${base}/tests`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(payload)
+  });
+  return handle(res);
+}
+
+export async function deleteTest(id) {
+  const res = await fetch(`${base}/tests/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { ...getAuthHeaders() } });
+  return handle(res);
+}
+
+/* --- ATTENDANCE --- */
+export async function getAttendance() {
+  const res = await fetch(`${base}/attendance`, { headers: { ...getAuthHeaders() } });
+  return handle(res);
+}
+
+export async function saveAttendance(entries) {
+  const res = await fetch(`${base}/attendance`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ entries })
+  });
+  return handle(res);
+}
+
+/* --- CHATBOT TRIGGERS --- */
+export async function getChatbotTriggers() {
+  const res = await fetch(`${base}/chatbot/triggers`, { headers: { ...getAuthHeaders() } });
+  return handle(res);
+}
+
+export async function addChatbotTrigger(trigger, response, type = 'normal') {
+  const res = await fetch(`${base}/chatbot/triggers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ trigger, response, type })
+  });
+  return handle(res);
+}
+
+export async function editChatbotTrigger(id, trigger, response, type) {
+  const res = await fetch(`${base}/chatbot/triggers/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ trigger, response, type })
+  });
+  return handle(res);
+}
+
+export async function deleteChatbotTrigger(id) {
+  const res = await fetch(`${base}/chatbot/triggers/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { ...getAuthHeaders() } });
+  return handle(res);
+}
+
+/* --- NOTICES --- */
+export async function getNotices() {
+  const res = await fetch(`${base}/notices`, { headers: { ...getAuthHeaders() } });
+  return handle(res);
+}
+
+export async function addNotice(payload) {
+  const res = await fetch(`${base}/notices`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(payload)
+  });
+  return handle(res);
+}
+
+export async function editNotice(id, payload) {
+  const res = await fetch(`${base}/notices/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(payload)
+  });
+  return handle(res);
+}
+
+export async function deleteNotice(id) {
+  const res = await fetch(`${base}/notices/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { ...getAuthHeaders() } });
+  return handle(res);
+}
+
+/* --- EXPORT --- */
+export default {
+  login, logout,
+  getUsers, addUser, editUser, deleteUser, toggleUserLock,
+  getBadges, createBadge, removeBadge, assignBadge,
+  getMasterCommands, addMasterCommand, editMasterCommand, deleteMasterCommand, executeMasterCommand,
+  getTests, createTest, deleteTest,
+  getAttendance, saveAttendance,
+  getChatbotTriggers, addChatbotTrigger, editChatbotTrigger, deleteChatbotTrigger,
+  getNotices, addNotice, editNotice, deleteNotice
+};
