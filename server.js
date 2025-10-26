@@ -1,4 +1,4 @@
-// server.js — Full backend for Student Assistant (Part 1)
+// server.js — Part 1
 // Node >= 14 required
 
 const express = require('express');
@@ -103,15 +103,11 @@ io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
 
   socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
-
-  // Chat message handling will go in next part
 });
-// ---------------- ROUTES — Part 2 ----------------
 
 // --- HEALTH CHECK ---
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
-
-// --- USERS CRUD ---
+// ---------------- USERS CRUD ----------------
 app.get('/api/users', (req, res) => res.json(Object.values(users)));
 
 app.post('/api/users', async (req, res) => {
@@ -120,7 +116,16 @@ app.post('/api/users', async (req, res) => {
   if (users[email]) return res.status(400).json({ error: 'user exists' });
 
   const hashed = password ? await bcrypt.hash(password, 10) : null;
-  users[email] = { email, name, password: hashed, role, badges: [], specialAccess: [], locked: false, createdAt: new Date().toISOString(), lastLogin: null };
+  users[email] = {
+    email, name,
+    password: hashed,
+    role,
+    badges: [],
+    specialAccess: [],
+    locked: false,
+    createdAt: new Date().toISOString(),
+    lastLogin: null
+  };
   writeJSON(USERS_FILE, users);
   addLog(`User created: ${email}`, 'admin');
   io.emit('users:created', users[email]);
@@ -163,7 +168,7 @@ app.patch('/api/users/:email/lock', (req, res) => {
   res.json({ email: key, locked: !!locked });
 });
 
-// --- LOGIN ---
+// ---------------- LOGIN ----------------
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email) return res.status(400).json({ success: false, error: 'email required' });
@@ -184,25 +189,41 @@ app.post('/api/login', async (req, res) => {
   writeJSON(USERS_FILE, users);
   addLog('User login', email);
 
-  res.json({ success: true, message: 'Login successful', user: { email: user.email, name: user.name, role: user.role, badges: user.badges, specialAccess: user.specialAccess } });
+  res.json({
+    success: true,
+    message: 'Login successful',
+    user: {
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      badges: user.badges,
+      specialAccess: user.specialAccess
+    }
+  });
 });
 
-// --- 2FA & PASSWORD RESET ---
+// ---------------- 2FA & PASSWORD RESET ----------------
 const twoFactorStore = {}; // email -> { code, expiresAt }
 function gen2FACode() { return Math.floor(100000 + Math.random() * 900000).toString(); }
 
+// Send 2FA code for password reset
 app.post('/api/send-2fa', async (req, res) => {
   const { email } = req.body;
   if (!email || !users[email]) return res.status(404).json({ sent: false, error: 'User not found' });
 
   const code = gen2FACode();
-  const expiresAt = Date.now() + 5 * 60 * 1000;
+  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
   twoFactorStore[email] = { code, expiresAt };
 
   try {
-    if (!EMAIL_USER || !EMAIL_PASS) return res.json({ sent: true, debugCode: code });
+    if (!EMAIL_USER || !EMAIL_PASS) {
+      // If email not configured, return code for debugging
+      return res.json({ sent: true, debugCode: code });
+    }
     await transporter.sendMail({
-      from: EMAIL_USER, to: email, subject: 'Student Assistant — 2FA code',
+      from: EMAIL_USER,
+      to: email,
+      subject: 'Student Assistant — 2FA code',
       text: `Your password reset code: ${code}. Expires in 5 minutes.`
     });
     addLog(`2FA code sent to ${email}`, 'system');
@@ -213,9 +234,10 @@ app.post('/api/send-2fa', async (req, res) => {
   }
 });
 
+// Reset password using 2FA code
 app.post('/api/reset-password', async (req, res) => {
   const { email, code, newPassword } = req.body;
-  if (!email || !code || !newPassword) 
+  if (!email || !code || !newPassword)
     return res.status(400).json({ success: false, error: 'email, code, newPassword required' });
 
   const rec = twoFactorStore[email];
@@ -229,26 +251,6 @@ app.post('/api/reset-password', async (req, res) => {
   addLog(`Password reset for ${email}`, 'system');
   res.json({ success: true, message: 'Password reset OK' });
 });
-
-// --- CHAT & BOT TEST ---
-app.get('/api/chat/history', (req, res) => res.json(chatHistory));
-
-app.post('/api/chat/history', (req, res) => {
-  const entry = { id: genId('ch_'), ...req.body, time: new Date().toISOString() };
-  chatHistory.push(entry);
-  writeJSON(CHAT_HISTORY_FILE, chatHistory);
-  io.emit('chat:message', entry);
-  res.json(entry);
-});
-
-// Bot test endpoint
-app.get('/bot-test', (req, res) => {
-  const bot = Object.values(users).find(u => u.bot);
-  if (!bot) return res.status(404).send('No bot found');
-  res.send(`Bot running: ${bot.username}`);
-});
-// ---------------- ROUTES — Part 3 ----------------
-
 // ---------------- BADGES CRUD ----------------
 app.get('/api/badges', (req, res) => res.json(badges));
 
@@ -398,6 +400,7 @@ app.get('/api/attendance/export', (req, res) => {
   const result = date ? attendance.filter(a => a.date === date) : attendance;
   res.json(result);
 });
+
 // ---------------- CHAT & ANALYTICS ----------------
 app.get('/api/chat/history', (req, res) => res.json(chatHistory));
 
@@ -441,10 +444,34 @@ app.post('/api/import', (req, res) => {
   addLog('Data imported', 'admin');
   res.json({ imported: true });
 });
+// ---------------- SERVER EXIT HANDLERS ----------------
+function persistAll() {
+  writeJSON(USERS_FILE, users);
+  writeJSON(BADGES_FILE, badges);
+  writeJSON(MASTER_FILE, masterCommands);
+  writeJSON(CHATBOT_FILE, chatbotTriggers);
+  writeJSON(NOTICES_FILE, notices);
+  writeJSON(TESTS_FILE, tests);
+  writeJSON(ATTENDANCE_FILE, attendance);
+  writeJSON(LOGS_FILE, logs);
+  writeJSON(ANALYTICS_FILE, analytics);
+  writeJSON(CHAT_HISTORY_FILE, chatHistory);
+  writeJSON(LOCKS_FILE, lockData);
+  console.log('✅ All data persisted');
+}
 
-// ---------------- SERVER EXIT & START ----------------
-process.on('SIGINT', () => { console.log('SIGINT, persisting...'); persistAll(); process.exit(); });
-process.on('SIGTERM', () => { console.log('SIGTERM, persisting...'); persistAll(); process.exit(); });
+process.on('SIGINT', () => {
+  console.log('⚡ SIGINT received, saving data...');
+  persistAll();
+  process.exit();
+});
 
+process.on('SIGTERM', () => {
+  console.log('⚡ SIGTERM received, saving data...');
+  persistAll();
+  process.exit();
+});
+
+// ---------------- START SERVER ----------------
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`✅ Student Assistant server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Student Assistant server running on port ${PORT}`));
