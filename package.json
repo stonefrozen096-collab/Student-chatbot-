@@ -1,6 +1,6 @@
 {
   "name": "student-assistant-backend",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Full backend API for Student Assistant system with secure login, password reset, user roles, master command system, and real-time dashboard features.",
   "main": "server.js",
   "scripts": {
@@ -17,6 +17,7 @@
     "csv-parser": "^3.0.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
+    "express-validator": "^7.0.1",
     "fs-extra": "^11.2.0",
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.30.1",
