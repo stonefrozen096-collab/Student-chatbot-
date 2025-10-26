@@ -1,4 +1,4 @@
-// server.js — Production-ready Student Assistant (Part 1)
+// server.js — Production-ready Student Assistant (FULL)
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -9,6 +9,7 @@ const mongoose = require('mongoose');
 const http = require('http');
 const { Server } = require('socket.io');
 const crypto = require('crypto');
+const { body, validationResult } = require('express-validator');
 
 const app = express();
 const server = http.createServer(app);
@@ -39,7 +40,7 @@ const userSchema = new mongoose.Schema({
 });
 
 const twoFASchema = new mongoose.Schema({
-  email: String,
+  email: { type: String, index: true, unique: true },
   code: String,
   expiresAt: Date
 });
@@ -50,10 +51,69 @@ const logSchema = new mongoose.Schema({
   time: { type: Date, default: Date.now }
 });
 
-// Models
+const badgeSchema = new mongoose.Schema({
+  id: { type: String, index: true, unique: true },
+  name: String,
+  effects: [String],
+  access: [String],
+  createdAt: { type: Date, default: Date.now }
+});
+
+const masterSchema = new mongoose.Schema({
+  id: { type: String, index: true, unique: true },
+  name: String,
+  action: String,
+  permission: { type: String, default: 'all' },
+  dangerous: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const testSchema = new mongoose.Schema({
+  _id: { type: String, default: () => genId('t_') },
+  title: String,
+  subject: String,
+  type: { type: String, default: 'mcq' },
+  options: [String],
+  correct: String,
+  assignedStudents: [String],
+  createdAt: { type: Date, default: Date.now }
+});
+
+const attendanceSchema = new mongoose.Schema({
+  id: { type: String, index: true, default: () => genId('a_') },
+  username: String,
+  date: String, // YYYY-MM-DD
+  status: { type: String, enum: ['present','absent','late','onduty', null], default: null },
+  createdAt: { type: Date, default: Date.now }
+});
+attendanceSchema.index({ username: 1, date: 1 }, { unique: true });
+
+const noticeSchema = new mongoose.Schema({
+  id: { type: String, index: true, default: () => genId('n_') },
+  title: String,
+  message: String,
+  assignedStudents: [String],
+  createdAt: { type: Date, default: Date.now }
+});
+
+const chatTriggerSchema = new mongoose.Schema({
+  id: { type: String, index: true, default: () => genId('ct_') },
+  trigger: String,
+  response: String,
+  type: { type: String, default: 'normal' }, // normal / alert / urgent / warning
+  createdAt: { type: Date, default: Date.now }
+});
+
+// ---------------- MODELS ----------------
 const User = mongoose.model('User', userSchema);
 const TwoFA = mongoose.model('TwoFA', twoFASchema);
 const Log = mongoose.model('Log', logSchema);
+const Badge = mongoose.model('Badge', badgeSchema);
+const MasterCommand = mongoose.model('MasterCommand', masterSchema);
+const Test = mongoose.model('Test', testSchema);
+const Attendance = mongoose.model('Attendance', attendanceSchema);
+const Notice = mongoose.model('Notice', noticeSchema);
+const ChatTrigger = mongoose.model('ChatTrigger', chatTriggerSchema);
 
 // ---------------- EMAIL ----------------
 const transporter = nodemailer.createTransport({
@@ -69,41 +129,10 @@ async function addLog(action, user='system') {
   io.emit('logs:updated', log);
 }
 
-// ---------------- SOCKET.IO ----------------
-io.on('connection', (socket) => {
-  console.log('Socket connected:', socket.id);
-  socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
-});
-
-app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date() }));
-// ---------------- PART 2: AUTH, USERS, BADGES, MASTER COMMANDS, & 2FA ----------------
-const { body, validationResult } = require('express-validator');
-
-// ---------- MODELS (additional) ----------
-const badgeSchema = new mongoose.Schema({
-  id: { type: String, index: true, unique: true },
-  name: String,
-  effects: [String],
-  access: [String],
-  createdAt: { type: Date, default: Date.now }
-});
-const Badge = mongoose.model('Badge', badgeSchema);
-
-const masterSchema = new mongoose.Schema({
-  id: { type: String, index: true, unique: true },
-  name: String,
-  action: String,
-  permission: { type: String, default: 'all' },
-  dangerous: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now }
-});
-const MasterCommand = mongoose.model('MasterCommand', masterSchema);
-
-// ---------- CONFIG ----------
+// ---------------- CONFIG ----------------
 const JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret_in_prod';
 const JWT_TTL = process.env.JWT_TTL || '8h'; // token lifetime
 
-// ---------- HELPERS ----------
 function signToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_TTL });
 }
@@ -118,7 +147,7 @@ function authMiddleware(req, res, next) {
     req.user = decoded;
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'Invalid token' });
+    return res.status(401).json({ error: 'Invalid token or expired' });
   }
 }
 
@@ -131,114 +160,62 @@ function requireRole(...roles) {
   };
 }
 
-// ---------- USER ROUTES ----------
+// ---------------- SOCKET.IO ----------------
+io.on('connection', socket => {
+  console.log('Socket connected:', socket.id);
+  socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
+});
 
-// Register (admin can create staff users via API; public registration can be enabled if desired)
-app.post('/api/register',
-  body('email').isEmail(),
-  body('password').isLength({ min: 6 }),
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ error: errors.array() });
+// ---------------- ROUTES ----------------
 
-    const { email, password, name = '', role = 'student' } = req.body;
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ error: 'User exists' });
-    const hashed = await bcrypt.hash(password, 10);
-    const u = new User({ email, name, password: hashed, role, badges: [], specialAccess: [], locked: false });
-    await u.save();
-    await addLog(`User registered: ${email}`, 'system');
-    io.emit('users:created', u);
-    res.json({ success: true, user: { email: u.email, name: u.name, role: u.role } });
-  });
+// Health check
+app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date() }));
 
-// Login -> returns JWT
-app.post('/api/login',
-  body('email').isEmail(),
-  async (req, res) => {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
-    if (user.locked) return res.status(403).json({ success: false, error: 'Account locked' });
+// ---------------- USER AUTH ----------------
+app.post('/api/register', body('email').isEmail(), body('password').isLength({ min: 6 }), async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ error: errors.array() });
+  const { email, password, name = '', role = 'student' } = req.body;
+  if (await User.findOne({ email })) return res.status(400).json({ error: 'User exists' });
+  const hashed = await bcrypt.hash(password, 10);
+  const u = new User({ email, name, password: hashed, role, badges: [], specialAccess: [], locked: false });
+  await u.save();
+  await addLog(`User registered: ${email}`, 'system');
+  io.emit('users:created', u);
+  res.json({ success: true, user: { email: u.email, name: u.name, role: u.role } });
+});
 
-    // For students (no password required in some flows) we still allow passwordless if you want:
-    if (['admin','faculty','moderator','tester'].includes(user.role)) {
-      if (!password) return res.status(400).json({ success: false, error: 'Password required' });
-      const ok = await bcrypt.compare(password, user.password || '');
-      if (!ok) return res.status(401).json({ success: false, error: 'Invalid credentials' });
-    } else {
-      // If student and you want to permit login without password (e.g., email link), handle accordingly.
-      if (password && user.password) {
-        const ok = await bcrypt.compare(password, user.password);
-        if (!ok) return res.status(401).json({ success: false, error: 'Invalid credentials' });
-      }
-    }
+app.post('/api/login', body('email').isEmail(), async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+  if (user.locked) return res.status(403).json({ success: false, error: 'Account locked' });
+  if (user.password) {
+    if (!password) return res.status(400).json({ success: false, error: 'Password required' });
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) return res.status(401).json({ success: false, error: 'Invalid credentials' });
+  }
+  user.lastLogin = new Date();
+  await user.save();
+  await addLog(`User login: ${email}`, email);
+  const token = signToken({ id: user._id, email: user.email, role: user.role });
+  res.json({ success: true, user: { email: user.email, name: user.name, role: user.role, badges: user.badges, specialAccess: user.specialAccess }, token });
+});
 
-    user.lastLogin = new Date();
-    await user.save();
-    await addLog(`User login: ${email}`, email);
-
-    const token = signToken({ id: user._id, email: user.email, role: user.role });
-    res.json({ success: true, user: { email: user.email, name: user.name, role: user.role, badges: user.badges, specialAccess: user.specialAccess }, token });
-  });
-
-// Get current user (requires JWT)
 app.get('/api/me', authMiddleware, async (req, res) => {
   const user = await User.findOne({ email: req.user.email }).select('-password');
   if (!user) return res.status(404).json({ error: 'Not found' });
   res.json(user);
 });
 
-// Admin: list users
-app.get('/api/admin/users', authMiddleware, requireRole('admin'), async (req, res) => {
-  const all = await User.find().select('-password');
-  res.json(all);
-});
-
-// Update user (admin or owner)
-app.put('/api/users/:email', authMiddleware, async (req, res) => {
-  const targetEmail = req.params.email;
-  const requester = req.user;
-  if (requester.email !== targetEmail && requester.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
-
-  const updates = { ...req.body };
-  if (updates.password) updates.password = await bcrypt.hash(updates.password, 10);
-  const u = await User.findOneAndUpdate({ email: targetEmail }, updates, { new: true }).select('-password');
-  if (!u) return res.status(404).json({ error: 'Not found' });
-  await addLog(`User updated: ${targetEmail}`, requester.email);
-  io.emit('users:updated', u);
-  res.json(u);
-});
-
-// Delete user (admin)
-app.delete('/api/users/:email', authMiddleware, requireRole('admin'), async (req, res) => {
-  const target = req.params.email;
-  const deleted = await User.findOneAndDelete({ email: target });
-  if (!deleted) return res.status(404).json({ error: 'Not found' });
-  await addLog(`User deleted: ${target}`, req.user.email);
-  io.emit('users:deleted', { email: target });
-  res.json({ deleted: true });
-});
-
-// Lock/unlock (admin)
-app.patch('/api/users/:email/lock', authMiddleware, requireRole('admin'), async (req, res) => {
-  const { locked } = req.body;
-  const u = await User.findOneAndUpdate({ email: req.params.email }, { locked: !!locked }, { new: true });
-  if (!u) return res.status(404).json({ error: 'Not found' });
-  await addLog(`User ${locked ? 'locked' : 'unlocked'}: ${u.email}`, req.user.email);
-  io.emit('users:lock', { email: u.email, locked: !!locked });
-  res.json({ email: u.email, locked: u.locked });
-});
-
-// ---------- 2FA / RESET FLOW ----------
-// Request reset token — creates TwoFA doc and emails or returns debug code when no email config
+// ---------------- 2FA / RESET PASSWORD ----------------
 app.post('/api/request-reset', body('email').isEmail(), async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email });
   if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
 
   const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 10); // 10 min
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 10); // 10 minutes
   await TwoFA.findOneAndUpdate({ email }, { email, code, expiresAt }, { upsert: true });
 
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
@@ -261,7 +238,6 @@ app.post('/api/request-reset', body('email').isEmail(), async (req, res) => {
   }
 });
 
-// Verify token + set new password
 app.post('/api/reset-password', async (req, res) => {
   const { email, code, newPassword } = req.body;
   if (!email || !code || !newPassword) return res.status(400).json({ ok: false, error: 'email, code and newPassword required' });
@@ -277,10 +253,9 @@ app.post('/api/reset-password', async (req, res) => {
   res.json({ ok: true, message: 'Password reset successful' });
 });
 
-// ---------- BADGES ----------
+// ---------------- BADGES ----------------
 app.get('/api/badges', authMiddleware, requireRole('any'), async (req, res) => {
-  const b = await Badge.find();
-  res.json(b);
+  res.json(await Badge.find());
 });
 
 app.post('/api/badges', authMiddleware, requireRole('admin'), async (req, res) => {
@@ -307,10 +282,9 @@ app.post('/api/badges/assign', authMiddleware, requireRole('admin'), async (req,
   res.json({ success: true, user: { email: u.email, badges: u.badges, specialAccess: u.specialAccess } });
 });
 
-// ---------- MASTER COMMANDS ----------
+// ---------------- MASTER COMMANDS ----------------
 app.get('/api/master', authMiddleware, requireRole('any'), async (req, res) => {
-  const items = await MasterCommand.find();
-  res.json(items);
+  res.json(await MasterCommand.find());
 });
 
 app.post('/api/master', authMiddleware, requireRole('admin'), async (req, res) => {
@@ -326,112 +300,10 @@ app.post('/api/master', authMiddleware, requireRole('admin'), async (req, res) =
 app.post('/api/master/:id/execute', authMiddleware, requireRole('admin'), async (req, res) => {
   const cmd = await MasterCommand.findOne({ id: req.params.id });
   if (!cmd) return res.status(404).json({ error: 'not found' });
-  // Emit instruction—clients decide how to handle actions safely.
   io.emit('master:execute', { id: cmd.id, name: cmd.name, action: cmd.action, actor: req.user.email });
   await addLog(`Master executed: ${cmd.name} by ${req.user.email}`, req.user.email);
   res.json({ executed: true, id: cmd.id });
 });
-
-// ---------- LOCKS SYSTEM ----------
-app.get('/api/locks', authMiddleware, requireRole('admin'), async (req, res) => {
-  res.json(lockData || { allLocked: false, lockedUsers: [] });
-});
-
-app.post('/api/locks', authMiddleware, requireRole('admin'), async (req, res) => {
-  lockData = { ...(lockData || {}), ...(req.body || {}) };
-  // persist into DB or config if desired (for now in-memory plus log)
-  await addLog(`Lock state updated: ${JSON.stringify(lockData)}`, req.user.email);
-  io.emit('locks:updated', lockData);
-  res.json({ saved: true, data: lockData });
-});
-
-// ---------- EXPORT / IMPORT (admin only) ----------
-app.get('/api/export', authMiddleware, requireRole('admin'), async (req, res) => {
-  const users = await User.find().select('-password').lean();
-  const badges = await Badge.find().lean();
-  const master = await MasterCommand.find().lean();
-  const twofas = await TwoFA.find().lean();
-  res.json({ users, badges, master, twofas });
-});
-
-app.post('/api/import', authMiddleware, requireRole('admin'), async (req, res) => {
-  const d = req.body || {};
-  // careful: only allow when you trust the uploaded data
-  if (d.badges) {
-    await Badge.deleteMany({});
-    await Badge.insertMany(d.badges.map(b => ({ ...b })));
-  }
-  if (d.master) {
-    await MasterCommand.deleteMany({});
-    await MasterCommand.insertMany(d.master);
-  }
-  if (d.users) {
-    // skip passwords or require hashed passwords
-    for (const u of d.users) {
-      try {
-        const ex = await User.findOne({ email: u.email });
-        if (!ex) await new User(u).save();
-      } catch (e) { console.warn('Import user error', e); }
-    }
-  }
-  await addLog('Data import executed', req.user.email);
-  io.emit('data:imported', { by: req.user.email });
-  res.json({ imported: true });
-});
-// ---------- PART 3: TESTS, ATTENDANCE, CHAT TRIGGERS, NOTICES, TwoFA model ----------
-
-/**
- * Assumes mongoose is already required and connected earlier in server.js:
- * const mongoose = require('mongoose');
- */
-
-// ---------- SCHEMAS / MODELS ----------
-const twoFASchema = new mongoose.Schema({
-  email: { type: String, index: true, unique: true },
-  code: String,
-  expiresAt: Date
-});
-const TwoFA = mongoose.model('TwoFA', twoFASchema);
-
-const testSchema = new mongoose.Schema({
-  _id: { type: String, default: () => genId('t_') },
-  title: String,
-  subject: String,
-  type: { type: String, default: 'mcq' },
-  options: [String],
-  correct: String,
-  assignedStudents: [String],
-  createdAt: { type: Date, default: Date.now }
-});
-const Test = mongoose.model('Test', testSchema);
-
-const attendanceSchema = new mongoose.Schema({
-  id: { type: String, index: true, default: () => genId('a_') },
-  username: String,
-  date: String, // YYYY-MM-DD
-  status: { type: String, enum: ['present','absent','late','onduty', null], default: null },
-  createdAt: { type: Date, default: Date.now }
-});
-attendanceSchema.index({ username: 1, date: 1 }, { unique: true });
-const Attendance = mongoose.model('Attendance', attendanceSchema);
-
-const noticeSchema = new mongoose.Schema({
-  id: { type: String, index: true, default: () => genId('n_') },
-  title: String,
-  message: String,
-  assignedStudents: [String],
-  createdAt: { type: Date, default: Date.now }
-});
-const Notice = mongoose.model('Notice', noticeSchema);
-
-const chatTriggerSchema = new mongoose.Schema({
-  id: { type: String, index: true, default: () => genId('ct_') },
-  trigger: String,
-  response: String,
-  type: { type: String, default: 'normal' }, // normal / alert / urgent / warning
-  createdAt: { type: Date, default: Date.now }
-});
-const ChatTrigger = mongoose.model('ChatTrigger', chatTriggerSchema);
 
 // ---------- TESTS ROUTES ----------
 app.get('/api/tests', authMiddleware, requireRole('any'), async (req, res) => {
@@ -462,7 +334,6 @@ app.get('/api/attendance', authMiddleware, requireRole('any'), async (req, res) 
 });
 
 app.post('/api/attendance', authMiddleware, requireRole('any'), async (req, res) => {
-  // Accept either { entries: [...] } or a single entry object
   const entries = Array.isArray(req.body.entries) ? req.body.entries : [req.body];
   const upserted = [];
   for (const e of entries) {
@@ -478,13 +349,6 @@ app.post('/api/attendance', authMiddleware, requireRole('any'), async (req, res)
   await addLog(`Attendance saved (${upserted.length})`, req.user?.email || 'system');
   io.emit('attendance:updated', { date: entries[0]?.date, records: upserted });
   res.json({ saved: true, count: upserted.length });
-});
-
-// Export attendance for a date
-app.get('/api/attendance/export', authMiddleware, requireRole('admin'), async (req, res) => {
-  const date = req.query.date;
-  const rows = date ? await Attendance.find({ date }).lean() : await Attendance.find().lean();
-  res.json(rows);
 });
 
 // ---------- NOTICES ----------
@@ -545,8 +409,7 @@ app.delete('/api/chatbot/triggers/:id', authMiddleware, requireRole('admin'), as
   res.json({ deleted: true });
 });
 
-// ---------- SIMPLE BOT-HOOK (example) ----------
-// This endpoint simulates a student sending a message to bot; server can check triggers and respond.
+// ---------- SIMPLE BOT-HOOK ----------
 app.post('/api/chat/send', authMiddleware, async (req, res) => {
   const { message, username } = req.body;
   if (!message) return res.status(400).json({ error: 'message required' });
@@ -555,7 +418,6 @@ app.post('/api/chat/send', authMiddleware, async (req, res) => {
   const found = triggers.find(t => message.toLowerCase().includes(t.trigger.toLowerCase()));
   if (found) {
     if (['alert', 'urgent', 'warning'].includes(found.type)) {
-      // lock chatbot for 10s example by emitting lock event
       io.emit('chatbot:lock', { seconds: 10, message: found.response });
       return res.json({ type: 'lock', response: found.response });
     }
@@ -564,10 +426,9 @@ app.post('/api/chat/send', authMiddleware, async (req, res) => {
   return res.json({ type: 'none', response: "Sorry, I don't understand." });
 });
 
-// ---------- SOCKET.IO: optional server listeners for admin actions ----------
+// ---------- SOCKET.IO: optional server listeners ----------
 io.on('connection', socket => {
   socket.on('attendance:save', async (payload) => {
-    // optional: allow client to send attendance via socket; we'll process and emit attendance:updated
     try {
       const { date, records } = payload;
       for (const r of records) {
@@ -580,3 +441,7 @@ io.on('connection', socket => {
     }
   });
 });
+
+// ---------- START SERVER ----------
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
