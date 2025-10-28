@@ -1,10 +1,12 @@
 // frontend/js/api.js
-// ✅ Production-ready fetch wrapper for all API endpoints
-// Includes Forgot Password + Reset Password + JWT support
+// ✅ Unified and production-ready API handler for Student Assistant project
+// Includes JWT, Forgot Password, Reset Password, and all existing modules
 
 const base = '/api';
 
-/* ------------------------- AUTH HELPERS ------------------------- */
+/* ------------------------- AUTH ------------------------- */
+
+// 🔹 Login
 export async function login(email, password) {
   const res = await fetch(`${base}/login`, {
     method: 'POST',
@@ -14,12 +16,13 @@ export async function login(email, password) {
   return handle(res);
 }
 
+// 🔹 Logout
 export function logout() {
   localStorage.removeItem('token');
   localStorage.removeItem('userRole');
 }
 
-/* --- PASSWORD RESET --- */
+// 🔹 Forgot Password
 export async function forgotPassword(email) {
   const res = await fetch(`${base}/forgot-password`, {
     method: 'POST',
@@ -29,6 +32,7 @@ export async function forgotPassword(email) {
   return handle(res);
 }
 
+// 🔹 Reset Password
 export async function resetPassword(token, newPassword) {
   const res = await fetch(`${base}/reset-password/${encodeURIComponent(token)}`, {
     method: 'POST',
@@ -38,13 +42,15 @@ export async function resetPassword(token, newPassword) {
   return handle(res);
 }
 
-/* --- TOKEN HEADERS --- */
+/* ------------------------- HELPERS ------------------------- */
+
+// 🔹 Adds Bearer Token if available
 function getAuthHeaders() {
   const token = localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-/* --- RESPONSE HANDLER --- */
+// 🔹 Handles all API responses
 async function handle(res) {
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
