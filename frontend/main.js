@@ -1,32 +1,26 @@
-// ---------- MAIN.JS — Complete Auth (Login + Signup + Forgot + Reset + Logout) ----------
+// ---------- MAIN.JS — Full (Login + Signup + Forgot + Reset + Logout) ----------
 const socket = io();
 const API_URL = "https://feathers-26g1.onrender.com";
 
 // ---------- SOCKET STATUS ----------
-socket.on("connect", () => console.log("✅ Connected to WebSocket"));
-socket.on("disconnect", () => console.warn("⚠️ WebSocket disconnected"));
+socket.on("connect", () => console.log("✅ Connected to server"));
+socket.on("disconnect", () => console.warn("⚠️ Disconnected from server"));
 
 // ---------- THEME TOGGLE ----------
 const themeToggle = document.getElementById("theme-toggle");
-themeToggle?.addEventListener("click", () => document.body.classList.toggle("dark-mode"));
+themeToggle?.addEventListener("click", () => {
+  document.body.classList.toggle("dark-mode");
+});
 
 // ---------- SEARCH FILTER ----------
 const searchInput = document.getElementById("search-input");
 searchInput?.addEventListener("input", () => {
   const query = searchInput.value.toLowerCase();
-  document.querySelectorAll(".search-item").forEach(item => {
+  const items = document.querySelectorAll(".search-item");
+  items.forEach(item => {
     item.style.display = item.innerText.toLowerCase().includes(query) ? "" : "none";
   });
 });
-
-// ---------- TOAST FUNCTION ----------
-function showToast(message, type = "success") {
-  const toast = document.createElement("div");
-  toast.className = `toast ${type}`;
-  toast.innerText = message;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
-}
 
 // ---------- COUNTER ANIMATION ----------
 function animateCounter(element, start = 0, end, duration = 1000) {
@@ -40,6 +34,15 @@ function animateCounter(element, start = 0, end, duration = 1000) {
   window.requestAnimationFrame(step);
 }
 
+// ---------- TOAST ----------
+function showToast(message, type = "success") {
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.innerText = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
 // ---------- LOGIN ----------
 const loginForm = document.getElementById("loginForm");
 if (loginForm) {
@@ -49,7 +52,6 @@ if (loginForm) {
     const password = document.getElementById("password").value.trim();
     const statusDiv = document.getElementById("loginStatus") || document.getElementById("loginMsg");
     statusDiv.textContent = "Logging in...";
-    statusDiv.style.color = "#555";
 
     try {
       const res = await fetch(`${API_URL}/api/login`, {
@@ -57,7 +59,6 @@ if (loginForm) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed");
 
@@ -74,11 +75,10 @@ if (loginForm) {
         case "faculty": redirectPage = "faculty.html"; break;
         case "tester": redirectPage = "tester.html"; break;
       }
-
       setTimeout(() => (window.location.href = `/${redirectPage}`), 1000);
     } catch (err) {
       console.error("Login error:", err);
-      statusDiv.textContent = `❌ ${err.message || "Server error"}`;
+      statusDiv.textContent = `❌ ${err.message}`;
       statusDiv.style.color = "red";
     }
   });
@@ -95,24 +95,22 @@ if (signupForm) {
     const role = "student";
     const statusDiv = document.getElementById("signupStatus") || document.getElementById("signupMsg");
     statusDiv.textContent = "Creating account...";
-    statusDiv.style.color = "#555";
 
     try {
       const res = await fetch(`${API_URL}/api/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, email, password, role })
+        body: JSON.stringify({ name: fullName, email, password, role })
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Signup failed");
 
-      statusDiv.textContent = "✅ Account created successfully!";
+      statusDiv.textContent = "✅ Account created! Redirecting...";
       statusDiv.style.color = "green";
       setTimeout(() => (window.location.href = "/login.html"), 1000);
     } catch (err) {
       console.error("Signup error:", err);
-      statusDiv.textContent = `❌ ${err.message || "Server error"}`;
+      statusDiv.textContent = `❌ ${err.message}`;
       statusDiv.style.color = "red";
     }
   });
@@ -124,26 +122,24 @@ if (forgotForm) {
   forgotForm.addEventListener("submit", async e => {
     e.preventDefault();
     const email = document.getElementById("forgotEmail").value.trim();
-    const statusDiv = document.getElementById("forgotStatus");
-    statusDiv.textContent = "Sending reset link...";
-    statusDiv.style.color = "#555";
+    const msgDiv = document.getElementById("forgotMsg");
+    msgDiv.textContent = "Requesting reset link...";
 
     try {
-      const res = await fetch(`${API_URL}/api/forgot-password`, {
+      const res = await fetch(`${API_URL}/api/request-reset`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email })
       });
-
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to send reset link");
+      if (!res.ok) throw new Error(data.error || "Failed to send token");
 
-      statusDiv.textContent = "✅ Reset link sent! Check your email.";
-      statusDiv.style.color = "green";
+      msgDiv.style.color = "green";
+      msgDiv.textContent = "✅ Token sent to your email!";
+      if (data.debugCode) console.log("DEBUG Reset Code:", data.debugCode);
     } catch (err) {
-      console.error("Forgot password error:", err);
-      statusDiv.textContent = `❌ ${err.message || "Server error"}`;
-      statusDiv.style.color = "red";
+      msgDiv.style.color = "red";
+      msgDiv.textContent = `❌ ${err.message}`;
     }
   });
 }
@@ -153,29 +149,27 @@ const resetForm = document.getElementById("resetForm");
 if (resetForm) {
   resetForm.addEventListener("submit", async e => {
     e.preventDefault();
-    const token = new URLSearchParams(window.location.search).get("token");
-    const newPassword = document.getElementById("newPassword").value.trim();
-    const statusDiv = document.getElementById("resetStatus");
-    statusDiv.textContent = "Resetting password...";
-    statusDiv.style.color = "#555";
+    const email = document.getElementById("resetEmail").value.trim();
+    const code = document.getElementById("resetCode").value.trim();
+    const newPassword = document.getElementById("resetPassword").value.trim();
+    const msgDiv = document.getElementById("resetMsg");
+    msgDiv.textContent = "Resetting password...";
 
     try {
       const res = await fetch(`${API_URL}/api/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, newPassword })
+        body: JSON.stringify({ email, code, newPassword })
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Reset failed");
 
-      statusDiv.textContent = "✅ Password reset successful! Redirecting...";
-      statusDiv.style.color = "green";
+      msgDiv.style.color = "green";
+      msgDiv.textContent = "✅ Password reset successful! Redirecting...";
       setTimeout(() => (window.location.href = "/login.html"), 1500);
     } catch (err) {
-      console.error("Reset error:", err);
-      statusDiv.textContent = `❌ ${err.message || "Server error"}`;
-      statusDiv.style.color = "red";
+      msgDiv.style.color = "red";
+      msgDiv.textContent = `❌ ${err.message}`;
     }
   });
 }
@@ -186,8 +180,8 @@ if (logoutBtn) {
   logoutBtn.addEventListener("click", () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userRole");
-    showToast("👋 Logged out successfully!");
-    setTimeout(() => (window.location.href = "/login.html"), 800);
+    showToast("Logged out successfully", "info");
+    setTimeout(() => (window.location.href = "/login.html"), 1000);
   });
 }
 
