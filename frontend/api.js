@@ -1,36 +1,63 @@
 // frontend/js/api.js
-// Production-ready fetch wrapper returning parsed JSON and { error } on failure
+// ✅ Production-ready fetch wrapper for all API endpoints
+// Includes Forgot Password + Reset Password + JWT support
 
 const base = '/api';
 
-/* --- AUTH HELPERS --- */
+/* ------------------------- AUTH HELPERS ------------------------- */
 export async function login(email, password) {
   const res = await fetch(`${base}/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
   });
-  const json = await res.json();
-  return json;
+  return handle(res);
 }
 
 export function logout() {
-  localStorage.removeItem('token'); // currently unused
+  localStorage.removeItem('token');
+  localStorage.removeItem('userRole');
 }
 
+/* --- PASSWORD RESET --- */
+export async function forgotPassword(email) {
+  const res = await fetch(`${base}/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+  return handle(res);
+}
+
+export async function resetPassword(token, newPassword) {
+  const res = await fetch(`${base}/reset-password/${encodeURIComponent(token)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: newPassword })
+  });
+  return handle(res);
+}
+
+/* --- TOKEN HEADERS --- */
 function getAuthHeaders() {
-  // Placeholder for future JWT
   const token = localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+/* --- RESPONSE HANDLER --- */
 async function handle(res) {
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) return { error: json.error || json.message || 'HTTP Error', status: res.status, data: json };
+  if (!res.ok) {
+    return {
+      error: json.error || json.message || 'HTTP Error',
+      status: res.status,
+      data: json
+    };
+  }
   return json;
 }
 
-/* --- USERS --- */
+/* ------------------------- USERS ------------------------- */
 export async function getUsers() {
   const res = await fetch(`${base}/users`, { headers: { ...getAuthHeaders() } });
   return handle(res);
@@ -55,7 +82,10 @@ export async function editUser(email, data) {
 }
 
 export async function deleteUser(email) {
-  const res = await fetch(`${base}/users/${encodeURIComponent(email)}`, { method: 'DELETE', headers: { ...getAuthHeaders() } });
+  const res = await fetch(`${base}/users/${encodeURIComponent(email)}`, {
+    method: 'DELETE',
+    headers: { ...getAuthHeaders() }
+  });
   return handle(res);
 }
 
@@ -68,7 +98,7 @@ export async function toggleUserLock(email, locked) {
   return handle(res);
 }
 
-/* --- BADGES --- */
+/* ------------------------- BADGES ------------------------- */
 export async function getBadges() {
   const res = await fetch(`${base}/badges`, { headers: { ...getAuthHeaders() } });
   return handle(res);
@@ -84,7 +114,10 @@ export async function createBadge(name, effects = [], access = []) {
 }
 
 export async function removeBadge(id) {
-  const res = await fetch(`${base}/badges/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { ...getAuthHeaders() } });
+  const res = await fetch(`${base}/badges/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { ...getAuthHeaders() }
+  });
   return handle(res);
 }
 
@@ -97,7 +130,7 @@ export async function assignBadge(email, badgeId) {
   return handle(res);
 }
 
-/* --- MASTER COMMANDS --- */
+/* ------------------------- MASTER COMMANDS ------------------------- */
 export async function getMasterCommands() {
   const res = await fetch(`${base}/master`, { headers: { ...getAuthHeaders() } });
   return handle(res);
@@ -122,7 +155,10 @@ export async function editMasterCommand(id, updates) {
 }
 
 export async function deleteMasterCommand(id) {
-  const res = await fetch(`${base}/master/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { ...getAuthHeaders() } });
+  const res = await fetch(`${base}/master/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { ...getAuthHeaders() }
+  });
   return handle(res);
 }
 
@@ -135,7 +171,7 @@ export async function executeMasterCommand(id, body = {}) {
   return handle(res);
 }
 
-/* --- TESTS --- */
+/* ------------------------- TESTS ------------------------- */
 export async function getTests() {
   const res = await fetch(`${base}/tests`, { headers: { ...getAuthHeaders() } });
   return handle(res);
@@ -151,11 +187,14 @@ export async function createTest(payload) {
 }
 
 export async function deleteTest(id) {
-  const res = await fetch(`${base}/tests/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { ...getAuthHeaders() } });
+  const res = await fetch(`${base}/tests/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { ...getAuthHeaders() }
+  });
   return handle(res);
 }
 
-/* --- ATTENDANCE --- */
+/* ------------------------- ATTENDANCE ------------------------- */
 export async function getAttendance() {
   const res = await fetch(`${base}/attendance`, { headers: { ...getAuthHeaders() } });
   return handle(res);
@@ -170,7 +209,7 @@ export async function saveAttendance(entries) {
   return handle(res);
 }
 
-/* --- CHATBOT TRIGGERS --- */
+/* ------------------------- CHATBOT TRIGGERS ------------------------- */
 export async function getChatbotTriggers() {
   const res = await fetch(`${base}/chatbot/triggers`, { headers: { ...getAuthHeaders() } });
   return handle(res);
@@ -195,11 +234,14 @@ export async function editChatbotTrigger(id, trigger, response, type) {
 }
 
 export async function deleteChatbotTrigger(id) {
-  const res = await fetch(`${base}/chatbot/triggers/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { ...getAuthHeaders() } });
+  const res = await fetch(`${base}/chatbot/triggers/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { ...getAuthHeaders() }
+  });
   return handle(res);
 }
 
-/* --- NOTICES --- */
+/* ------------------------- NOTICES ------------------------- */
 export async function getNotices() {
   const res = await fetch(`${base}/notices`, { headers: { ...getAuthHeaders() } });
   return handle(res);
@@ -224,13 +266,17 @@ export async function editNotice(id, payload) {
 }
 
 export async function deleteNotice(id) {
-  const res = await fetch(`${base}/notices/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { ...getAuthHeaders() } });
+  const res = await fetch(`${base}/notices/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { ...getAuthHeaders() }
+  });
   return handle(res);
 }
 
-/* --- EXPORT --- */
+/* ------------------------- EXPORT ------------------------- */
 export default {
   login, logout,
+  forgotPassword, resetPassword,
   getUsers, addUser, editUser, deleteUser, toggleUserLock,
   getBadges, createBadge, removeBadge, assignBadge,
   getMasterCommands, addMasterCommand, editMasterCommand, deleteMasterCommand, executeMasterCommand,
