@@ -3,6 +3,7 @@
 
 // server.js — compatible with Render / Node 22+
 // server.js — Node 22 (ESM) + Resend + Express + MongoDB setup
+const fetch = global.fetch;
 import path from 'path';
 import express from 'express';
 import cors from 'cors';
@@ -12,7 +13,6 @@ import mongoose from 'mongoose';
 import http from 'http';
 import { Server } from 'socket.io';
 import crypto from 'crypto';
-import fetch from 'node-fetch';
 import { body, validationResult } from 'express-validator';
 import dotenv from 'dotenv';
 import { Resend } from 'resend';
