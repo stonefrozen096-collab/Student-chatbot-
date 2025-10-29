@@ -324,15 +324,19 @@ app.post("/api/reset-password", async (req, res) => {
 // ---------- FIXED ROUTES ----------
 // ---------- Forgot / Reset Password Pages ----------
 // ✅ Serve the correct forgot-password page (common file)
+// ✅ Serve frontend forgot/reset pages
 app.get(['/admin/forgot-password', '/admin/reset-password'], (req, res) => {
   const f = path.join(__dirname, 'frontend', 'forgot-password.html');
-  res.sendFile(f, err => { 
+  res.sendFile(f, err => {
     if (err) {
-      console.error('File not found:', f);
-      res.status(404).send('Not found');
+      console.error('File not found:', f, err);
+      res.status(404).send('File not found');
     }
   });
 });
+
+// (Optional fallback for direct file serving)
+app.use(express.static(path.join(__dirname, 'frontend')));
 // ---------------- BADGES ----------------
 app.get('/api/badges', authMiddleware, requireRole('any'), wrap(async (req, res) => {
   res.json(await Badge.find());
