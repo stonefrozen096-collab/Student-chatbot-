@@ -322,20 +322,11 @@ app.post("/api/reset-password", async (req, res) => {
 
 // serve forgot/reset HTML pages (for admin route)
 // ---------- FIXED ROUTES ----------
-app.get("/admin/forgot-password", (req, res) => {
-  const f = path.join(__dirname, "frontend", "forgot-password.html");
-  res.sendFile(f, (err) => {
-    if (err) res.status(404).send("Not found");
-  });
+// ---------- Forgot / Reset Password Pages ----------
+app.get(['/admin/forgot-password', '/admin/reset-password'], (req, res) => {
+  const f = path.join(__dirname, 'frontend', 'admin', 'forgot-password.html');
+  res.sendFile(f, err => { if (err) res.status(404).send('Not found'); });
 });
-
-app.get("/admin/reset-password", (req, res) => {
-  const f = path.join(__dirname, "frontend", "reset-password.html");
-  res.sendFile(f, (err) => {
-    if (err) res.status(404).send("Not found");
-  });
-});
-
 // ---------------- BADGES ----------------
 app.get('/api/badges', authMiddleware, requireRole('any'), wrap(async (req, res) => {
   res.json(await Badge.find());
