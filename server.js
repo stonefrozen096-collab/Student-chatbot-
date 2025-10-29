@@ -16,6 +16,7 @@ import crypto from 'crypto';
 import { body, validationResult } from 'express-validator';
 import dotenv from 'dotenv';
 import { Resend } from 'resend';
+import fs from "fs";
 
 dotenv.config();
 
@@ -348,6 +349,13 @@ app.get("/admin/reset-password", (req, res) => {
     }
   });
 });
+console.log("🧠 DEBUG: Current directory:", __dirname);
+try {
+  const frontendPath = path.join(__dirname, "frontend");
+  console.log("📂 DEBUG: Files in frontend:", fs.readdirSync(frontendPath));
+} catch (err) {
+  console.error("⚠️ DEBUG: Could not read frontend folder:", err.message);
+}
 
 // Serve all other static frontend files
 app.use(express.static(path.join(__dirname, "frontend")));
