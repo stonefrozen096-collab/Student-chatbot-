@@ -112,7 +112,7 @@ app.post("/api/request-reset", wrap(async (req, res) => {
 
   try {
     await resend.emails.send({
-      from: "no-reply@student-assistant.app",
+      from: "onboarding@resend.dev",
       to: email,
       subject: "Password Reset Code",
       text: `Your password reset code is ${code}. It will expire in 10 minutes.`
