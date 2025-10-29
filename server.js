@@ -254,81 +254,81 @@ app.get('/api/me', authMiddleware, wrap(async (req, res) => {
 
 // ---------------- PASSWORD RESET (2FA) ----------------
 // handler that generates code & sends email (Resend or nodemailer)
-async function handleRequestReset(req, res) {
-  const email = req.body.email;
-  if (!email) return res.status(400).json({ ok: false, error: 'email required' });
-  const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
+// ---------------------- PASSWORD RESET (Resend version) ----------------------
 
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-  await TwoFA.findOneAndUpdate({ email }, { email, code, expiresAt }, { upsert: true });
-
+app.post("/api/request-reset", async (req, res) => {
   try {
-    await sendEmail({
-      from: process.env.EMAIL_FROM || 'no-reply@student-assistant.app',
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ ok: false, error: "Email required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ ok: false, error: "User not found" });
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min expiry
+
+    await TwoFA.findOneAndUpdate(
+      { email },
+      { email, code, expiresAt },
+      { upsert: true }
+    );
+
+    console.log("📧 Sending reset code via Resend to:", email);
+
+    // Send email using Resend API
+    const from = process.env.EMAIL_FROM || "Student Assistant <onboarding@resend.dev>";
+    const result = await resend.emails.send({
+      from,
       to: email,
-      subject: 'Password reset token — Student Assistant',
-      text: `Your reset token: ${code}. Expires in 10 minutes.`,
-      html: `<p>Your reset token: <strong>${code}</strong>. It expires in 10 minutes.</p>`
+      subject: "Password Reset Token — Student Assistant",
+      html: `<p>Your password reset code is: <strong>${code}</strong></p>
+             <p>This code will expire in 10 minutes.</p>`,
     });
-    await addLog(`Reset token sent to ${email}`, 'system');
-    return res.json({ ok: true, message: 'Token sent' });
+
+    console.log("✅ Resend API response:", result);
+
+    return res.json({ ok: true, message: "Reset code sent successfully" });
   } catch (err) {
-    console.error('Email send error', err && (err.message || err));
-    // For development convenience, if no email backend configured, return debug code
-    if (!process.env.RESEND_API_KEY && !process.env.EMAIL_USER) {
-      return res.json({ ok: true, debugCode: code, message: 'Email not configured; returning debug code' });
-    }
-    return res.status(500).json({ ok: false, error: 'Failed to send email' });
+    console.error("❌ Error in /api/request-reset:", err);
+    return res.status(500).json({ ok: false, error: "Failed to send email" });
   }
-}
-
-// handler that consumes code and sets new password
-async function handleResetPassword(req, res) {
-  const { email, code, newPassword } = req.body;
-  if (!email || !code || !newPassword) return res.status(400).json({ ok: false, error: 'email, code and newPassword required' });
-
-  const rec = await TwoFA.findOne({ email, code });
-  if (!rec) return res.status(400).json({ ok: false, error: 'Invalid or expired token' });
-  if (rec.expiresAt < new Date()) {
-    await TwoFA.deleteOne({ _id: rec._id });
-    return res.status(400).json({ ok: false, error: 'Token expired' });
-  }
-
-  const hashed = await bcrypt.hash(newPassword, 10);
-  await User.findOneAndUpdate({ email }, { password: hashed });
-  await TwoFA.deleteOne({ _id: rec._id });
-  await addLog(`Password reset for ${email}`, 'system');
-  return res.json({ ok: true, message: 'Password reset successful' });
-}
-
-// expose endpoints
-app.post('/api/request-reset', body('email').isEmail(), wrap(handleRequestReset));
-app.post('/api/forgot-password', body('email').isEmail(), wrap(handleRequestReset)); // alias
-app.post('/admin/forgot-password', body('email').isEmail(), wrap(handleRequestReset)); // alias for older frontends
-
-app.post('/api/reset-password', wrap(handleResetPassword));
-app.post('/admin/reset-password', wrap(handleResetPassword)); // alias
-
-// token in URL optional
-app.post('/api/reset-password/:token', wrap(async (req, res) => {
-  const token = req.params.token;
-  const email = req.body.email || req.query.email;
-  const newPassword = req.body.newPassword || req.query.newPassword || req.body.password;
-  if (!email || !token || !newPassword) return res.status(400).json({ ok: false, error: 'email, token and newPassword required' });
-  req.body = { email, code: token, newPassword };
-  return handleResetPassword(req, res);
-}));
-
-// serve admin static pages (so GET /admin/forgot-password returns page)
-app.get('/admin/forgot-password', (req, res) => {
-  const f = path.join(__dirname, 'frontend', 'admin', 'forgot-password.html');
-  res.sendFile(f, err => { if (err) res.status(404).send('Not found'); });
 });
-app.get('/admin/reset-password', (req, res) => {
-  const f = path.join(__dirname, 'frontend', 'admin', 'reset-password.html');
-  res.sendFile(f, err => { if (err) res.status(404).send('Not found'); });
+
+// ---------------------- RESET PASSWORD ----------------------
+app.post("/api/reset-password", async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword)
+      return res.status(400).json({ ok: false, error: "Email, code, and newPassword required" });
+
+    const rec = await TwoFA.findOne({ email, code });
+    if (!rec) return res.status(400).json({ ok: false, error: "Invalid or expired token" });
+    if (rec.expiresAt < new Date()) {
+      await TwoFA.deleteOne({ _id: rec._id });
+      return res.status(400).json({ ok: false, error: "Token expired" });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await User.findOneAndUpdate({ email }, { password: hashed });
+    await TwoFA.deleteOne({ _id: rec._id });
+
+    console.log(`✅ Password reset successful for ${email}`);
+    return res.json({ ok: true, message: "Password reset successful" });
+  } catch (err) {
+    console.error("❌ Error in /api/reset-password:", err);
+    return res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
+
+// serve forgot/reset HTML pages (for admin route)
+app.get("/admin/forgot-password", (req, res) => {
+  const f = path.join(__dirname, "frontend", "admin", "forgot-password.html");
+  res.sendFile(f, (err) => { if (err) res.status(404).send("Not found"); });
+});
+
+app.get("/admin/reset-password", (req, res) => {
+  const f = path.join(__dirname, "frontend", "admin", "reset-password.html");
+  res.sendFile(f, (err) => { if (err) res.status(404).send("Not found"); });
 });
 
 // ---------------- BADGES ----------------
