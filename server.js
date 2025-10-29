@@ -358,7 +358,22 @@ try {
 }
 
 // Serve all other static frontend files
+// ✅ Serve static frontend files
 app.use(express.static(path.join(__dirname, "frontend")));
+
+// ✅ Specific routes for HTML files (important for Render)
+app.get("/admin/forgot-password", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend", "forgot-password.html"));
+});
+
+app.get("/admin/reset-password", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend", "reset-password.html"));
+});
+
+// ✅ Catch-all route for any other frontend pages
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend", "index.html"));
+});
 
 // ---------------- BADGES ----------------
 app.get('/api/badges', authMiddleware, requireRole('any'), wrap(async (req, res) => {
