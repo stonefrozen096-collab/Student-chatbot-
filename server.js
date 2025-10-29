@@ -325,18 +325,33 @@ app.post("/api/reset-password", async (req, res) => {
 // ---------- Forgot / Reset Password Pages ----------
 // ✅ Serve the correct forgot-password page (common file)
 // ✅ Serve frontend forgot/reset pages
-app.get(['/admin/forgot-password', '/admin/reset-password'], (req, res) => {
-  const f = path.join(__dirname, 'frontend', 'forgot-password.html');
-  res.sendFile(f, err => {
+// ---------- FRONTEND ROUTES ----------
+const path = require("path");
+
+// Serve forgot password and reset password pages
+app.get("/admin/forgot-password", (req, res) => {
+  const filePath = path.join(__dirname, "frontend", "forgot-password.html");
+  res.sendFile(filePath, (err) => {
     if (err) {
-      console.error('File not found:', f, err);
-      res.status(404).send('File not found');
+      console.error("Error sending forgot-password.html:", err);
+      res.status(500).send("Internal Server Error");
     }
   });
 });
 
-// (Optional fallback for direct file serving)
-app.use(express.static(path.join(__dirname, 'frontend')));
+app.get("/admin/reset-password", (req, res) => {
+  const filePath = path.join(__dirname, "frontend", "reset-password.html");
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("Error sending reset-password.html:", err);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+});
+
+// Serve all other static frontend files
+app.use(express.static(path.join(__dirname, "frontend")));
+
 // ---------------- BADGES ----------------
 app.get('/api/badges', authMiddleware, requireRole('any'), wrap(async (req, res) => {
   res.json(await Badge.find());
