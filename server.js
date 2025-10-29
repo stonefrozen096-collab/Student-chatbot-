@@ -326,7 +326,7 @@ app.post("/api/reset-password", async (req, res) => {
 // ✅ Serve the correct forgot-password page (common file)
 // ✅ Serve frontend forgot/reset pages
 // ---------- FRONTEND ROUTES ----------
-const path = require("path");
+
 
 // Serve forgot password and reset password pages
 app.get("/admin/forgot-password", (req, res) => {
