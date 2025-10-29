@@ -1,7 +1,7 @@
 // server.js — Production-ready Student Assistant (FULL)
 // Replace existing server.js with this file
 
-require('dotenv').config();
+
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
