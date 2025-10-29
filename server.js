@@ -26,6 +26,29 @@ const io = new Server(server, { cors: { origin: process.env.CORS_ORIGIN || '*' }
 
 // Initialize Resend (email API)
 const resend = new Resend(process.env.RESEND_API_KEY);
+// ---------- EMAIL SENDER ----------
+async function sendEmail({ from, to, subject, text, html }) {
+  try {
+    if (!process.env.RESEND_API_KEY) {
+      console.warn('⚠️ RESEND_API_KEY missing — returning debug mode');
+      return { debug: true };
+    }
+
+    const data = await resend.emails.send({
+      from,
+      to,
+      subject,
+      text,
+      html,
+    });
+
+    console.log('📧 Email sent:', data?.id || 'No ID returned');
+    return data;
+  } catch (err) {
+    console.error('❌ Email send failed:', err.message || err);
+    throw err;
+  }
+}
 
 app.use(cors());
 app.use(express.json());
