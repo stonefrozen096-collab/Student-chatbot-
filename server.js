@@ -2,12 +2,12 @@
 // Replace existing server.js with this file
 
 // server.js — compatible with Render / Node 22+
+// server.js — Node 22 (ESM) + Resend + Express + MongoDB setup
 import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
 import mongoose from 'mongoose';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -15,12 +15,17 @@ import crypto from 'crypto';
 import fetch from 'node-fetch';
 import { body, validationResult } from 'express-validator';
 import dotenv from 'dotenv';
+import { Resend } from 'resend';
 
 dotenv.config();
 
+const __dirname = path.resolve();
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: process.env.CORS_ORIGIN || '*' } });
+
+// Initialize Resend (email API)
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 app.use(cors());
 app.use(express.json());
