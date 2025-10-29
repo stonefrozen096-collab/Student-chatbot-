@@ -153,65 +153,7 @@ const Notice = mongoose.model('Notice', noticeSchema);
 const ChatTrigger = mongoose.model('ChatTrigger', chatTriggerSchema);
 
 // ---------------- EMAIL BACKENDS ----------------
-// nodemailer transporter (if EMAIL_USER & EMAIL_PASS provided)
-let transporter = null;
-if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-  });
-}
 
-// helper sendEmail supports Resend (preferred) or nodemailer fallback
-async function sendEmail({ from, to, subject, text, html }) {
-  // 1) Resend API if API key present (recommended)
-  if (process.env.RESEND_API_KEY) {
-    try {
-      const resp = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`
-        },
-        body: JSON.stringify({
-          from: from || 'onboarding@resend.dev',
-          to,
-          subject,
-          text,
-          html
-        })
-      });
-      if (!resp.ok) {
-        const body = await resp.text();
-        throw new Error(`Resend error ${resp.status}: ${body}`);
-      }
-      return true;
-    } catch (err) {
-      console.error('Resend send error:', err && (err.message || err));
-      throw err;
-    }
-  }
-
-  // 2) nodemailer fallback (Gmail SMTP or configured SMTP)
-  if (transporter) {
-    try {
-      await transporter.sendMail({
-        from: from || process.env.EMAIL_USER,
-        to,
-        subject,
-        text,
-        html
-      });
-      return true;
-    } catch (err) {
-      console.error('Nodemailer send error:', err && (err.message || err));
-      throw err;
-    }
-  }
-
-  // 3) no email backend configured
-  throw new Error('No email backend configured (set RESEND_API_KEY or EMAIL_USER & EMAIL_PASS)');
-}
 
 // ---------------- HELPERS ----------------
 async function addLog(action, user = 'system') {
