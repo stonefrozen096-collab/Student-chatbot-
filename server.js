@@ -1,19 +1,22 @@
 // server.js — Production-ready Student Assistant (FULL)
 // Replace existing server.js with this file
 
+// server.js — compatible with Render / Node 22+
+import path from 'path';
+import express from 'express';
+import cors from 'cors';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
+import mongoose from 'mongoose';
+import http from 'http';
+import { Server } from 'socket.io';
+import crypto from 'crypto';
+import fetch from 'node-fetch';
+import { body, validationResult } from 'express-validator';
+import dotenv from 'dotenv';
 
-const path = require('path');
-const express = require('express');
-const cors = require('cors');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
-const mongoose = require('mongoose');
-const http = require('http');
-const { Server } = require('socket.io');
-const crypto = require('crypto');
-const fetch = global.fetch || require('node-fetch'); // Node22 has fetch, fallback if needed
-const { body, validationResult } = require('express-validator');
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
