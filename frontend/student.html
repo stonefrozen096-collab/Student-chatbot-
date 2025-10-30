@@ -4,263 +4,307 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Student Dashboard</title>
-<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="common.css">
 <style>
-  body { font-family:"Segoe UI",sans-serif; background:#f4f6f9; margin:0; padding:0; }
-  .container { max-width: 1000px; margin: 30px auto; padding:20px; background:#fff; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
-  h2,h3,h4 { margin:5px 0; color:#0f172a; }
-  .section { margin-bottom:25px; }
-  .profile-info p { margin:2px 0; color:#475569; }
-  .list-item { padding:5px 0; border-bottom:1px solid #e5e7eb; }
-  input,textarea,select,button { width:100%; padding:10px; margin:5px 0; border-radius:8px; border:1px solid #d1d5db; outline:none; }
-  button.primary-btn { background:#4f46e5;color:#fff;font-weight:bold;border:none;cursor:pointer;transition:0.3s; }
-  button.primary-btn:hover { transform:scale(1.03); }
-  canvas { max-width:100%; margin-top:10px; }
-  #chatbot { border:1px solid #d1d5db; border-radius:8px; padding:10px; max-height:300px; overflow-y:auto; background:#f9fafb; margin-top:10px; }
-  .chat-msg { margin:5px 0; }
-  .chat-msg.user { color:#2563eb; }
-  .chat-msg.bot { color:#10b981; }
+  body {
+    font-family: "Segoe UI", sans-serif;
+    background: #f4f6f9;
+    margin: 0;
+  }
+  header {
+    background: #1e3a8a;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 25px;
+  }
+  header h1 {
+    font-size: 22px;
+    margin: 0;
+  }
+  nav {
+    position: relative;
+  }
+  .dropdown {
+    position: relative;
+    display: inline-block;
+  }
+  .dropbtn {
+    background: #3b82f6;
+    border: none;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    overflow: hidden;
+    z-index: 99;
+  }
+  .dropdown-content a {
+    display: block;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: #1e3a8a;
+  }
+  .dropdown-content a:hover {
+    background: #e0e7ff;
+  }
+  .dropdown:hover .dropdown-content {
+    display: block;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 30px auto;
+    background: #fff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+
+  h2, h3 {
+    color: #1e3a8a;
+  }
+
+  .list-item {
+    padding: 6px 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  button.primary-btn {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  button.primary-btn:hover {
+    background: #1d4ed8;
+  }
+
+  canvas {
+    max-width: 100%;
+  }
+
+  /* ---- CALCULATOR PANEL ---- */
+  #calculatorPanel {
+    position: fixed;
+    top: 0;
+    right: -350px;
+    width: 300px;
+    height: 100%;
+    background: #1e40af;
+    color: #fff;
+    transition: right 0.4s ease;
+    padding: 20px;
+    box-shadow: -3px 0 10px rgba(0,0,0,0.3);
+    z-index: 999;
+  }
+  #calculatorPanel.active {
+    right: 0;
+  }
+  #calculatorPanel h3 {
+    margin-top: 0;
+    text-align: center;
+  }
+  .calc-display {
+    width: 100%;
+    height: 45px;
+    text-align: right;
+    font-size: 20px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: none;
+    padding: 5px;
+    background: #fff;
+    color: #000;
+  }
+  .calc-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .calc-buttons button {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .calc-buttons button:hover {
+    background: #60a5fa;
+  }
+  .close-btn {
+    background: #f87171;
+    margin-top: 12px;
+  }
+  .close-btn:hover {
+    background: #ef4444;
+  }
 </style>
 </head>
+
 <body>
+<header>
+  <h1>Student Dashboard</h1>
+  <nav>
+    <div class="dropdown">
+      <button class="dropbtn">Tools ⚙️</button>
+      <div class="dropdown-content">
+        <a href="#" onclick="toggleCalculator()">Calculator</a>
+        <a href="#">(Future Tool)</a>
+      </div>
+    </div>
+  </nav>
+</header>
+
 <div class="container">
-  <!-- Profile -->
-  <div class="section profile-info">
-    <h2 id="studentName">Hari Prasath</h2>
-    <p><strong>Reg No:</strong> DME123</p>
-    <p><strong>Email:</strong> hari@example.com</p>
-    <p><strong>Roles:</strong> STUDENT/TESTER</p>
-    <button class="primary-btn" onclick="logout()">Logout</button>
-  </div>
+  <h2 id="studentName">Hari Prasath</h2>
+  <p><strong>Reg No:</strong> DME123</p>
+  <p><strong>Email:</strong> hari@example.com</p>
+  <p><strong>Role:</strong> Student/Tester</p>
+  <button class="primary-btn" onclick="logout()">Logout</button>
 
-  <!-- Assigned Faculty -->
-  <div class="section">
-    <h3>Assigned Faculty</h3>
-    <div class="list-item">Mr. John Doe</div>
-    <div class="list-item">Ms. Jane Smith</div>
-  </div>
+  <hr>
 
-  <!-- Attendance Summary -->
-  <div class="section">
-    <h3>Attendance Summary</h3>
-    <div id="attendanceList"></div>
-  </div>
+  <h3>Assigned Faculty</h3>
+  <div id="facultyList"></div>
 
-  <!-- Notes -->
-  <div class="section">
-    <h3>Notes</h3>
-    <div id="notesList"></div>
-  </div>
+  <h3>Attendance Summary</h3>
+  <div id="attendanceList"></div>
 
-  <!-- Tests / Assignments -->
-  <div class="section">
-    <h3>Tests / Assignments</h3>
-    <div id="testList"></div>
-  </div>
+  <h3>Notes</h3>
+  <div id="notesList"></div>
 
-  <!-- Notices -->
-  <div class="section">
-    <h3>Notices</h3>
-    <div id="noticeList"></div>
-  </div>
+  <h3>Tests / Assignments</h3>
+  <div id="testList"></div>
 
-  <!-- Feedback -->
-  <div class="section">
-    <h3>Submit Feedback</h3>
-    <label for="feedbackSubject">Subject</label>
-    <input type="text" id="feedbackSubject" placeholder="Enter subject">
-    <textarea id="feedbackText" rows="2" placeholder="Write your feedback here..."></textarea>
-    <button class="primary-btn" onclick="submitFeedback()">Send Feedback</button>
-    <h4>Feedback Responses</h4>
-    <div id="feedbackResponses"></div>
-  </div>
+  <h3>Notices</h3>
+  <div id="noticeList"></div>
 
-  <!-- Charts -->
-  <div class="section">
-    <h3>Performance Charts</h3>
-    <canvas id="testChart"></canvas>
-    <canvas id="attendanceChart"></canvas>
-    <canvas id="completionChart"></canvas>
-  </div>
+  <h3>Feedback</h3>
+  <input type="text" id="feedbackSubject" placeholder="Subject">
+  <textarea id="feedbackText" placeholder="Write feedback..."></textarea>
+  <button class="primary-btn" onclick="submitFeedback()">Send Feedback</button>
+  <div id="feedbackResponses"></div>
 
-  <!-- Chatbot -->
-  <div class="section">
-    <h3>Chatbot Assistant</h3>
-    <div id="chatbot"></div>
-    <input type="text" id="chatbotInput" placeholder="Ask me anything...">
-    <button class="primary-btn" id="chatbotSendBtn">Send</button>
+  <h3>Performance</h3>
+  <canvas id="attendanceChart"></canvas>
+  <canvas id="testChart"></canvas>
+</div>
+
+<!-- Calculator Side Panel -->
+<div id="calculatorPanel">
+  <h3>Calculator</h3>
+  <input type="text" id="calcDisplay" class="calc-display" readonly>
+  <div class="calc-buttons">
+    <button onclick="press('7')">7</button>
+    <button onclick="press('8')">8</button>
+    <button onclick="press('9')">9</button>
+    <button onclick="press('/')">÷</button>
+
+    <button onclick="press('4')">4</button>
+    <button onclick="press('5')">5</button>
+    <button onclick="press('6')">6</button>
+    <button onclick="press('*')">×</button>
+
+    <button onclick="press('1')">1</button>
+    <button onclick="press('2')">2</button>
+    <button onclick="press('3')">3</button>
+    <button onclick="press('-')">−</button>
+
+    <button onclick="press('0')">0</button>
+    <button onclick="press('.')">.</button>
+    <button onclick="calculate()">=</button>
+    <button onclick="press('+')">+</button>
+
+    <button class="close-btn" onclick="toggleCalculator()">Close</button>
+    <button onclick="clearCalc()">C</button>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Sample Data
-  const attendanceData = [
-    {subject:'Maths', percent:95},
-    {subject:'Physics', percent:90},
-    {subject:'Mechanics', percent:92}
-  ];
-  const notesData = [
-    {title:'Chapter 5 summary', faculty:'Mr. John Doe'},
-    {title:'Lab instructions', faculty:'Ms. Jane Smith'}
-  ];
-  const testData = [
-    {title:'Math Assignment 3'},
-    {title:'Physics Lab Report'}
-  ];
-  const noticeData = [
-    'Extra classes on Friday',
-    'Submission deadline extended'
-  ];
-  const feedbackData = [];
-  const feedbackResponses = [
-    'Request for extra classes (Mr. John Doe): Scheduled on Friday',
-    'Assignment submission issue (Ms. Jane Smith): Received late submission'
-  ];
-
-  const triggers = [
-    {word:'hello', reply:'hello 👋 how can I help you?'},
-    {word:'hi', reply:'Hi there! How can I assist you?'}
-  ];
-
-  // Render Functions
-  function renderAttendance() {
-    const container = document.getElementById('attendanceList');
-    container.innerHTML = '';
-    attendanceData.forEach(a => {
-      const div = document.createElement('div');
-      div.className='list-item';
-      div.textContent = `${a.subject} - ${a.percent}%`;
-      container.appendChild(div);
-    });
+  // Toggle Calculator Panel
+  function toggleCalculator() {
+    document.getElementById('calculatorPanel').classList.toggle('active');
   }
 
-  function renderNotes() {
-    const container = document.getElementById('notesList');
-    container.innerHTML = '';
-    notesData.forEach(n=>{
-      const div=document.createElement('div');
-      div.className='list-item';
-      div.textContent=`${n.title} by ${n.faculty}`;
-      container.appendChild(div);
-    });
-  }
+  // Calculator logic
+  let calcInput = "";
+  const display = document.getElementById('calcDisplay');
 
-  function renderTests() {
-    const container=document.getElementById('testList');
-    container.innerHTML='';
-    testData.forEach(t=>{
-      const div=document.createElement('div');
-      div.className='list-item';
-      div.textContent=t.title;
-      container.appendChild(div);
-    });
+  function press(val) {
+    calcInput += val;
+    display.value = calcInput;
   }
-
-  function renderNotices() {
-    const container=document.getElementById('noticeList');
-    container.innerHTML='';
-    noticeData.forEach(n=>{
-      const div=document.createElement('div');
-      div.className='list-item';
-      div.textContent=n;
-      container.appendChild(div);
-    });
+  function clearCalc() {
+    calcInput = "";
+    display.value = "";
   }
-
-  function renderFeedback() {
-    const container=document.getElementById('feedbackResponses');
-    container.innerHTML='';
-    feedbackResponses.forEach(f=>{
-      const div=document.createElement('div');
-      div.className='list-item';
-      div.textContent=f;
-      container.appendChild(div);
-    });
-  }
-
-  function submitFeedback() {
-    const subject=document.getElementById('feedbackSubject').value;
-    const text=document.getElementById('feedbackText').value;
-    if(subject && text) {
-      feedbackData.push({subject,text});
-      alert('Feedback submitted!');
-      document.getElementById('feedbackSubject').value='';
-      document.getElementById('feedbackText').value='';
-      renderFeedback();
+  function calculate() {
+    try {
+      calcInput = eval(calcInput).toString();
+      display.value = calcInput;
+    } catch {
+      display.value = "Error";
+      calcInput = "";
     }
   }
+
+  // Dummy dynamic loading placeholders
+  const faculty = ['Mr. John Doe', 'Ms. Jane Smith'];
+  const attendance = [{subject:'Math',percent:92},{subject:'Physics',percent:88}];
+  const notes = ['Lab Manual Update','Project Guidelines'];
+  const tests = ['Midterm Test','Assignment 2'];
+  const notices = ['Seminar on Friday','Lab timing updated'];
+  const responses = ['Feedback noted.'];
+
+  function renderList(id, arr) {
+    const el = document.getElementById(id);
+    el.innerHTML = arr.map(i=>`<div class='list-item'>${typeof i==='object'?`${i.subject}: ${i.percent}%`:i}</div>`).join('');
+  }
+  function submitFeedback(){
+    alert("Feedback sent successfully!");
+  }
+
+  renderList("facultyList",faculty);
+  renderList("attendanceList",attendance);
+  renderList("notesList",notes);
+  renderList("testList",tests);
+  renderList("noticeList",notices);
+  renderList("feedbackResponses",responses);
 
   // Charts
-  const testChart=new Chart(document.getElementById('testChart'),{
-    type:'bar',
-    data:{
-      labels:testData.map(t=>t.title),
-      datasets:[{label:'Scores', data:[80,90], backgroundColor:'#2563eb'}]
+  new Chart(document.getElementById("attendanceChart"), {
+    type: "bar",
+    data: {
+      labels: attendance.map(a=>a.subject),
+      datasets: [{ label:"Attendance %", data: attendance.map(a=>a.percent), backgroundColor:"#2563eb"}]
+    }
+  });
+  new Chart(document.getElementById("testChart"), {
+    type: "doughnut",
+    data: {
+      labels: ["Completed","Pending"],
+      datasets: [{ data:[8,2], backgroundColor:["#10b981","#f59e0b"] }]
     }
   });
 
-  const attendanceChart=new Chart(document.getElementById('attendanceChart'),{
-    type:'pie',
-    data:{
-      labels:attendanceData.map(a=>a.subject),
-      datasets:[{data:attendanceData.map(a=>a.percent), backgroundColor:['#4f46e5','#3b82f6','#16a34a']}]
-    }
-  });
-
-  const completionChart=new Chart(document.getElementById('completionChart'),{
-    type:'doughnut',
-    data:{
-      labels:['Completed','Pending'],
-      datasets:[{data:[12,3], backgroundColor:['#10b981','#f59e0b']}]
-    }
-  });
-
-  // Chatbot
-  const chatbotContainer = document.getElementById('chatbot');
-  const chatbotInput = document.getElementById('chatbotInput');
-  const chatbotSendBtn = document.getElementById('chatbotSendBtn');
-
-  function addChatMessage(msg, sender) {
-    const div = document.createElement('div');
-    div.className = 'chat-msg ' + sender;
-    div.textContent = msg;
-    chatbotContainer.appendChild(div);
-    chatbotContainer.scrollTop = chatbotContainer.scrollHeight;
-  }
-
-  chatbotSendBtn.addEventListener('click', () => {
-    const userMsg = chatbotInput.value.trim();
-    if(!userMsg) return;
-    addChatMessage('You: ' + userMsg, 'user');
-    chatbotInput.value = '';
-
-    // Check triggers
-    const trigger = triggers.find(t => userMsg.toLowerCase().includes(t.word.toLowerCase()));
-    if(trigger) {
-      addChatMessage('Bot: ' + trigger.reply, 'bot');
-    } else {
-      addChatMessage('Bot: I have received your query.', 'bot');
-    }
-  });
-
-  chatbotInput.addEventListener('keypress', e => {
-    if(e.key==='Enter') chatbotSendBtn.click();
-  });
-
-  function logout() {
-    alert('Logging out...');
-    window.location.href='index.html';
-  }
-
-  // Initialize
-  renderAttendance();
-  renderNotes();
-  renderTests();
-  renderNotices();
-  renderFeedback();
+  function logout(){ window.location.href="index.html"; }
 </script>
 </body>
 </html>
-
-  
