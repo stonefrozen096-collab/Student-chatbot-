@@ -3,13 +3,162 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Assistant — Login</title>
-  <link rel="stylesheet" href="css/common.css">
-  <link rel="stylesheet" href="css/animation.css">
+  <title>Feathers — Student Assistant</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #0077ff, #00d4ff);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    /* Floating background feathers */
+    @keyframes floatFeather {
+      0% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+    }
+
+    .feather {
+      position: absolute;
+      bottom: -10%;
+      width: 40px;
+      height: 40px;
+      background: url('https://cdn-icons-png.flaticon.com/512/616/616408.png') no-repeat center;
+      background-size: contain;
+      animation: floatFeather 12s linear infinite;
+      opacity: 0.7;
+    }
+
+    .feather:nth-child(1) { left: 10%; animation-delay: 0s; }
+    .feather:nth-child(2) { left: 25%; animation-delay: 3s; transform: scale(0.8); }
+    .feather:nth-child(3) { left: 50%; animation-delay: 6s; transform: scale(1.1); }
+    .feather:nth-child(4) { left: 70%; animation-delay: 1s; transform: scale(0.9); }
+    .feather:nth-child(5) { left: 85%; animation-delay: 4s; transform: scale(1); }
+
+    .container {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      backdrop-filter: blur(12px);
+      padding: 40px 50px;
+      width: 340px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      animation: fadeIn 1s ease-in;
+      z-index: 5;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 34px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 2px;
+      text-shadow: 0 3px 15px rgba(255, 255, 255, 0.3);
+      margin-bottom: 5px;
+      animation: floatTitle 3s ease-in-out infinite;
+    }
+
+    @keyframes floatTitle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    .tagline {
+      font-size: 14px;
+      color: #e0f7ff;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+      opacity: 0.9;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+
+    input {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      font-size: 15px;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #0077ff;
+      color: white;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #00bfff;
+      transform: translateY(-2px);
+    }
+
+    a {
+      color: #fff;
+      text-decoration: underline;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    a:hover {
+      color: #00ffff;
+    }
+
+    .feedback-msg {
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    h2 {
+      color: #fff;
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+
+    section {
+      display: none;
+      animation: fadeIn 0.6s ease-in;
+    }
+
+    #auth-section {
+      display: block;
+    }
+
+  </style>
 </head>
 <body>
+  <!-- Floating Feathers Animation -->
+  <div class="feather"></div>
+  <div class="feather"></div>
+  <div class="feather"></div>
+  <div class="feather"></div>
+  <div class="feather"></div>
+
   <div class="container">
-    <h1>Student Assistant</h1>
+    <h1>🪶 Feathers</h1>
+    <p class="tagline">Be light like a feather</p>
 
     <!-- Login / Signup -->
     <section id="auth-section">
@@ -18,21 +167,21 @@
       <input type="password" id="authPassword" placeholder="Password">
       <button id="loginBtn">Login</button>
       <button id="signupBtn">Sign Up</button>
-      <p><a href="#" id="forgotLink">Forgot Password?</a></p>
+      <p><a id="forgotLink">Forgot Password?</a></p>
       <p id="authMsg" class="feedback-msg"></p>
     </section>
 
     <!-- Forgot Password -->
-    <section id="forgot-section" style="display:none">
+    <section id="forgot-section">
       <h2>Forgot Password</h2>
       <input type="email" id="fpEmail" placeholder="Registered Email">
       <button id="sendTokenBtn">Send Reset Token</button>
       <p id="fpMsg"></p>
-      <p><a href="#" id="backToAuth">Back</a></p>
+      <p><a id="backToAuth">Back</a></p>
     </section>
 
     <!-- Reset Password -->
-    <section id="reset-section" style="display:none">
+    <section id="reset-section">
       <h2>Reset Password</h2>
       <input type="text" id="resetToken" placeholder="Enter token">
       <input type="password" id="newPassword" placeholder="New Password">
@@ -51,11 +200,12 @@
     const fpMsg = document.getElementById('fpMsg');
     const resetMsg = document.getElementById('resetMsg');
 
-    // Toggle sections
+    // Section toggles
     document.getElementById('forgotLink').addEventListener('click', () => {
       authSection.style.display = 'none';
       forgotSection.style.display = 'block';
     });
+
     document.getElementById('backToAuth').addEventListener('click', () => {
       forgotSection.style.display = 'none';
       resetSection.style.display = 'none';
@@ -76,15 +226,15 @@
         });
         const data = await res.json();
         if (res.ok) {
-          authMsg.style.color = 'green';
+          authMsg.style.color = 'lightgreen';
           authMsg.textContent = '✅ Login successful! Redirecting...';
           setTimeout(() => window.location.href = 'dashboard.html', 1000);
         } else {
-          authMsg.style.color = 'red';
+          authMsg.style.color = 'salmon';
           authMsg.textContent = data.error || 'Login failed';
         }
-      } catch (err) {
-        authMsg.style.color = 'red';
+      } catch {
+        authMsg.style.color = 'salmon';
         authMsg.textContent = 'Error connecting to server.';
       }
     });
@@ -97,7 +247,7 @@
       authMsg.textContent = '';
 
       if (!name || !email || !password) {
-        authMsg.style.color = 'red';
+        authMsg.style.color = 'salmon';
         authMsg.textContent = 'All fields are required for signup.';
         return;
       }
@@ -110,16 +260,16 @@
         });
         const data = await res.json();
         if (!data.error) {
-          authMsg.style.color = 'green';
+          authMsg.style.color = 'lightgreen';
           authMsg.textContent = '✅ Signup successful! You can login now.';
           document.getElementById('authName').value = '';
           document.getElementById('authPassword').value = '';
         } else {
-          authMsg.style.color = 'red';
+          authMsg.style.color = 'salmon';
           authMsg.textContent = data.error;
         }
-      } catch (err) {
-        authMsg.style.color = 'red';
+      } catch {
+        authMsg.style.color = 'salmon';
         authMsg.textContent = 'Error connecting to server.';
       }
     });
@@ -135,11 +285,11 @@
           body: JSON.stringify({ email })
         });
         const data = await res.json();
-        fpMsg.style.color = res.ok ? 'green' : 'red';
+        fpMsg.style.color = res.ok ? 'lightgreen' : 'salmon';
         fpMsg.textContent = data.msg;
         if (res.ok) resetSection.style.display = 'block';
-      } catch (err) {
-        fpMsg.style.color = 'red';
+      } catch {
+        fpMsg.style.color = 'salmon';
         fpMsg.textContent = 'Error sending request.';
       }
     });
@@ -153,7 +303,7 @@
       resetMsg.textContent = '';
 
       if (newPassword !== confirmPassword) {
-        resetMsg.style.color = 'red';
+        resetMsg.style.color = 'salmon';
         resetMsg.textContent = 'Passwords do not match.';
         return;
       }
@@ -165,15 +315,15 @@
           body: JSON.stringify({ token, newPassword })
         });
         const data = await res.json();
-        resetMsg.style.color = res.ok ? 'green' : 'red';
+        resetMsg.style.color = res.ok ? 'lightgreen' : 'salmon';
         resetMsg.textContent = data.msg;
         if (res.ok) {
           document.getElementById('resetToken').value = '';
           document.getElementById('newPassword').value = '';
           document.getElementById('confirmPassword').value = '';
         }
-      } catch (err) {
-        resetMsg.style.color = 'red';
+      } catch {
+        resetMsg.style.color = 'salmon';
         resetMsg.textContent = 'Error resetting password.';
       }
     });
