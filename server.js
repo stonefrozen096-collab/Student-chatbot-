@@ -1,92 +1,108 @@
-// server.js — Production-ready Student Assistant (FULL)
-// Replace existing server.js with this file
+// server.js — Production-ready Student Assistant (ESM, Resend-ready)
+// Replaces previous server.js — keeps all models & logic, fixes signup + forgot-password issues.
 
-// server.js — compatible with Render / Node 22+
-// server.js — Node 22 (ESM) + Resend + Express + MongoDB setup
-const fetch = global.fetch;
-import path from 'path';
-import express from 'express';
-import cors from 'cors';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import mongoose from 'mongoose';
-import http from 'http';
-import { Server } from 'socket.io';
-import crypto from 'crypto';
-import { body, validationResult } from 'express-validator';
-import dotenv from 'dotenv';
-import { Resend } from 'resend';
+import path from "path";
 import fs from "fs";
+import express from "express";
+import cors from "cors";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
+import http from "http";
+import { Server } from "socket.io";
+import crypto from "crypto";
+import { body, validationResult } from "express-validator";
+import dotenv from "dotenv";
+import { Resend } from "resend";
 
 dotenv.config();
 
+// ---------- basic env / paths ----------
 const __dirname = path.resolve();
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: process.env.CORS_ORIGIN || '*' } });
+const io = new Server(server, { cors: { origin: process.env.CORS_ORIGIN || "*" } });
 
-// Initialize Resend (email API)
-const resend = new Resend(process.env.RESEND_API_KEY);
-// ---------- EMAIL SENDER ----------
+// ---------- Resend init ----------
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+// ---------- helpers ----------
 async function sendEmail({ from, to, subject, text, html }) {
+  // Centralized email helper — returns { ok: true, id } on success.
   try {
-    if (!process.env.RESEND_API_KEY) {
-      console.warn('⚠️ RESEND_API_KEY missing — returning debug mode');
-      return { debug: true };
+    if (!resend) {
+      // No Resend configured — return debug mode
+      console.warn("⚠️ RESEND not configured: running in debug email mode");
+      return { ok: true, debug: true };
     }
-
-    const data = await resend.emails.send({
-      from,
-      to,
-      subject,
-      text,
-      html,
-    });
-
-    console.log('📧 Email sent:', data?.id || 'No ID returned');
-    return data;
+    const data = await resend.emails.send({ from, to, subject, text, html });
+    console.log("📧 Email sent (resend id):", data?.id);
+    return { ok: true, id: data?.id };
   } catch (err) {
-    console.error('❌ Email send failed:', err.message || err);
+    console.error("❌ Email send failed:", err && (err.message || err));
     throw err;
   }
 }
 
+// ---------- middlewares ----------
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'frontend')));
 
-// ---------------- MONGODB ----------------
-const DB_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/student_assistant';
-mongoose.connect(DB_URI)
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// request logging for debug
+app.use((req, res, next) => {
+  console.log(`➡️ ${req.method} ${req.path}`);
+  next();
+});
 
-// ---------------- SCHEMAS ----------------
-function genId(prefix = '') { return prefix + crypto.randomBytes(8).toString('hex'); }
+// ---------- static frontend (serve assets) ----------
+// Important: static must be registered so assets (css/js) load when you serve specific HTML pages.
+const FRONTEND_DIR = path.join(__dirname, "frontend");
+app.use(express.static(FRONTEND_DIR));
 
+// debug: list frontend files (helpful on Render)
+try {
+  console.log("🧠 DEBUG: Current directory:", __dirname);
+  console.log("📂 DEBUG: Files in frontend:", fs.readdirSync(FRONTEND_DIR));
+} catch (err) {
+  console.warn("⚠️ DEBUG: Could not read frontend folder:", err && err.message);
+}
+
+// ---------- MONGO ----------
+const DB_URI = process.env.MONGO_URI || "mongodb://localhost:27017/student_assistant";
+mongoose
+  .connect(DB_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("MongoDB connection error:", err && err.message));
+
+// ---------- helper id ----------
+function genId(prefix = "") {
+  return prefix + crypto.randomBytes(8).toString("hex");
+}
+
+// ---------- SCHEMAS ----------
 const userSchema = new mongoose.Schema({
   email: { type: String, unique: true, index: true },
   name: String,
   password: String,
-  role: { type: String, enum: ['admin','faculty','moderator','tester','student'], default: 'student' },
+  role: { type: String, enum: ["admin", "faculty", "moderator", "tester", "student"], default: "student" },
   badges: [String],
   specialAccess: [String],
   locked: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
-  lastLogin: Date
+  lastLogin: Date,
 });
 
 const twoFASchema = new mongoose.Schema({
   email: { type: String, index: true, unique: true },
   code: String,
-  expiresAt: Date
+  expiresAt: Date,
 });
 
 const logSchema = new mongoose.Schema({
   action: String,
   user: String,
-  time: { type: Date, default: Date.now }
+  time: { type: Date, default: Date.now },
 });
 
 const badgeSchema = new mongoose.Schema({
@@ -94,84 +110,80 @@ const badgeSchema = new mongoose.Schema({
   name: String,
   effects: [String],
   access: [String],
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
 const masterSchema = new mongoose.Schema({
   id: { type: String, index: true, unique: true },
   name: String,
   action: String,
-  permission: { type: String, default: 'all' },
+  permission: { type: String, default: "all" },
   dangerous: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
 const testSchema = new mongoose.Schema({
-  _id: { type: String, default: () => genId('t_') },
+  _id: { type: String, default: () => genId("t_") },
   title: String,
   subject: String,
-  type: { type: String, default: 'mcq' },
+  type: { type: String, default: "mcq" },
   options: [String],
   correct: String,
   assignedStudents: [String],
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
 const attendanceSchema = new mongoose.Schema({
-  id: { type: String, index: true, default: () => genId('a_') },
+  id: { type: String, index: true, default: () => genId("a_") },
   username: String,
-  date: String, // YYYY-MM-DD
-  status: { type: String, enum: ['present','absent','late','onduty', null], default: null },
-  createdAt: { type: Date, default: Date.now }
+  date: String,
+  status: { type: String, enum: ["present", "absent", "late", "onduty", null], default: null },
+  createdAt: { type: Date, default: Date.now },
 });
 attendanceSchema.index({ username: 1, date: 1 }, { unique: true });
 
 const noticeSchema = new mongoose.Schema({
-  id: { type: String, index: true, default: () => genId('n_') },
+  id: { type: String, index: true, default: () => genId("n_") },
   title: String,
   message: String,
   assignedStudents: [String],
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
 const chatTriggerSchema = new mongoose.Schema({
-  id: { type: String, index: true, default: () => genId('ct_') },
+  id: { type: String, index: true, default: () => genId("ct_") },
   trigger: String,
   response: String,
-  type: { type: String, default: 'normal' }, // normal / alert / urgent / warning
-  createdAt: { type: Date, default: Date.now }
+  type: { type: String, default: "normal" },
+  createdAt: { type: Date, default: Date.now },
 });
 
-// ---------------- MODELS ----------------
-const User = mongoose.model('User', userSchema);
-const TwoFA = mongoose.model('TwoFA', twoFASchema);
-const Log = mongoose.model('Log', logSchema);
-const Badge = mongoose.model('Badge', badgeSchema);
-const MasterCommand = mongoose.model('MasterCommand', masterSchema);
-const Test = mongoose.model('Test', testSchema);
-const Attendance = mongoose.model('Attendance', attendanceSchema);
-const Notice = mongoose.model('Notice', noticeSchema);
-const ChatTrigger = mongoose.model('ChatTrigger', chatTriggerSchema);
+// ---------- MODELS ----------
+const User = mongoose.model("User", userSchema);
+const TwoFA = mongoose.model("TwoFA", twoFASchema);
+const Log = mongoose.model("Log", logSchema);
+const Badge = mongoose.model("Badge", badgeSchema);
+const MasterCommand = mongoose.model("MasterCommand", masterSchema);
+const Test = mongoose.model("Test", testSchema);
+const Attendance = mongoose.model("Attendance", attendanceSchema);
+const Notice = mongoose.model("Notice", noticeSchema);
+const ChatTrigger = mongoose.model("ChatTrigger", chatTriggerSchema);
 
-// ---------------- EMAIL BACKENDS ----------------
-
-
-// ---------------- HELPERS ----------------
-async function addLog(action, user = 'system') {
+// ---------- small helpers ----------
+async function addLog(action, user = "system") {
   try {
     const log = new Log({ action, user });
     await log.save();
-    io.emit('logs:updated', log);
+    io.emit("logs:updated", log);
   } catch (err) {
-    console.warn('addLog failed:', err && err.message);
+    console.warn("addLog failed:", err && err.message);
   }
 }
 
-const wrap = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-// ---------------- AUTH CONFIG ----------------
-const JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret_in_prod';
-const JWT_TTL = process.env.JWT_TTL || '8h';
+const JWT_SECRET = process.env.JWT_SECRET || "change_this_secret_in_prod";
+const JWT_TTL = process.env.JWT_TTL || "8h";
 
 function signToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_TTL });
@@ -179,86 +191,98 @@ function signToken(payload) {
 
 function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
-  if (!header) return res.status(401).json({ error: 'Missing Authorization' });
-  const parts = header.split(' ');
-  if (parts.length !== 2) return res.status(401).json({ error: 'Invalid Authorization' });
+  if (!header) return res.status(401).json({ error: "Missing Authorization" });
+  const parts = header.split(" ");
+  if (parts.length !== 2) return res.status(401).json({ error: "Invalid Authorization" });
   const token = parts[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     return next();
   } catch (err) {
-    return res.status(401).json({ error: 'Invalid token or expired' });
+    return res.status(401).json({ error: "Invalid token or expired" });
   }
 }
 
 function requireRole(...roles) {
   return (req, res, next) => {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
-    if (roles.includes('any')) return next();
-    if (!roles.includes(req.user.role)) return res.status(403).json({ error: 'Forbidden' });
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+    if (roles.includes("any")) return next();
+    if (!roles.includes(req.user.role)) return res.status(403).json({ error: "Forbidden" });
     next();
   };
 }
 
-// ---------------- SOCKET.IO ----------------
-io.on('connection', socket => {
-  console.log('Socket connected:', socket.id);
-  socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
+// ---------- SOCKET.IO ----------
+io.on("connection", (socket) => {
+  console.log("Socket connected:", socket.id);
+  socket.on("disconnect", () => console.log("Socket disconnected:", socket.id));
 });
 
-// ---------------- ROUTES ----------------
+// ---------- ROUTES ----------
 // health
-app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
+app.get("/api/health", (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
 // register
-app.post('/api/register',
-  body('email').isEmail(), body('password').isLength({ min: 6 }),
+app.post(
+  "/api/register",
+  body("email").isEmail(),
+  body("password").isLength({ min: 6 }),
   wrap(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ error: errors.array() });
-    const { email, password, name = '', role = 'student' } = req.body;
-    if (await User.findOne({ email })) return res.status(400).json({ error: 'User exists' });
+    const { email, password, name = "", role = "student" } = req.body;
+    if (await User.findOne({ email })) return res.status(400).json({ error: "User exists" });
     const hashed = await bcrypt.hash(password, 10);
     const u = new User({ email, name, password: hashed, role, badges: [], specialAccess: [], locked: false });
     await u.save();
-    await addLog(`User registered: ${email}`, 'system');
-    io.emit('users:created', u);
-    res.json({ success: true, user: { email: u.email, name: u.name, role: u.role } });
+    await addLog(`User registered: ${email}`, "system");
+    io.emit("users:created", u);
+
+    // return token immediately for convenience
+    const token = signToken({ id: u._id, email: u.email, role: u.role });
+    res.json({ success: true, user: { email: u.email, name: u.name, role: u.role }, token });
   })
 );
 
 // login
-app.post('/api/login', body('email').isEmail(), wrap(async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ success: false, error: 'User not found' });
-  if (user.locked) return res.status(403).json({ success: false, error: 'Account locked' });
-  if (user.password) {
-    if (!password) return res.status(400).json({ success: false, error: 'Password required' });
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(401).json({ success: false, error: 'Invalid credentials' });
-  }
-  user.lastLogin = new Date();
-  await user.save();
-  await addLog(`User login: ${email}`, email);
-  const token = signToken({ id: user._id, email: user.email, role: user.role });
-  res.json({ success: true, user: { email: user.email, name: user.name, role: user.role, badges: user.badges, specialAccess: user.specialAccess }, token });
-}));
+app.post(
+  "/api/login",
+  body("email").isEmail(),
+  wrap(async (req, res) => {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ success: false, error: "User not found" });
+    if (user.locked) return res.status(403).json({ success: false, error: "Account locked" });
+    if (user.password) {
+      if (!password) return res.status(400).json({ success: false, error: "Password required" });
+      const ok = await bcrypt.compare(password, user.password);
+      if (!ok) return res.status(401).json({ success: false, error: "Invalid credentials" });
+    }
+    user.lastLogin = new Date();
+    await user.save();
+    await addLog(`User login: ${email}`, email);
+    const token = signToken({ id: user._id, email: user.email, role: user.role });
+    res.json({ success: true, user: { email: user.email, name: user.name, role: user.role, badges: user.badges, specialAccess: user.specialAccess }, token });
+  })
+);
 
 // profile
-app.get('/api/me', authMiddleware, wrap(async (req, res) => {
-  const user = await User.findOne({ email: req.user.email }).select('-password');
-  if (!user) return res.status(404).json({ error: 'Not found' });
-  res.json(user);
-}));
+app.get(
+  "/api/me",
+  authMiddleware,
+  wrap(async (req, res) => {
+    const user = await User.findOne({ email: req.user.email }).select("-password");
+    if (!user) return res.status(404).json({ error: "Not found" });
+    res.json(user);
+  })
+);
 
-// ---------------- PASSWORD RESET (2FA) ----------------
-// handler that generates code & sends email (Resend or nodemailer)
-// ---------------------- PASSWORD RESET (Resend version) ----------------------
-
-app.post("/api/request-reset", async (req, res) => {
-  try {
+// ---------------- PASSWORD RESET (Resend-friendly) ----------------
+app.post(
+  "/api/request-reset",
+  body("email").isEmail(),
+  wrap(async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ ok: false, error: "Email required" });
 
@@ -266,41 +290,41 @@ app.post("/api/request-reset", async (req, res) => {
     if (!user) return res.status(404).json({ ok: false, error: "User not found" });
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min expiry
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    await TwoFA.findOneAndUpdate(
-      { email },
-      { email, code, expiresAt },
-      { upsert: true }
-    );
+    await TwoFA.findOneAndUpdate({ email }, { email, code, expiresAt }, { upsert: true, new: true });
 
-    console.log("📧 Sending reset code via Resend to:", email);
+    console.log("📧 Sending reset code to:", email);
 
-    // Send email using Resend API
-    const from = process.env.EMAIL_FROM || "Student Assistant <onboarding@resend.dev>";
-    const result = await resend.emails.send({
-      from,
-      to: email,
-      subject: "Password Reset Token — Student Assistant",
-      html: `<p>Your password reset code is: <strong>${code}</strong></p>
-             <p>This code will expire in 10 minutes.</p>`,
-    });
+    // use sendEmail helper to allow debug fallback
+    try {
+      const from = process.env.EMAIL_FROM || "Student Assistant <onboarding@resend.dev>";
+      const result = await sendEmail({
+        from,
+        to: email,
+        subject: "Password Reset Token — Student Assistant",
+        html: `<p>Your password reset code is: <strong>${code}</strong></p><p>Expires in 10 minutes.</p>`,
+      });
 
-    console.log("✅ Resend API response:", result);
+      // if debug mode, return debugCode so frontend can show it (very handy in dev)
+      if (result && result.debug) {
+        return res.json({ ok: true, message: "Email backend not configured; returning debug code", debugCode: code });
+      }
 
-    return res.json({ ok: true, message: "Reset code sent successfully" });
-  } catch (err) {
-    console.error("❌ Error in /api/request-reset:", err);
-    return res.status(500).json({ ok: false, error: "Failed to send email" });
-  }
-});
+      return res.json({ ok: true, message: "Reset code sent successfully" });
+    } catch (err) {
+      console.error("❌ Error sending reset email:", err && (err.message || err));
+      return res.status(500).json({ ok: false, error: "Failed to send email" });
+    }
+  })
+);
 
-// ---------------------- RESET PASSWORD ----------------------
-app.post("/api/reset-password", async (req, res) => {
-  try {
+// reset password
+app.post(
+  "/api/reset-password",
+  wrap(async (req, res) => {
     const { email, code, newPassword } = req.body;
-    if (!email || !code || !newPassword)
-      return res.status(400).json({ ok: false, error: "Email, code, and newPassword required" });
+    if (!email || !code || !newPassword) return res.status(400).json({ ok: false, error: "Email, code and newPassword required" });
 
     const rec = await TwoFA.findOne({ email, code });
     if (!rec) return res.status(400).json({ ok: false, error: "Invalid or expired token" });
@@ -314,262 +338,219 @@ app.post("/api/reset-password", async (req, res) => {
     await TwoFA.deleteOne({ _id: rec._id });
 
     console.log(`✅ Password reset successful for ${email}`);
+    await addLog(`Password reset for ${email}`, "system");
     return res.json({ ok: true, message: "Password reset successful" });
-  } catch (err) {
-    console.error("❌ Error in /api/reset-password:", err);
-    return res.status(500).json({ ok: false, error: "Server error" });
-  }
-});
+  })
+);
 
-// serve forgot/reset HTML pages (for admin route)
-// ---------- FIXED ROUTES ----------
-// ---------- Forgot / Reset Password Pages ----------
-// ✅ Serve the correct forgot-password page (common file)
-// ✅ Serve frontend forgot/reset pages
-// ---------- FRONTEND ROUTES ----------
-
-
-// Serve forgot password and reset password pages
+// ---------- Serve forgot/reset HTML pages (explicit) ----------
 app.get("/admin/forgot-password", (req, res) => {
-  const filePath = path.join(__dirname, "frontend", "forgot-password.html");
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      console.error("Error sending forgot-password.html:", err);
-      res.status(500).send("Internal Server Error");
-    }
-  });
+  const filePath = path.join(FRONTEND_DIR, "forgot-password.html");
+  if (!fs.existsSync(filePath)) return res.status(404).send("Not found");
+  res.sendFile(filePath);
 });
 
 app.get("/admin/reset-password", (req, res) => {
-  const filePath = path.join(__dirname, "frontend", "reset-password.html");
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      console.error("Error sending reset-password.html:", err);
-      res.status(500).send("Internal Server Error");
-    }
-  });
-});
-console.log("🧠 DEBUG: Current directory:", __dirname);
-try {
-  const frontendPath = path.join(__dirname, "frontend");
-  console.log("📂 DEBUG: Files in frontend:", fs.readdirSync(frontendPath));
-} catch (err) {
-  console.error("⚠️ DEBUG: Could not read frontend folder:", err.message);
-}
-
-// Serve all other static frontend files
-// ✅ Serve static frontend files
-app.use(express.static(path.join(__dirname, "frontend")));
-
-// ✅ Specific routes for HTML files (important for Render)
-app.get("/admin/forgot-password", (req, res) => {
-  res.sendFile(path.join(__dirname, "frontend", "forgot-password.html"));
+  const filePath = path.join(FRONTEND_DIR, "reset-password.html");
+  if (!fs.existsSync(filePath)) return res.status(404).send("Not found");
+  res.sendFile(filePath);
 });
 
-app.get("/admin/reset-password", (req, res) => {
-  res.sendFile(path.join(__dirname, "frontend", "reset-password.html"));
-});
+// ---------- OTHER ROUTES (kept intact) ----------
+/* Keep all other admin / api routes exactly as your original file does.
+   For brevity I'll include the rest of your existing routes here (badges, master commands,
+   tests, attendance, notices, chatbot triggers, chat send, etc.) — unchanged logic but
+   wrapped with the same wrap() where needed. */
 
-// ✅ Catch-all route for any other frontend pages
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "frontend", "index.html"));
-});
-
-// ---------------- BADGES ----------------
-app.get('/api/badges', authMiddleware, requireRole('any'), wrap(async (req, res) => {
+/* ---------------- BADGES ---------------- */
+app.get("/api/badges", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   res.json(await Badge.find());
 }));
 
-app.post('/api/badges', authMiddleware, requireRole('admin'), wrap(async (req, res) => {
+app.post("/api/badges", authMiddleware, requireRole("admin"), wrap(async (req, res) => {
   const { name, effects = [], access = [] } = req.body;
-  const id = genId('b_');
+  const id = genId("b_");
   const badge = new Badge({ id, name, effects, access });
   await badge.save();
   await addLog(`Badge created: ${name}`, req.user.email);
-  io.emit('badges:created', badge);
+  io.emit("badges:created", badge);
   res.json(badge);
 }));
 
-app.post('/api/badges/assign', authMiddleware, requireRole('admin'), wrap(async (req, res) => {
+app.post("/api/badges/assign", authMiddleware, requireRole("admin"), wrap(async (req, res) => {
   const { email, badgeId } = req.body;
   const badge = await Badge.findOne({ id: badgeId });
-  if (!badge) return res.status(404).json({ error: 'Badge not found' });
+  if (!badge) return res.status(404).json({ error: "Badge not found" });
   const u = await User.findOne({ email });
-  if (!u) return res.status(404).json({ error: 'User not found' });
+  if (!u) return res.status(404).json({ error: "User not found" });
   u.badges = Array.from(new Set([...(u.badges || []), badge.name]));
   u.specialAccess = Array.from(new Set([...(u.specialAccess || []), ...badge.access]));
   await u.save();
   await addLog(`Badge ${badge.name} assigned to ${email}`, req.user.email);
-  io.emit('badges:assigned', { email, badge });
+  io.emit("badges:assigned", { email, badge });
   res.json({ success: true, user: { email: u.email, badges: u.badges, specialAccess: u.specialAccess } });
 }));
 
-// ---------------- MASTER COMMANDS ----------------
-app.get('/api/master', authMiddleware, requireRole('any'), wrap(async (req, res) => {
+/* ---------------- MASTER COMMANDS ---------------- */
+app.get("/api/master", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   res.json(await MasterCommand.find());
 }));
-
-app.post('/api/master', authMiddleware, requireRole('admin'), wrap(async (req, res) => {
-  const { name, action, permission = 'all', dangerous = false } = req.body;
-  const id = genId('m_');
+app.post("/api/master", authMiddleware, requireRole("admin"), wrap(async (req, res) => {
+  const { name, action, permission = "all", dangerous = false } = req.body;
+  const id = genId("m_");
   const cmd = new MasterCommand({ id, name, action, permission, dangerous });
   await cmd.save();
   await addLog(`Master command added: ${name}`, req.user.email);
-  io.emit('master:created', cmd);
+  io.emit("master:created", cmd);
   res.json(cmd);
 }));
-
-app.post('/api/master/:id/execute', authMiddleware, requireRole('admin'), wrap(async (req, res) => {
+app.post("/api/master/:id/execute", authMiddleware, requireRole("admin"), wrap(async (req, res) => {
   const cmd = await MasterCommand.findOne({ id: req.params.id });
-  if (!cmd) return res.status(404).json({ error: 'not found' });
-  io.emit('master:execute', { id: cmd.id, name: cmd.name, action: cmd.action, actor: req.user.email });
+  if (!cmd) return res.status(404).json({ error: "not found" });
+  io.emit("master:execute", { id: cmd.id, name: cmd.name, action: cmd.action, actor: req.user.email });
   await addLog(`Master executed: ${cmd.name} by ${req.user.email}`, req.user.email);
   res.json({ executed: true, id: cmd.id });
 }));
 
-// ---------- TESTS ROUTES ----------
-app.get('/api/tests', authMiddleware, requireRole('any'), wrap(async (req, res) => {
+/* ---------------- TESTS ---------------- */
+app.get("/api/tests", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   const tests = await Test.find().lean();
   res.json(tests);
 }));
-
-app.post('/api/tests', authMiddleware, requireRole('admin'), wrap(async (req, res) => {
+app.post("/api/tests", authMiddleware, requireRole("admin"), wrap(async (req, res) => {
   const payload = req.body;
   const t = new Test(payload);
   await t.save();
   await addLog(`Test created: ${t.title}`, req.user.email);
-  io.emit('tests:created', t);
+  io.emit("tests:created", t);
   res.json(t);
 }));
-
-app.delete('/api/tests/:id', authMiddleware, requireRole('admin'), wrap(async (req, res) => {
+app.delete("/api/tests/:id", authMiddleware, requireRole("admin"), wrap(async (req, res) => {
   await Test.deleteOne({ _id: req.params.id });
   await addLog(`Test deleted: ${req.params.id}`, req.user.email);
-  io.emit('tests:deleted', { id: req.params.id });
+  io.emit("tests:deleted", { id: req.params.id });
   res.json({ deleted: true });
 }));
 
-// ---------- ATTENDANCE ROUTES ----------
-app.get('/api/attendance', authMiddleware, requireRole('any'), wrap(async (req, res) => {
+/* ---------------- ATTENDANCE ---------------- */
+app.get("/api/attendance", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   const all = await Attendance.find().lean();
   res.json(all);
 }));
-
-app.post('/api/attendance', authMiddleware, requireRole('any'), wrap(async (req, res) => {
+app.post("/api/attendance", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   const entries = Array.isArray(req.body.entries) ? req.body.entries : [req.body];
   const upserted = [];
   for (const e of entries) {
     const { username, date, status } = e;
     if (!username || !date) continue;
-    await Attendance.findOneAndUpdate(
-      { username, date },
-      { username, date, status },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    await Attendance.findOneAndUpdate({ username, date }, { username, date, status }, { upsert: true, new: true, setDefaultsOnInsert: true });
     upserted.push({ username, date, status });
   }
-  await addLog(`Attendance saved (${upserted.length})`, req.user?.email || 'system');
-  io.emit('attendance:updated', { date: entries[0]?.date, records: upserted });
+  await addLog(`Attendance saved (${upserted.length})`, req.user?.email || "system");
+  io.emit("attendance:updated", { date: entries[0]?.date, records: upserted });
   res.json({ saved: true, count: upserted.length });
 }));
 
-// ---------- NOTICES ----------
-app.get('/api/notices', authMiddleware, requireRole('any'), wrap(async (req, res) => {
+/* ---------------- NOTICES ---------------- */
+app.get("/api/notices", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   const all = await Notice.find().lean();
   res.json(all);
 }));
-
-app.post('/api/notices', authMiddleware, requireRole('admin'), wrap(async (req, res) => {
+app.post("/api/notices", authMiddleware, requireRole("admin"), wrap(async (req, res) => {
   const payload = req.body;
   const n = new Notice(payload);
   await n.save();
   await addLog(`Notice published: ${n.title}`, req.user.email);
-  io.emit('noticeAdded', n);
+  io.emit("noticeAdded", n);
   res.json(n);
 }));
-
-app.put('/api/notices/:id', authMiddleware, requireRole('admin'), wrap(async (req, res) => {
+app.put("/api/notices/:id", authMiddleware, requireRole("admin"), wrap(async (req, res) => {
   const updated = await Notice.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
   await addLog(`Notice updated: ${req.params.id}`, req.user.email);
-  io.emit('noticeUpdated', updated);
+  io.emit("noticeUpdated", updated);
   res.json(updated);
 }));
-
-app.delete('/api/notices/:id', authMiddleware, requireRole('admin'), wrap(async (req, res) => {
+app.delete("/api/notices/:id", authMiddleware, requireRole("admin"), wrap(async (req, res) => {
   await Notice.deleteOne({ id: req.params.id });
   await addLog(`Notice deleted: ${req.params.id}`, req.user.email);
-  io.emit('noticeDeleted', req.params.id);
+  io.emit("noticeDeleted", req.params.id);
   res.json({ deleted: true });
 }));
 
-// ---------- CHATBOT TRIGGERS ----------
-app.get('/api/chatbot/triggers', authMiddleware, requireRole('any'), wrap(async (req, res) => {
+/* ---------------- CHATBOT TRIGGERS ---------------- */
+app.get("/api/chatbot/triggers", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   const triggers = await ChatTrigger.find().lean();
   res.json(triggers);
 }));
-
-app.post('/api/chatbot/triggers', authMiddleware, requireRole('admin'), wrap(async (req, res) => {
+app.post("/api/chatbot/triggers", authMiddleware, requireRole("admin"), wrap(async (req, res) => {
   const payload = req.body;
   const ct = new ChatTrigger(payload);
   await ct.save();
   await addLog(`Chat trigger added: ${ct.trigger}`, req.user.email);
-  io.emit('chatbot:updateTriggers', await ChatTrigger.find().lean());
+  io.emit("chatbot:updateTriggers", await ChatTrigger.find().lean());
   res.json(ct);
 }));
-
-app.put('/api/chatbot/triggers/:id', authMiddleware, requireRole('admin'), wrap(async (req, res) => {
+app.put("/api/chatbot/triggers/:id", authMiddleware, requireRole("admin"), wrap(async (req, res) => {
   const updated = await ChatTrigger.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
   await addLog(`Chat trigger updated: ${req.params.id}`, req.user.email);
-  io.emit('chatbot:updateTriggers', await ChatTrigger.find().lean());
+  io.emit("chatbot:updateTriggers", await ChatTrigger.find().lean());
   res.json(updated);
 }));
-
-app.delete('/api/chatbot/triggers/:id', authMiddleware, requireRole('admin'), wrap(async (req, res) => {
+app.delete("/api/chatbot/triggers/:id", authMiddleware, requireRole("admin"), wrap(async (req, res) => {
   await ChatTrigger.deleteOne({ id: req.params.id });
   await addLog(`Chat trigger deleted: ${req.params.id}`, req.user.email);
-  io.emit('chatbot:updateTriggers', await ChatTrigger.find().lean());
+  io.emit("chatbot:updateTriggers", await ChatTrigger.find().lean());
   res.json({ deleted: true });
 }));
 
-// ---------- SIMPLE BOT-HOOK ----------
-app.post('/api/chat/send', authMiddleware, wrap(async (req, res) => {
+/* ---------------- SIMPLE BOT-HOOK ---------------- */
+app.post("/api/chat/send", authMiddleware, wrap(async (req, res) => {
   const { message, username } = req.body;
-  if (!message) return res.status(400).json({ error: 'message required' });
+  if (!message) return res.status(400).json({ error: "message required" });
 
   const triggers = await ChatTrigger.find().lean();
-  const found = triggers.find(t => message.toLowerCase().includes(t.trigger.toLowerCase()));
+  const found = triggers.find((t) => message.toLowerCase().includes(t.trigger.toLowerCase()));
   if (found) {
-    if (['alert', 'urgent', 'warning'].includes(found.type)) {
-      io.emit('chatbot:lock', { seconds: 10, message: found.response });
-      return res.json({ type: 'lock', response: found.response });
+    if (["alert", "urgent", "warning"].includes(found.type)) {
+      io.emit("chatbot:lock", { seconds: 10, message: found.response });
+      return res.json({ type: "lock", response: found.response });
     }
-    return res.json({ type: 'reply', response: found.response });
+    return res.json({ type: "reply", response: found.response });
   }
-  return res.json({ type: 'none', response: "Sorry, I don't understand." });
+  return res.json({ type: "none", response: "Sorry, I don't understand." });
 }));
 
-// ---------- SOCKET.IO: optional server listeners ----------
-io.on('connection', socket => {
-  socket.on('attendance:save', async (payload) => {
+/* ---------------- SOCKET LISTENERS (attendance via socket) ---------------- */
+io.on("connection", (socket) => {
+  socket.on("attendance:save", async (payload) => {
     try {
       const { date, records } = payload;
       for (const r of records) {
         await Attendance.findOneAndUpdate({ username: r.username, date }, { ...r }, { upsert: true });
       }
-      io.emit('attendanceUpdated', { date, records });
-      await addLog('Attendance saved via socket', 'socket');
+      io.emit("attendanceUpdated", { date, records });
+      await addLog("Attendance saved via socket", "socket");
     } catch (err) {
-      console.error('attendance socket save error', err && err.message);
+      console.error("attendance socket save error", err && err.message);
     }
   });
 });
 
-// ---------- GLOBAL ERROR HANDLER ----------
+/* ---------- GLOBAL ERROR HANDLER ---------- */
 app.use((err, req, res, next) => {
-  console.error('Server error:', err && (err.stack || err.message || err));
-  res.status(500).json({ error: 'Server error', message: err && err.message });
+  console.error("Server error:", err && (err.stack || err.message || err));
+  res.status(500).json({ error: "Server error", message: err && err.message });
 });
 
-// ---------- START SERVER ----------
+/* ---------- CATCH-ALL (frontend single-page fallback) ---------- */
+app.get("*", (req, res) => {
+  // If the request was for a static file that doesn't exist, index.html fallback helps client-side routing.
+  const indexHtml = path.join(FRONTEND_DIR, "index.html");
+  if (fs.existsSync(indexHtml)) return res.sendFile(indexHtml);
+  return res.status(404).send("Not found");
+});
+
+/* ---------- SERVER START ---------- */
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+      
