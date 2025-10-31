@@ -1,342 +1,459 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Faculty Dashboard</title>
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: #f4f6f9;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background: #0056b3;
-      color: #fff;
-      text-align: center;
-      padding: 15px;
-      font-size: 24px;
-      font-weight: bold;
-    }
-    .container {
-      width: 95%;
-      max-width: 1100px;
-      margin: 20px auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    h2 {
-      color: #333;
-      border-bottom: 3px solid #0056b3;
-      padding-bottom: 5px;
-    }
-    section {
-      margin-bottom: 35px;
-    }
-    label, select, input, textarea, button {
-      font-size: 15px;
-      padding: 8px;
-    }
-    input, textarea, select {
-      width: 100%;
-      margin-bottom: 8px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    button {
-      background: #0056b3;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      padding: 10px 16px;
-    }
-    button:hover { background: #004095; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    table, th, td {
-      border: 1px solid #ccc;
-    }
-    th, td {
-      padding: 8px;
-      text-align: center;
-    }
-    th {
-      background: #0056b3;
-      color: white;
-    }
-    .status-select {
-      width: 100%;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      padding: 6px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Faculty Dashboard — Student Assistant</title>
+
+<link rel="stylesheet" href="common.css" />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    margin: 0;
+    font-family: "Poppins", sans-serif;
+    background: radial-gradient(circle at top left, #0f172a, #1e3a8a 60%);
+    color: #fff;
+    display: flex;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 250px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    box-shadow: 3px 0 15px rgba(0,0,0,0.3);
+    padding: 25px 15px;
+    transition: all 0.3s ease;
+  }
+  .sidebar h2 {
+    text-align: center;
+    color: #60a5fa;
+    margin-top: 0;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+  }
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+  }
+  .sidebar ul li {
+    padding: 12px 15px;
+    margin: 8px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .sidebar ul li:hover,
+  .sidebar ul li.active {
+    background: #3b82f6;
+  }
+
+  /* Main area */
+  .main {
+    flex: 1;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header h1 {
+    font-size: 26px;
+    font-weight: 600;
+  }
+  header button {
+    background: #3b82f6;
+    border: none;
+    color: #fff;
+    padding: 9px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  header button:hover {
+    background: #2563eb;
+  }
+
+  /* Dashboard Cards */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 25px;
+    margin-top: 35px;
+  }
+  .card {
+    background: rgba(255,255,255,0.12);
+    padding: 25px;
+    border-radius: 14px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    transition: transform 0.3s ease;
+  }
+  .card:hover {
+    transform: translateY(-6px);
+  }
+  .card h3 {
+    font-weight: 400;
+    margin: 0;
+    color: #cbd5e1;
+  }
+  .card strong {
+    display: block;
+    font-size: 28px;
+    color: #60a5fa;
+    margin-top: 10px;
+  }
+
+  /* Charts Section */
+  .charts {
+    margin-top: 50px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 25px;
+  }
+  .chart-card {
+    background: rgba(255,255,255,0.12);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  canvas {
+    width: 100% !important;
+    height: 320px !important;
+  }
+
+  /* Calculator side panel */
+  #calculatorPanel {
+    position: fixed;
+    top: 0;
+    right: -350px;
+    width: 320px;
+    height: 100%;
+    background: rgba(30,58,138,0.95);
+    color: #fff;
+    transition: right 0.4s ease;
+    padding: 25px;
+    box-shadow: -3px 0 10px rgba(0,0,0,0.4);
+    z-index: 999;
+  }
+  #calculatorPanel.active {
+    right: 0;
+  }
+  .calc-display {
+    width: 100%;
+    height: 50px;
+    text-align: right;
+    font-size: 20px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    border: none;
+    padding: 8px;
+    background: #fff;
+    color: #000;
+  }
+  .calc-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .calc-buttons button {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .calc-buttons button:hover {
+    background: #60a5fa;
+  }
+  .close-btn {
+    background: #f87171;
+  }
+  .close-btn:hover {
+    background: #ef4444;
+  }
+</style>
 </head>
+
 <body>
-  <header>Faculty Dashboard</header>
-  <div class="container">
+  <aside class="sidebar">
+    <h2>Faculty</h2>
+    <ul>
+      <li class="active">Dashboard</li>
+      <li>Students</li>
+      <li>Attendance</li>
+      <li>Announcements</li>
+      <li id="openTools">Tools ⚙️</li>
+    </ul>
+  </aside>
 
-    <!-- Attendance Section -->
-    <section id="attendanceSection">
-      <h2>📋 Attendance Management</h2>
-      <label for="attendanceDate">Select Date:</label>
-      <input type="date" id="attendanceDate" />
+  <main class="main">
+    <header>
+      <h1>Welcome, <span id="facultyName">Dr. John Doe</span></h1>
+      <button onclick="logout()">Logout</button>
+    </header>
 
-      <table id="attendanceTable">
-        <thead>
-          <tr>
-            <th>Register No</th>
-            <th>Student Name</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="attendanceBody"></tbody>
-      </table>
-
-      <button id="saveAttendanceBtn">💾 Save Attendance</button>
-      <button id="exportAttendanceBtn">⬇️ Export Attendance</button>
-      <input type="file" id="importAttendanceFile" accept=".json" style="display:none" />
-      <button id="importAttendanceBtn">⬆️ Import Attendance</button>
+    <section class="cards">
+      <div class="card"><h3>Total Students</h3><strong id="studentCount">--</strong></div>
+      <div class="card"><h3>Average Attendance</h3><strong id="attendanceAvg">--%</strong></div>
+      <div class="card"><h3>Active Announcements</h3><strong id="annCount">--</strong></div>
     </section>
 
-    <!-- Notes Section -->
-    <section id="notesSection">
-      <h2>📝 Notes Upload</h2>
-      <input type="text" id="noteTitle" placeholder="Enter Note Title" />
-      <textarea id="noteContent" placeholder="Enter Note Content"></textarea>
-      <button id="addNoteBtn">Add Note</button>
-
-      <h3>Uploaded Notes</h3>
-      <ul id="notesList"></ul>
+    <section class="charts">
+      <div class="chart-card">
+        <h3>📊 Student Performance</h3>
+        <canvas id="performanceChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>📈 Attendance Trend</h3>
+        <canvas id="attendanceChart"></canvas>
+      </div>
     </section>
-    <!-- MCQ Test Section -->
-    <section id="testSection">
-      <h2>🧠 MCQ Test Management</h2>
-      <input type="text" id="question" placeholder="Enter Question" />
-      <input type="text" id="option1" placeholder="Option 1" />
-      <input type="text" id="option2" placeholder="Option 2" />
-      <input type="text" id="option3" placeholder="Option 3" />
-      <input type="text" id="option4" placeholder="Option 4" />
-      <select id="correctAnswer">
-        <option value="">Select Correct Answer</option>
-        <option value="1">Option 1</option>
-        <option value="2">Option 2</option>
-        <option value="3">Option 3</option>
-        <option value="4">Option 4</option>
-      </select>
-      <button id="addQuestionBtn">Add Question</button>
+  </main>
 
-      <h3>📚 Questions List</h3>
-      <ul id="questionList"></ul>
-    </section>
+  <!-- Calculator Panel -->
+  <div id="calculatorPanel">
+    <h3>Calculator</h3>
+    <input type="text" id="calcDisplay" class="calc-display" readonly>
+    <div class="calc-buttons">
+      <button onclick="press('7')">7</button>
+      <button onclick="press('8')">8</button>
+      <button onclick="press('9')">9</button>
+      <button onclick="press('/')">÷</button>
+
+      <button onclick="press('4')">4</button>
+      <button onclick="press('5')">5</button>
+      <button onclick="press('6')">6</button>
+      <button onclick="press('*')">×</button>
+
+      <button onclick="press('1')">1</button>
+      <button onclick="press('2')">2</button>
+      <button onclick="press('3')">3</button>
+      <button onclick="press('-')">−</button>
+
+      <button onclick="press('0')">0</button>
+      <button onclick="press('.')">.</button>
+      <button onclick="calculate()">=</button>
+      <button onclick="press('+')">+</button>
+
+      <button class="close-btn" onclick="toggleCalculator()">Close</button>
+      <button onclick="clearCalc()">C</button>
+    </div>
   </div>
 
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <script>
-    // ========================
-    // BACKEND CONFIG
-    // ========================
-    const API_BASE = "http://localhost:3000"; // Adjust if needed
+    const socket = io();
+    socket.on('connect', () => console.log('✅ Connected to server'));
+    <!-- ↓ Paste this AFTER your Calculator Side Panel div (so panels are siblings) -->
+<!-- Announcement Slide Panel -->
+<div id="announcementPanel" style="position:fixed; top:0; right:-420px; width:380px; height:100%; background:#07143a; color:#fff; padding:18px; box-shadow:-4px 0 18px rgba(0,0,0,0.4); z-index:1000; transition:right 0.35s ease;">
+  <h3 style="margin-top:6px; text-align:center;">Announcements</h3>
 
-    // ========================
-    // ATTENDANCE MANAGEMENT
-    // ========================
-    async function loadStudents() {
-      const res = await fetch(`${API_BASE}/students`);
-      const students = await res.json();
-      const tbody = document.getElementById("attendanceBody");
-      tbody.innerHTML = "";
-      students.forEach(stu => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${stu.regno}</td>
-          <td>${stu.name}</td>
-          <td>
-            <select class="status-select" id="status-${stu.regno}">
-              <option value="Present">Present</option>
-              <option value="Absent">Absent</option>
-              <option value="Late">Late</option>
-              <option value="On Duty">On Duty</option>
-            </select>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
+  <!-- Composer (faculty only) -->
+  <div id="announceComposer" style="margin:12px 0;">
+    <input id="annTitle" placeholder="Title" style="width:100%; padding:8px; border-radius:6px; border:none; margin-bottom:8px;">
+    <textarea id="annMessage" placeholder="Message" rows="4" style="width:100%; padding:8px; border-radius:6px; border:none;"></textarea>
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button id="sendAnnBtn" style="flex:1; background:#2563eb; color:#fff; border:none; padding:8px; border-radius:6px; cursor:pointer;">Send</button>
+      <button id="closeAnnBtn" style="background:#ef4444; color:#fff; border:none; padding:8px; border-radius:6px; cursor:pointer;">Close</button>
+    </div>
+    <p id="annStatus" style="margin:8px 0 0 0; font-size:13px;"></p>
+  </div>
 
-    document.getElementById("saveAttendanceBtn").addEventListener("click", async () => {
-      const date = document.getElementById("attendanceDate").value;
-      if (!date) return alert("Please select a date!");
-      const rows = document.querySelectorAll("#attendanceBody tr");
-      const data = [];
-      rows.forEach(row => {
-        const regno = row.children[0].textContent;
-        const name = row.children[1].textContent;
-        const status = row.querySelector("select").value;
-        data.push({ regno, name, status });
-      });
+  <hr style="border-color: rgba(255,255,255,0.06); margin:12px 0;">
 
-      const res = await fetch(`${API_BASE}/attendance`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, data })
-      });
-      const result = await res.json();
-      alert(result.message || "Attendance saved!");
+  <!-- Announcements feed -->
+  <div id="annFeed" style="overflow:auto; height:70%; padding-right:6px;">
+    <p style="color:rgba(255,255,255,0.6); font-size:13px;">Loading announcements...</p>
+  </div>
+</div>
+
+<script>
+/* Announcement panel JS -- requires socket.io + fetch + localStorage token (if protected) */
+
+// panel controls
+const annPanel = document.getElementById('announcementPanel');
+function toggleAnnouncements() {
+  const right = annPanel.style.right === '0px' ? '-420px' : '0px';
+  annPanel.style.right = right;
+}
+
+// wire your sidebar menu item to open this panel (if you used id="openTools" before, add id for Announcements menu)
+const annMenu = document.querySelector('li:contains("Announcements")') || document.getElementById('openAnnouncements');
+if (annMenu) annMenu.onclick = toggleAnnouncements;
+
+// fallback: add an explicit toggle via existing sidebar (I recommend change the "Announcements" <li> to have id="openAnnouncements")
+const openBtn = document.getElementById('openAnnouncements');
+if (openBtn) openBtn.onclick = toggleAnnouncements;
+
+// DOM refs
+const annFeed = document.getElementById('annFeed');
+const sendAnnBtn = document.getElementById('sendAnnBtn');
+const annTitle = document.getElementById('annTitle');
+const annMessage = document.getElementById('annMessage');
+const annStatus = document.getElementById('annStatus');
+const closeAnnBtn = document.getElementById('closeAnnBtn');
+
+// fetch and render
+async function loadAnnouncements() {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/announcements', {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    });
+    const json = await res.json();
+    const arr = json.announcements || [];
+    renderAnnouncements(arr);
+  } catch (e) {
+    annFeed.innerHTML = '<p style="color:rgba(255,255,255,0.6)">Could not load announcements.</p>';
+  }
+}
+
+function renderAnnouncements(arr) {
+  if (!arr.length) {
+    annFeed.innerHTML = '<p style="color:rgba(255,255,255,0.6)">No announcements yet.</p>';
+    return;
+  }
+  annFeed.innerHTML = arr.map(a => {
+    const t = new Date(a.createdAt).toLocaleString();
+    return `<div style="padding:10px;border-radius:8px;margin-bottom:10px;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));">
+      <strong style="display:block;color:#cfe0ff">${escapeHtml(a.title)}</strong>
+      <div style="margin-top:6px;color:#e6eefc;font-size:14px;">${escapeHtml(a.message)}</div>
+      <div style="margin-top:8px;font-size:12px;color:rgba(255,255,255,0.55)">${t}</div>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(s = '') {
+  return String(s).replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+}
+
+// send announcement (faculty)
+sendAnnBtn?.addEventListener('click', async () => {
+  annStatus.textContent = '';
+  const title = annTitle.value.trim();
+  const message = annMessage.value.trim();
+  if (!title || !message) { annStatus.style.color='salmon'; annStatus.textContent='Title & message required.'; return; }
+
+  try {
+    const token = localStorage.getItem('token'); // ensure user has token & role faculty
+    annStatus.style.color = '#fff';
+    annStatus.textContent = 'Sending...';
+
+    const res = await fetch('/api/announcements', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { 'Authorization': `Bearer ${token}` } : {}),
+      body: JSON.stringify({ title, message })
     });
 
-    document.getElementById("exportAttendanceBtn").addEventListener("click", async () => {
-      const res = await fetch(`${API_BASE}/attendance/export`);
-      const blob = await res.blob();
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "attendance.json";
-      link.click();
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to post');
+
+    // clear composer & show success
+    annTitle.value = '';
+    annMessage.value = '';
+    annStatus.style.color = 'lightgreen';
+    annStatus.textContent = 'Announcement posted.';
+    // new announcement will arrive via socket (announcement:new). But also add locally for instant UX:
+    prependAnnouncement(json.announcement || json);
+  } catch (err) {
+    annStatus.style.color = 'salmon';
+    annStatus.textContent = err.message || 'Error posting announcement';
+  }
+});
+
+closeAnnBtn?.addEventListener('click', () => toggleAnnouncements());
+
+// helper to add at top
+function prependAnnouncement(a) {
+  const t = new Date(a.createdAt).toLocaleString();
+  const node = document.createElement('div');
+  node.style.padding='10px';
+  node.style.borderRadius='8px';
+  node.style.marginBottom='10px';
+  node.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))';
+  node.innerHTML = `<strong style="display:block;color:#cfe0ff">${escapeHtml(a.title)}</strong>
+    <div style="margin-top:6px;color:#e6eefc;font-size:14px;">${escapeHtml(a.message)}</div>
+    <div style="margin-top:8px;font-size:12px;color:rgba(255,255,255,0.55)">${t}</div>`;
+  annFeed.prepend(node);
+}
+
+// SOCKET: listen for new announcements
+if (typeof io !== 'undefined') {
+  const socketAnn = io();
+  socketAnn.on('connect', () => console.log('Ann socket connected'));
+  socketAnn.on('announcement:new', (announcement) => {
+    // add announcement to feed
+    prependAnnouncement(announcement);
+    // optionally show toast or highlight
+    try { showToast && showToast('New announcement posted', 'info'); } catch(e){}
+  });
+}
+
+// initial load
+loadAnnouncements();
+</script>
+
+    // Realtime faculty dashboard updates
+    socket.on('facultyDashboardUpdate', data => {
+      document.getElementById('studentCount').textContent = data.studentCount ?? '--';
+      document.getElementById('attendanceAvg').textContent = data.attendanceAvg ? data.attendanceAvg + '%' : '--%';
+      document.getElementById('annCount').textContent = data.annCount ?? '--';
+      updateCharts(data);
     });
 
-    document.getElementById("importAttendanceBtn").addEventListener("click", () => {
-      document.getElementById("importAttendanceFile").click();
+    // Calculator
+    let calcInput = "";
+    const display = document.getElementById('calcDisplay');
+    function press(v){ calcInput += v; display.value = calcInput; }
+    function clearCalc(){ calcInput = ""; display.value = ""; }
+    function calculate(){ try{ calcInput = eval(calcInput).toString(); display.value = calcInput; }catch{ display.value = "Error"; calcInput = ""; } }
+
+    const calcPanel = document.getElementById('calculatorPanel');
+    document.getElementById('openTools').onclick = toggleCalculator;
+    function toggleCalculator(){ calcPanel.classList.toggle('active'); }
+
+    function logout(){ window.location.href = "index.html"; }
+
+    // Charts
+    const ctx1 = document.getElementById('performanceChart');
+    const ctx2 = document.getElementById('attendanceChart');
+
+    const performanceChart = new Chart(ctx1, {
+      type: 'bar',
+      data: { labels: ['Class A','Class B','Class C'], datasets: [{ label: 'Avg Marks', data: [80, 88, 92], backgroundColor: '#60a5fa' }] }
+    });
+    const attendanceChart = new Chart(ctx2, {
+      type: 'line',
+      data: { labels: ['Jan','Feb','Mar','Apr'], datasets: [{ label: 'Attendance %', data: [89,91,87,93], borderColor: '#10b981', fill: false, tension: 0.3 }] }
     });
 
-    document.getElementById("importAttendanceFile").addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const text = await file.text();
-      const imported = JSON.parse(text);
-      await fetch(`${API_BASE}/attendance/import`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(imported)
-      });
-      alert("Attendance imported successfully!");
-      loadStudents();
-    });
-
-    loadStudents();
-    // ========================
-    // MCQ TEST MANAGEMENT
-    // ========================
-    async function loadQuestions() {
-      const res = await fetch(`${API_BASE}/questions`);
-      const questions = await res.json();
-      renderQuestions(questions);
+    function updateCharts(data){
+      if(data.performance){
+        performanceChart.data.labels = data.performance.labels;
+        performanceChart.data.datasets[0].data = data.performance.values;
+        performanceChart.update();
+      }
+      if(data.attendanceTrend){
+        attendanceChart.data.labels = data.attendanceTrend.labels;
+        attendanceChart.data.datasets[0].data = data.attendanceTrend.values;
+        attendanceChart.update();
+      }
     }
-
-    function renderQuestions(questions) {
-      const list = document.getElementById("questionList");
-      list.innerHTML = "";
-      questions.forEach((q, i) => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-          <strong>Q${i + 1}:</strong> ${q.question}<br>
-          1️⃣ ${q.options[0]}<br>
-          2️⃣ ${q.options[1]}<br>
-          3️⃣ ${q.options[2]}<br>
-          4️⃣ ${q.options[3]}<br>
-          ✅ Correct: Option ${q.correct}<br>
-          <button class="delete-btn" onclick="deleteQuestion('${q.id}')">Delete</button>
-        `;
-        list.appendChild(li);
-      });
-    }
-
-    document.getElementById("addQuestionBtn").addEventListener("click", async () => {
-      const question = document.getElementById("question").value.trim();
-      const options = [
-        document.getElementById("option1").value.trim(),
-        document.getElementById("option2").value.trim(),
-        document.getElementById("option3").value.trim(),
-        document.getElementById("option4").value.trim()
-      ];
-      const correct = document.getElementById("correctAnswer").value;
-      if (!question || options.some(o => !o) || !correct)
-        return alert("Please fill all MCQ fields!");
-
-      const res = await fetch(`${API_BASE}/questions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, options, correct })
-      });
-      const result = await res.json();
-      alert(result.message || "Question added!");
-      loadQuestions();
-      ["question","option1","option2","option3","option4"].forEach(id => document.getElementById(id).value = "");
-      document.getElementById("correctAnswer").value = "";
-    });
-
-    async function deleteQuestion(id) {
-      if (!confirm("Delete this question?")) return;
-      const res = await fetch(`${API_BASE}/questions/${id}`, { method: "DELETE" });
-      const result = await res.json();
-      alert(result.message || "Question deleted");
-      loadQuestions();
-    }
-
-    loadQuestions();
-
-
-    // ========================
-    // NOTES SYSTEM
-    // ========================
-    async function loadNotes() {
-      const res = await fetch(`${API_BASE}/notes`);
-      const notes = await res.json();
-      renderNotes(notes);
-    }
-
-    function renderNotes(notes) {
-      const list = document.getElementById("notesList");
-      list.innerHTML = "";
-      notes.forEach((note, i) => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-          🗒️ <strong>${note.type.toUpperCase()}</strong>: ${note.content} 
-          <span style="color:#64748b;">(${note.date})</span>
-          <button class="delete-btn" onclick="deleteNote('${note.id}')">Delete</button>
-        `;
-        list.appendChild(li);
-      });
-    }
-
-    async function addNote() {
-      const content = document.getElementById("noteContent").value.trim();
-      const type = document.getElementById("noteType").value;
-      if (!content) return alert("Note cannot be empty!");
-      const res = await fetch(`${API_BASE}/notes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, type })
-      });
-      const result = await res.json();
-      alert(result.message || "Note added!");
-      document.getElementById("noteContent").value = "";
-      loadNotes();
-    }
-
-    async function deleteNote(id) {
-      const res = await fetch(`${API_BASE}/notes/${id}`, { method: "DELETE" });
-      const result = await res.json();
-      alert(result.message || "Note deleted!");
-      loadNotes();
-    }
-
-    loadNotes();
-
-
-    // ========================
-    // LOGOUT
-    // ========================
-    function logout() {
-      alert("Logging out...");
-      window.location.href = "index.html";
-    }
-
   </script>
 </body>
 </html>
