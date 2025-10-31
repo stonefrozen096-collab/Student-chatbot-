@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Student Dashboard</title>
 <link rel="stylesheet" href="common.css">
+<script src="/socket.io/socket.io.js"></script>
 <style>
   body {
     font-family: "Segoe UI", sans-serif;
@@ -19,47 +20,24 @@
     align-items: center;
     padding: 12px 25px;
   }
-  header h1 {
-    font-size: 22px;
-    margin: 0;
-  }
-  nav {
-    position: relative;
-  }
-  .dropdown {
-    position: relative;
-    display: inline-block;
-  }
+  header h1 { font-size: 22px; margin: 0; }
+  nav { position: relative; }
+  .dropdown { position: relative; display: inline-block; }
   .dropbtn {
-    background: #3b82f6;
-    border: none;
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
+    background: #3b82f6; border: none; color: #fff;
+    padding: 8px 16px; border-radius: 6px;
+    cursor: pointer; font-weight: bold;
   }
   .dropdown-content {
-    display: none;
-    position: absolute;
-    background: #fff;
+    display: none; position: absolute; background: #fff;
     box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    border-radius: 8px;
-    overflow: hidden;
-    z-index: 99;
+    border-radius: 8px; overflow: hidden; z-index: 99;
   }
   .dropdown-content a {
-    display: block;
-    padding: 10px 15px;
-    text-decoration: none;
-    color: #1e3a8a;
+    display: block; padding: 10px 15px; text-decoration: none; color: #1e3a8a;
   }
-  .dropdown-content a:hover {
-    background: #e0e7ff;
-  }
-  .dropdown:hover .dropdown-content {
-    display: block;
-  }
+  .dropdown-content a:hover { background: #e0e7ff; }
+  .dropdown:hover .dropdown-content { display: block; }
 
   .container {
     max-width: 1000px;
@@ -70,90 +48,58 @@
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   }
 
-  h2, h3 {
-    color: #1e3a8a;
-  }
-
-  .list-item {
-    padding: 6px 0;
-    border-bottom: 1px solid #e5e7eb;
-  }
+  h2, h3 { color: #1e3a8a; }
+  .list-item { padding: 6px 0; border-bottom: 1px solid #e5e7eb; }
 
   button.primary-btn {
-    background: #2563eb;
-    color: #fff;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    cursor: pointer;
+    background: #2563eb; color: #fff; border: none;
+    padding: 10px 15px; border-radius: 8px; cursor: pointer;
     transition: 0.3s;
   }
-  button.primary-btn:hover {
-    background: #1d4ed8;
+  button.primary-btn:hover { background: #1d4ed8; }
+
+  /* Announcement box */
+  #liveAnnouncements {
+    margin-top: 15px;
+    background: #e0f2fe;
+    padding: 12px;
+    border-radius: 10px;
+  }
+  .announcement-item {
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 6px 0;
+    border-left: 4px solid #2563eb;
   }
 
-  canvas {
-    max-width: 100%;
-  }
-
-  /* ---- CALCULATOR PANEL ---- */
+  /* Calculator */
   #calculatorPanel {
-    position: fixed;
-    top: 0;
-    right: -350px;
-    width: 300px;
-    height: 100%;
-    background: #1e40af;
-    color: #fff;
+    position: fixed; top: 0; right: -350px;
+    width: 300px; height: 100%;
+    background: #1e40af; color: #fff;
     transition: right 0.4s ease;
     padding: 20px;
     box-shadow: -3px 0 10px rgba(0,0,0,0.3);
     z-index: 999;
   }
-  #calculatorPanel.active {
-    right: 0;
-  }
-  #calculatorPanel h3 {
-    margin-top: 0;
-    text-align: center;
-  }
+  #calculatorPanel.active { right: 0; }
+  #calculatorPanel h3 { margin-top: 0; text-align: center; }
   .calc-display {
-    width: 100%;
-    height: 45px;
-    text-align: right;
-    font-size: 20px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    border: none;
-    padding: 5px;
-    background: #fff;
-    color: #000;
+    width: 100%; height: 45px; text-align: right;
+    font-size: 20px; margin-bottom: 10px; border-radius: 6px;
+    border: none; padding: 5px; background: #fff; color: #000;
   }
   .calc-buttons {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
   }
   .calc-buttons button {
-    background: #3b82f6;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 6px;
-    font-size: 18px;
-    cursor: pointer;
-    transition: 0.2s;
+    background: #3b82f6; color: white; border: none;
+    padding: 10px; border-radius: 6px; font-size: 18px; cursor: pointer;
   }
-  .calc-buttons button:hover {
-    background: #60a5fa;
-  }
-  .close-btn {
-    background: #f87171;
-    margin-top: 12px;
-  }
-  .close-btn:hover {
-    background: #ef4444;
-  }
+  .calc-buttons button:hover { background: #60a5fa; }
+  .close-btn { background: #f87171; margin-top: 12px; }
+  .close-btn:hover { background: #ef4444; }
 </style>
 </head>
 
@@ -165,7 +111,6 @@
       <button class="dropbtn">Tools ⚙️</button>
       <div class="dropdown-content">
         <a href="#" onclick="toggleCalculator()">Calculator</a>
-        <a href="#">(Future Tool)</a>
       </div>
     </div>
   </nav>
@@ -173,40 +118,18 @@
 
 <div class="container">
   <h2 id="studentName">Loading...</h2>
-  <p><strong>Reg No:</strong> <span id="studentReg"></span></p>
-  <p><strong>Email:</strong> <span id="studentEmail"></span></p>
-  <p><strong>Role:</strong> <span id="studentRole"></span></p>
-  <button class="primary-btn" onclick="logout()">Logout</button>
+  <p><strong>Reg No:</strong> <span id="regNo">---</span></p>
+  <p><strong>Email:</strong> <span id="email">---</span></p>
 
   <hr>
+  <h3>Live Announcements</h3>
+  <div id="liveAnnouncements">No announcements yet.</div>
 
-  <h3>Assigned Faculty</h3>
-  <div id="facultyList"></div>
-
-  <h3>Attendance Summary</h3>
-  <div id="attendanceList"></div>
-
-  <h3>Notes</h3>
-  <div id="notesList"></div>
-
-  <h3>Tests / Assignments</h3>
-  <div id="testList"></div>
-
-  <h3>Notices</h3>
-  <div id="noticeList"></div>
-
-  <h3>Feedback</h3>
-  <input type="text" id="feedbackSubject" placeholder="Subject">
-  <textarea id="feedbackText" placeholder="Write feedback..."></textarea>
-  <button class="primary-btn" onclick="submitFeedback()">Send Feedback</button>
-  <div id="feedbackResponses"></div>
-
-  <h3>Performance</h3>
-  <canvas id="attendanceChart"></canvas>
-  <canvas id="testChart"></canvas>
+  <hr>
+  <button class="primary-btn" onclick="logout()">Logout</button>
 </div>
 
-<!-- Calculator Side Panel -->
+<!-- Calculator -->
 <div id="calculatorPanel">
   <h3>Calculator</h3>
   <input type="text" id="calcDisplay" class="calc-display" readonly>
@@ -236,106 +159,31 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="/socket.io/socket.io.js"></script>
 <script>
-  // -------- Calculator --------
+  const socket = io();
+
+  // Show announcements instantly
+  const liveBox = document.getElementById("liveAnnouncements");
+  socket.on("announcementBroadcast", data => {
+    if (liveBox.innerHTML.includes("No announcements")) liveBox.innerHTML = "";
+    const div = document.createElement("div");
+    div.classList.add("announcement-item");
+    div.innerHTML = `<strong>${data.sender}:</strong> ${data.message} <br><small>${new Date().toLocaleTimeString()}</small>`;
+    liveBox.prepend(div);
+  });
+
+  // Calculator
   function toggleCalculator() {
     document.getElementById('calculatorPanel').classList.toggle('active');
   }
-  let calcInput = "";
-  const display = document.getElementById('calcDisplay');
-  function press(val){ calcInput += val; display.value = calcInput; }
+  let calcInput = "", display = document.getElementById('calcDisplay');
+  function press(v){ calcInput += v; display.value = calcInput; }
   function clearCalc(){ calcInput = ""; display.value = ""; }
-  function calculate(){
-    try { calcInput = eval(calcInput).toString(); display.value = calcInput; }
-    catch { display.value = "Error"; calcInput = ""; }
-  }
+  function calculate(){ try{ calcInput = eval(calcInput).toString(); display.value = calcInput; }catch{ display.value="Err"; calcInput=""; } }
 
-  // -------- Dynamic Student Info --------
-  async function loadStudent() {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "index.html";
-      return;
-    }
+  function logout(){ window.location.href="index.html"; }
 
-    try {
-      const res = await fetch("/api/student", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        document.getElementById("studentName").textContent = data.name;
-        document.getElementById("studentReg").textContent = data.regNo;
-        document.getElementById("studentEmail").textContent = data.email;
-        document.getElementById("studentRole").textContent = data.role || "Student";
-        localStorage.setItem("studentId", data._id);
-
-        // Render lists dynamically
-        renderList("facultyList", data.faculty || []);
-        renderList("attendanceList", data.attendance || []);
-        renderList("notesList", data.notes || []);
-        renderList("testList", data.tests || []);
-        renderList("noticeList", data.notices || []);
-        renderList("feedbackResponses", data.feedbackResponses || []);
-
-        renderCharts(data);
-      } else {
-        alert(data.message || "Error fetching student details");
-      }
-    } catch (err) {
-      console.error("Fetch error:", err);
-    }
-  }
-
-  function renderList(id, arr) {
-    const el = document.getElementById(id);
-    el.innerHTML = arr.length
-      ? arr.map(i => `<div class='list-item'>${typeof i==='object'?`${i.subject || i.title || ''} ${i.percent ? ': '+i.percent+'%' : ''}`:i}</div>`).join('')
-      : "<p>No data available</p>";
-  }
-
-  function renderCharts(data){
-    const attendanceData = data.attendance || [];
-    new Chart(document.getElementById("attendanceChart"), {
-      type: "bar",
-      data: {
-        labels: attendanceData.map(a=>a.subject),
-        datasets: [{ label:"Attendance %", data: attendanceData.map(a=>a.percent), backgroundColor:"#2563eb"}]
-      }
-    });
-
-    new Chart(document.getElementById("testChart"), {
-      type: "doughnut",
-      data: {
-        labels: ["Completed","Pending"],
-        datasets: [{ data:[data.completedTests || 0, data.pendingTests || 0], backgroundColor:["#10b981","#f59e0b"] }]
-      }
-    });
-  }
-
-  function submitFeedback(){
-    alert("Feedback sent successfully!");
-  }
-
-  function logout(){
-    localStorage.removeItem("token");
-    localStorage.removeItem("studentId");
-    window.location.href="index.html";
-  }
-
-  // -------- Real-Time Updates --------
-  const socket = io();
-  socket.on("studentUpdated", (updatedData) => {
-    if (updatedData._id === localStorage.getItem("studentId")) {
-      document.getElementById("studentName").textContent = updatedData.name;
-      document.getElementById("studentEmail").textContent = updatedData.email;
-    }
-  });
-
-  loadStudent();
+  // TODO: Load student details from your backend via fetch() if needed
 </script>
 </body>
 </html>
