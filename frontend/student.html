@@ -172,10 +172,10 @@
 </header>
 
 <div class="container">
-  <h2 id="studentName">Hari Prasath</h2>
-  <p><strong>Reg No:</strong> DME123</p>
-  <p><strong>Email:</strong> hari@example.com</p>
-  <p><strong>Role:</strong> Student/Tester</p>
+  <h2 id="studentName">Loading...</h2>
+  <p><strong>Reg No:</strong> <span id="studentReg"></span></p>
+  <p><strong>Email:</strong> <span id="studentEmail"></span></p>
+  <p><strong>Role:</strong> <span id="studentRole"></span></p>
   <button class="primary-btn" onclick="logout()">Logout</button>
 
   <hr>
@@ -237,74 +237,105 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/socket.io/socket.io.js"></script>
 <script>
-  // Toggle Calculator Panel
+  // -------- Calculator --------
   function toggleCalculator() {
     document.getElementById('calculatorPanel').classList.toggle('active');
   }
-
-  // Calculator logic
   let calcInput = "";
   const display = document.getElementById('calcDisplay');
+  function press(val){ calcInput += val; display.value = calcInput; }
+  function clearCalc(){ calcInput = ""; display.value = ""; }
+  function calculate(){
+    try { calcInput = eval(calcInput).toString(); display.value = calcInput; }
+    catch { display.value = "Error"; calcInput = ""; }
+  }
 
-  function press(val) {
-    calcInput += val;
-    display.value = calcInput;
-  }
-  function clearCalc() {
-    calcInput = "";
-    display.value = "";
-  }
-  function calculate() {
+  // -------- Dynamic Student Info --------
+  async function loadStudent() {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "index.html";
+      return;
+    }
+
     try {
-      calcInput = eval(calcInput).toString();
-      display.value = calcInput;
-    } catch {
-      display.value = "Error";
-      calcInput = "";
+      const res = await fetch("/api/student", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        document.getElementById("studentName").textContent = data.name;
+        document.getElementById("studentReg").textContent = data.regNo;
+        document.getElementById("studentEmail").textContent = data.email;
+        document.getElementById("studentRole").textContent = data.role || "Student";
+        localStorage.setItem("studentId", data._id);
+
+        // Render lists dynamically
+        renderList("facultyList", data.faculty || []);
+        renderList("attendanceList", data.attendance || []);
+        renderList("notesList", data.notes || []);
+        renderList("testList", data.tests || []);
+        renderList("noticeList", data.notices || []);
+        renderList("feedbackResponses", data.feedbackResponses || []);
+
+        renderCharts(data);
+      } else {
+        alert(data.message || "Error fetching student details");
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
     }
   }
 
-  // Dummy dynamic loading placeholders
-  const faculty = ['Mr. John Doe', 'Ms. Jane Smith'];
-  const attendance = [{subject:'Math',percent:92},{subject:'Physics',percent:88}];
-  const notes = ['Lab Manual Update','Project Guidelines'];
-  const tests = ['Midterm Test','Assignment 2'];
-  const notices = ['Seminar on Friday','Lab timing updated'];
-  const responses = ['Feedback noted.'];
-
   function renderList(id, arr) {
     const el = document.getElementById(id);
-    el.innerHTML = arr.map(i=>`<div class='list-item'>${typeof i==='object'?`${i.subject}: ${i.percent}%`:i}</div>`).join('');
+    el.innerHTML = arr.length
+      ? arr.map(i => `<div class='list-item'>${typeof i==='object'?`${i.subject || i.title || ''} ${i.percent ? ': '+i.percent+'%' : ''}`:i}</div>`).join('')
+      : "<p>No data available</p>";
   }
+
+  function renderCharts(data){
+    const attendanceData = data.attendance || [];
+    new Chart(document.getElementById("attendanceChart"), {
+      type: "bar",
+      data: {
+        labels: attendanceData.map(a=>a.subject),
+        datasets: [{ label:"Attendance %", data: attendanceData.map(a=>a.percent), backgroundColor:"#2563eb"}]
+      }
+    });
+
+    new Chart(document.getElementById("testChart"), {
+      type: "doughnut",
+      data: {
+        labels: ["Completed","Pending"],
+        datasets: [{ data:[data.completedTests || 0, data.pendingTests || 0], backgroundColor:["#10b981","#f59e0b"] }]
+      }
+    });
+  }
+
   function submitFeedback(){
     alert("Feedback sent successfully!");
   }
 
-  renderList("facultyList",faculty);
-  renderList("attendanceList",attendance);
-  renderList("notesList",notes);
-  renderList("testList",tests);
-  renderList("noticeList",notices);
-  renderList("feedbackResponses",responses);
+  function logout(){
+    localStorage.removeItem("token");
+    localStorage.removeItem("studentId");
+    window.location.href="index.html";
+  }
 
-  // Charts
-  new Chart(document.getElementById("attendanceChart"), {
-    type: "bar",
-    data: {
-      labels: attendance.map(a=>a.subject),
-      datasets: [{ label:"Attendance %", data: attendance.map(a=>a.percent), backgroundColor:"#2563eb"}]
-    }
-  });
-  new Chart(document.getElementById("testChart"), {
-    type: "doughnut",
-    data: {
-      labels: ["Completed","Pending"],
-      datasets: [{ data:[8,2], backgroundColor:["#10b981","#f59e0b"] }]
+  // -------- Real-Time Updates --------
+  const socket = io();
+  socket.on("studentUpdated", (updatedData) => {
+    if (updatedData._id === localStorage.getItem("studentId")) {
+      document.getElementById("studentName").textContent = updatedData.name;
+      document.getElementById("studentEmail").textContent = updatedData.email;
     }
   });
 
-  function logout(){ window.location.href="index.html"; }
+  loadStudent();
 </script>
 </body>
 </html>
