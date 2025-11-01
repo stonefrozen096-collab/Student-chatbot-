@@ -1,5 +1,5 @@
 // server.js — Production-ready Student Assistant (ESM, Resend-ready)
-// Replaces previous server.js — keeps all models & logic, fixes signup + forgot-password issues.
+// Full merged version (both parts). Keep models and socket logic intact.
 
 import path from "path";
 import fs from "fs";
@@ -17,7 +17,6 @@ import { Resend } from "resend";
 
 dotenv.config();
 
-// ---------- basic env / paths ----------
 const __dirname = path.resolve();
 const app = express();
 const server = http.createServer(app);
@@ -28,11 +27,10 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 // ---------- helpers ----------
 async function sendEmail({ from, to, subject, text, html }) {
-  // Centralized email helper — returns { ok: true, id } on success.
   try {
     if (!resend) {
-      // No Resend configured — return debug mode
       console.warn("⚠️ RESEND not configured: running in debug email mode");
+      // debug fallback: don't throw so callers can return debug code
       return { ok: true, debug: true };
     }
     const data = await resend.emails.send({ from, to, subject, text, html });
@@ -40,6 +38,7 @@ async function sendEmail({ from, to, subject, text, html }) {
     return { ok: true, id: data?.id };
   } catch (err) {
     console.error("❌ Email send failed:", err && (err.message || err));
+    // bubble up error so caller can respond 500
     throw err;
   }
 }
@@ -56,11 +55,9 @@ app.use((req, res, next) => {
 });
 
 // ---------- static frontend (serve assets) ----------
-// Important: static must be registered so assets (css/js) load when you serve specific HTML pages.
 const FRONTEND_DIR = path.join(__dirname, "frontend");
 app.use(express.static(FRONTEND_DIR));
 
-// debug: list frontend files (helpful on Render)
 try {
   console.log("🧠 DEBUG: Current directory:", __dirname);
   console.log("📂 DEBUG: Files in frontend:", fs.readdirSync(FRONTEND_DIR));
@@ -68,7 +65,7 @@ try {
   console.warn("⚠️ DEBUG: Could not read frontend folder:", err && err.message);
 }
 
-// ---------- MONGO ----------
+// ---------------- MONGO ----------------
 const DB_URI = process.env.MONGO_URI || "mongodb://localhost:27017/student_assistant";
 mongoose
   .connect(DB_URI)
@@ -213,17 +210,34 @@ function requireRole(...roles) {
   };
 }
 
-// ---------- SOCKET.IO ----------
+// ---------- SOCKET.IO (single consolidated listener) ----------
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
+
   socket.on("disconnect", () => console.log("Socket disconnected:", socket.id));
+
+  // attendance save via socket
+  socket.on("attendance:save", async (payload) => {
+    try {
+      const { date, records } = payload;
+      for (const r of records) {
+        await Attendance.findOneAndUpdate({ username: r.username, date }, { ...r }, { upsert: true });
+      }
+      io.emit("attendanceUpdated", { date, records });
+      await addLog("Attendance saved via socket", "socket");
+    } catch (err) {
+      console.error("attendance socket save error", err && err.message);
+    }
+  });
+
+  // optional: listen/send other socket events here (e.g., announcements)
 });
 
 // ---------- ROUTES ----------
 // health
 app.get("/api/health", (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
-// register
+// register (returns token)
 app.post(
   "/api/register",
   body("email").isEmail(),
@@ -239,7 +253,6 @@ app.post(
     await addLog(`User registered: ${email}`, "system");
     io.emit("users:created", u);
 
-    // return token immediately for convenience
     const token = signToken({ id: u._id, email: u.email, role: u.role });
     res.json({ success: true, user: { email: u.email, name: u.name, role: u.role }, token });
   })
@@ -296,17 +309,16 @@ app.post(
 
     console.log("📧 Sending reset code to:", email);
 
-    // use sendEmail helper to allow debug fallback
     try {
       const from = process.env.EMAIL_FROM || "Student Assistant <onboarding@resend.dev>";
       const result = await sendEmail({
         from,
         to: email,
         subject: "Password Reset Token — Student Assistant",
-        html: `<p>Your password reset code is: <strong>${code}</strong></p><p>Expires in 10 minutes.</p>`,
+        html: `<p>Your password reset code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`,
       });
 
-      // if debug mode, return debugCode so frontend can show it (very handy in dev)
+      // debug fallback: when resend not configured we send back code in response
       if (result && result.debug) {
         return res.json({ ok: true, message: "Email backend not configured; returning debug code", debugCode: code });
       }
@@ -319,7 +331,6 @@ app.post(
   })
 );
 
-// reset password
 app.post(
   "/api/reset-password",
   wrap(async (req, res) => {
@@ -343,30 +354,25 @@ app.post(
   })
 );
 
-// ---------- Serve forgot/reset HTML pages (explicit) ----------
+// ---------- EXPLICIT HTML PAGES (forgot/reset) ----------
 app.get("/admin/forgot-password", (req, res) => {
   const filePath = path.join(FRONTEND_DIR, "forgot-password.html");
   if (!fs.existsSync(filePath)) return res.status(404).send("Not found");
   res.sendFile(filePath);
 });
-
 app.get("/admin/reset-password", (req, res) => {
   const filePath = path.join(FRONTEND_DIR, "reset-password.html");
   if (!fs.existsSync(filePath)) return res.status(404).send("Not found");
   res.sendFile(filePath);
 });
 
-// ---------- OTHER ROUTES (kept intact) ----------
-/* Keep all other admin / api routes exactly as your original file does.
-   For brevity I'll include the rest of your existing routes here (badges, master commands,
-   tests, attendance, notices, chatbot triggers, chat send, etc.) — unchanged logic but
-   wrapped with the same wrap() where needed. */
+// ---------------- BADGES, MASTER, TESTS, ATTENDANCE, NOTICES, CHATBOT, etc. ----------------
+// (kept same as your original — unchanged logic, wrapped with wrap/auth where needed)
 
-/* ---------------- BADGES ---------------- */
+// BADGES
 app.get("/api/badges", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   res.json(await Badge.find());
 }));
-
 app.post("/api/badges", authMiddleware, requireRole("admin"), wrap(async (req, res) => {
   const { name, effects = [], access = [] } = req.body;
   const id = genId("b_");
@@ -376,7 +382,6 @@ app.post("/api/badges", authMiddleware, requireRole("admin"), wrap(async (req, r
   io.emit("badges:created", badge);
   res.json(badge);
 }));
-
 app.post("/api/badges/assign", authMiddleware, requireRole("admin"), wrap(async (req, res) => {
   const { email, badgeId } = req.body;
   const badge = await Badge.findOne({ id: badgeId });
@@ -391,7 +396,7 @@ app.post("/api/badges/assign", authMiddleware, requireRole("admin"), wrap(async 
   res.json({ success: true, user: { email: u.email, badges: u.badges, specialAccess: u.specialAccess } });
 }));
 
-/* ---------------- MASTER COMMANDS ---------------- */
+// MASTER COMMANDS
 app.get("/api/master", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   res.json(await MasterCommand.find());
 }));
@@ -412,7 +417,7 @@ app.post("/api/master/:id/execute", authMiddleware, requireRole("admin"), wrap(a
   res.json({ executed: true, id: cmd.id });
 }));
 
-/* ---------------- TESTS ---------------- */
+// TESTS
 app.get("/api/tests", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   const tests = await Test.find().lean();
   res.json(tests);
@@ -432,7 +437,7 @@ app.delete("/api/tests/:id", authMiddleware, requireRole("admin"), wrap(async (r
   res.json({ deleted: true });
 }));
 
-/* ---------------- ATTENDANCE ---------------- */
+// ATTENDANCE
 app.get("/api/attendance", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   const all = await Attendance.find().lean();
   res.json(all);
@@ -451,7 +456,7 @@ app.post("/api/attendance", authMiddleware, requireRole("any"), wrap(async (req,
   res.json({ saved: true, count: upserted.length });
 }));
 
-/* ---------------- NOTICES ---------------- */
+// NOTICES
 app.get("/api/notices", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   const all = await Notice.find().lean();
   res.json(all);
@@ -477,7 +482,7 @@ app.delete("/api/notices/:id", authMiddleware, requireRole("admin"), wrap(async 
   res.json({ deleted: true });
 }));
 
-/* ---------------- CHATBOT TRIGGERS ---------------- */
+// CHATBOT TRIGGERS
 app.get("/api/chatbot/triggers", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   const triggers = await ChatTrigger.find().lean();
   res.json(triggers);
@@ -503,7 +508,7 @@ app.delete("/api/chatbot/triggers/:id", authMiddleware, requireRole("admin"), wr
   res.json({ deleted: true });
 }));
 
-/* ---------------- SIMPLE BOT-HOOK ---------------- */
+// SIMPLE BOT-HOOK
 app.post("/api/chat/send", authMiddleware, wrap(async (req, res) => {
   const { message, username } = req.body;
   if (!message) return res.status(400).json({ error: "message required" });
@@ -520,22 +525,6 @@ app.post("/api/chat/send", authMiddleware, wrap(async (req, res) => {
   return res.json({ type: "none", response: "Sorry, I don't understand." });
 }));
 
-/* ---------------- SOCKET LISTENERS (attendance via socket) ---------------- */
-io.on("connection", (socket) => {
-  socket.on("attendance:save", async (payload) => {
-    try {
-      const { date, records } = payload;
-      for (const r of records) {
-        await Attendance.findOneAndUpdate({ username: r.username, date }, { ...r }, { upsert: true });
-      }
-      io.emit("attendanceUpdated", { date, records });
-      await addLog("Attendance saved via socket", "socket");
-    } catch (err) {
-      console.error("attendance socket save error", err && err.message);
-    }
-  });
-});
-
 /* ---------- GLOBAL ERROR HANDLER ---------- */
 app.use((err, req, res, next) => {
   console.error("Server error:", err && (err.stack || err.message || err));
@@ -544,7 +533,6 @@ app.use((err, req, res, next) => {
 
 /* ---------- CATCH-ALL (frontend single-page fallback) ---------- */
 app.get("*", (req, res) => {
-  // If the request was for a static file that doesn't exist, index.html fallback helps client-side routing.
   const indexHtml = path.join(FRONTEND_DIR, "index.html");
   if (fs.existsSync(indexHtml)) return res.sendFile(indexHtml);
   return res.status(404).send("Not found");
@@ -553,4 +541,4 @@ app.get("*", (req, res) => {
 /* ---------- SERVER START ---------- */
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-      
+ 
