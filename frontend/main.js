@@ -60,16 +60,16 @@ if (loginForm) {
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Login failed");
+      if (!res.ok) throw new Error(data.error || data.message || "Login failed");
 
       localStorage.setItem("token", data.token);
-      localStorage.setItem("userRole", data.user.role);
+      localStorage.setItem("userRole", data.user?.role || "student");
 
       statusDiv.textContent = "✅ Login successful! Redirecting...";
       statusDiv.style.color = "green";
 
       let redirectPage = "student.html";
-      switch (data.user.role.toLowerCase()) {
+      switch ((data.user?.role || "").toLowerCase()) {
         case "admin": redirectPage = "admin.html"; break;
         case "moderator": redirectPage = "moderator.html"; break;
         case "faculty": redirectPage = "faculty.html"; break;
@@ -97,13 +97,15 @@ if (signupForm) {
     statusDiv.textContent = "Creating account...";
 
     try {
-      const res = await fetch(`${API_URL}/api/register`, {
+      // ✅ Adjusted endpoint: likely /api/users/register (check your backend route)
+      const res = await fetch(`${API_URL}/api/users/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: fullName, email, password, role })
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Signup failed");
+      if (!res.ok) throw new Error(data.error || data.message || "Signup failed");
 
       statusDiv.textContent = "✅ Account created! Redirecting...";
       statusDiv.style.color = "green";
@@ -132,7 +134,7 @@ if (forgotForm) {
         body: JSON.stringify({ email })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to send token");
+      if (!res.ok) throw new Error(data.error || data.message || "Failed to send token");
 
       msgDiv.style.color = "green";
       msgDiv.textContent = "✅ Token sent to your email!";
@@ -162,7 +164,7 @@ if (resetForm) {
         body: JSON.stringify({ email, code, newPassword })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Reset failed");
+      if (!res.ok) throw new Error(data.error || data.message || "Reset failed");
 
       msgDiv.style.color = "green";
       msgDiv.textContent = "✅ Password reset successful! Redirecting...";
