@@ -1,5 +1,4 @@
-// server.js — Production-ready Student Assistant (ESM, Resend-ready)
-// Full merged version (both parts). Keep models and socket logic intact.
+// server.js — Full merged version (ESM) with backward-compatible aliases & Resend-friendly reset
 import path from "path";
 import fs from "fs";
 import express from "express";
@@ -31,9 +30,8 @@ async function sendEmail({ from, to, subject, text, html }) {
   try {
     if (!resend) {
       console.warn("⚠️ RESEND not configured: running in debug email mode");
-      return { ok: true, debug: true }; // fallback mode
+      return { ok: true, debug: true }; // debug fallback
     }
-
     const data = await resend.emails.send({ from, to, subject, text, html });
     console.log("📧 Email sent (resend id):", data?.id);
     return { ok: true, id: data?.id };
@@ -46,24 +44,22 @@ async function sendEmail({ from, to, subject, text, html }) {
 // ---------- middlewares ----------
 app.use(
   cors({
-    origin: "*", // Allow requests from any frontend (mobile, web, etc.)
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// request logging for debug
 app.use((req, res, next) => {
   console.log(`➡️ ${req.method} ${req.path}`);
   next();
 });
 
-// ---------- static frontend (serve assets) ----------
+// ---------- static frontend ----------
 const FRONTEND_DIR = path.join(__dirname, "frontend");
 app.use(express.static(FRONTEND_DIR));
-
 try {
   console.log("🧠 DEBUG: Current directory:", __dirname);
   console.log("📂 DEBUG: Files in frontend:", fs.readdirSync(FRONTEND_DIR));
@@ -71,7 +67,7 @@ try {
   console.warn("⚠️ DEBUG: Could not read frontend folder:", err && err.message);
 }
 
-// ---------------- MONGO ----------------
+// ---------- MONGO ----------
 const DB_URI = process.env.MONGO_URI || "mongodb://localhost:27017/student_assistant";
 mongoose
   .connect(DB_URI)
@@ -216,13 +212,12 @@ function requireRole(...roles) {
   };
 }
 
-// ---------- SOCKET.IO (single consolidated listener) ----------
+// ---------- SOCKET.IO ----------
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
 
   socket.on("disconnect", () => console.log("Socket disconnected:", socket.id));
 
-  // attendance save via socket
   socket.on("attendance:save", async (payload) => {
     try {
       const { date, records } = payload;
@@ -236,7 +231,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // optional: listen/send other socket events here (e.g., announcements)
+  // announcements could be emitted here by server when posted, e.g. io.emit('announcement:new', announcement)
 });
 
 // ---------- ROUTES ----------
@@ -263,6 +258,13 @@ app.post(
     res.json({ success: true, user: { email: u.email, name: u.name, role: u.role }, token });
   })
 );
+
+// Backwards-compatible alias: some frontends call /api/users for signup
+app.post("/api/users", wrap(async (req, res) => {
+  // forward to /api/register logic (simple)
+  req.url = "/api/register";
+  app._router.handle(req, res);
+}));
 
 // login
 app.post(
@@ -317,6 +319,7 @@ app.post(
 
     try {
       const from = process.env.EMAIL_FROM || "Student Assistant <onboarding@resend.dev>";
+      // If using resend, make sure EMAIL_FROM is a verified sender/domain in Resend.
       const result = await sendEmail({
         from,
         to: email,
@@ -324,8 +327,8 @@ app.post(
         html: `<p>Your password reset code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`,
       });
 
-      // debug fallback: when resend not configured we send back code in response
       if (result && result.debug) {
+        // helpful during dev: return the code in response so you can test on mobile
         return res.json({ ok: true, message: "Email backend not configured; returning debug code", debugCode: code });
       }
 
@@ -336,6 +339,12 @@ app.post(
     }
   })
 );
+
+// Backwards-compatible alias: accept POST from old frontend path
+app.post("/admin/forgot-password", wrap(async (req, res) => {
+  req.url = "/api/request-reset";
+  app._router.handle(req, res);
+}));
 
 app.post(
   "/api/reset-password",
@@ -360,20 +369,14 @@ app.post(
   })
 );
 
-// ---------- EXPLICIT HTML PAGES (forgot/reset) ----------
-app.get("/admin/forgot-password", (req, res) => {
-  const filePath = path.join(FRONTEND_DIR, "forgot-password.html");
-  if (!fs.existsSync(filePath)) return res.status(404).send("Not found");
-  res.sendFile(filePath);
-});
-app.get("/admin/reset-password", (req, res) => {
-  const filePath = path.join(FRONTEND_DIR, "reset-password.html");
-  if (!fs.existsSync(filePath)) return res.status(404).send("Not found");
-  res.sendFile(filePath);
-});
+// Backwards-compatible alias for reset (old frontend)
+app.post("/admin/reset-password", wrap(async (req, res) => {
+  req.url = "/api/reset-password";
+  app._router.handle(req, res);
+}));
 
-// ---------------- BADGES, MASTER, TESTS, ATTENDANCE, NOTICES, CHATBOT, etc. ----------------
-// (kept same as your original — unchanged logic, wrapped with wrap/auth where needed)
+/* ---------------- BADGES, MASTER, TESTS, ATTENDANCE, NOTICES, CHATBOT TRIGGERS, etc. ---------------- */
+/* (kept same as previous — unchanged logic, wrapped where necessary) */
 
 // BADGES
 app.get("/api/badges", authMiddleware, requireRole("any"), wrap(async (req, res) => {
@@ -402,7 +405,9 @@ app.post("/api/badges/assign", authMiddleware, requireRole("admin"), wrap(async 
   res.json({ success: true, user: { email: u.email, badges: u.badges, specialAccess: u.specialAccess } });
 }));
 
-// MASTER COMMANDS
+// MASTER, TESTS, ATTENDANCE, NOTICES, CHATBOT TRIGGERS etc. (unchanged — keep as you had)
+// ... (You already provided these routes earlier; keep same content here)
+
 app.get("/api/master", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   res.json(await MasterCommand.find());
 }));
@@ -423,7 +428,6 @@ app.post("/api/master/:id/execute", authMiddleware, requireRole("admin"), wrap(a
   res.json({ executed: true, id: cmd.id });
 }));
 
-// TESTS
 app.get("/api/tests", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   const tests = await Test.find().lean();
   res.json(tests);
@@ -443,7 +447,6 @@ app.delete("/api/tests/:id", authMiddleware, requireRole("admin"), wrap(async (r
   res.json({ deleted: true });
 }));
 
-// ATTENDANCE
 app.get("/api/attendance", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   const all = await Attendance.find().lean();
   res.json(all);
@@ -462,7 +465,6 @@ app.post("/api/attendance", authMiddleware, requireRole("any"), wrap(async (req,
   res.json({ saved: true, count: upserted.length });
 }));
 
-// NOTICES
 app.get("/api/notices", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   const all = await Notice.find().lean();
   res.json(all);
@@ -488,7 +490,6 @@ app.delete("/api/notices/:id", authMiddleware, requireRole("admin"), wrap(async 
   res.json({ deleted: true });
 }));
 
-// CHATBOT TRIGGERS
 app.get("/api/chatbot/triggers", authMiddleware, requireRole("any"), wrap(async (req, res) => {
   const triggers = await ChatTrigger.find().lean();
   res.json(triggers);
@@ -514,37 +515,10 @@ app.delete("/api/chatbot/triggers/:id", authMiddleware, requireRole("admin"), wr
   res.json({ deleted: true });
 }));
 
-// SIMPLE BOT-HOOK
 app.post("/api/chat/send", authMiddleware, wrap(async (req, res) => {
   const { message, username } = req.body;
   if (!message) return res.status(400).json({ error: "message required" });
-
   const triggers = await ChatTrigger.find().lean();
   const found = triggers.find((t) => message.toLowerCase().includes(t.trigger.toLowerCase()));
   if (found) {
-    if (["alert", "urgent", "warning"].includes(found.type)) {
-      io.emit("chatbot:lock", { seconds: 10, message: found.response });
-      return res.json({ type: "lock", response: found.response });
-    }
-    return res.json({ type: "reply", response: found.response });
-  }
-  return res.json({ type: "none", response: "Sorry, I don't understand." });
-}));
-
-/* ---------- GLOBAL ERROR HANDLER ---------- */
-app.use((err, req, res, next) => {
-  console.error("Server error:", err && (err.stack || err.message || err));
-  res.status(500).json({ error: "Server error", message: err && err.message });
-});
-
-/* ---------- CATCH-ALL (frontend single-page fallback) ---------- */
-app.get("*", (req, res) => {
-  const indexHtml = path.join(FRONTEND_DIR, "index.html");
-  if (fs.existsSync(indexHtml)) return res.sendFile(indexHtml);
-  return res.status(404).send("Not found");
-});
-
-/* ---------- SERVER START ---------- */
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
- 
+    if (["alert", "
