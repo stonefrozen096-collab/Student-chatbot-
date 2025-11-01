@@ -265,6 +265,11 @@ app.post("/api/users", wrap(async (req, res) => {
   req.url = "/api/register";
   app._router.handle(req, res);
 }));
+// ✅ Additional alias to support /api/users/register
+app.post("/api/users/register", (req, res) => {
+  req.url = "/api/register";
+  app._router.handle(req, res);
+});
 
 // login
 app.post(
