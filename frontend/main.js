@@ -84,32 +84,44 @@ if (loginForm) {
   });
 }
 
-// ---------- SIGNUP ----------
+/* ---------- SIGNUP ---------- */
 const signupForm = document.getElementById("signupForm");
+
 if (signupForm) {
-  signupForm.addEventListener("submit", async e => {
+  signupForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const fullName = document.getElementById("fullname").value.trim();
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
     const role = "student";
-    const statusDiv = document.getElementById("signupStatus") || document.getElementById("signupMsg");
+    const statusDiv =
+      document.getElementById("signupStatus") ||
+      document.getElementById("signupMsg");
+
     statusDiv.textContent = "Creating account...";
+    statusDiv.style.color = "#555";
 
     try {
-      // ✅ Adjusted endpoint: likely /api/users/register (check your backend route)
-      const res = await fetch(`${API_URL}/api/users/register`, {
+      // ✅ Correct endpoint (your backend aliases /api/users to /api/register)
+      const res = await fetch(`${API_URL}/api/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: fullName, email, password, role })
+        body: JSON.stringify({ name: fullName, email, password, role }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || data.message || "Signup failed");
+      console.log("Signup response:", data);
 
-      statusDiv.textContent = "✅ Account created! Redirecting...";
-      statusDiv.style.color = "green";
-      setTimeout(() => (window.location.href = "/login.html"), 1000);
+      if (res.ok && data.success) {
+        statusDiv.textContent = "✅ Account created successfully!";
+        statusDiv.style.color = "green";
+        setTimeout(() => (window.location.href = "login.html"), 1500);
+      } else {
+        const msg = data.error || data.message || "Signup failed.";
+        statusDiv.textContent = `❌ ${msg}`;
+        statusDiv.style.color = "red";
+      }
     } catch (err) {
       console.error("Signup error:", err);
       statusDiv.textContent = `❌ ${err.message}`;
@@ -117,6 +129,7 @@ if (signupForm) {
     }
   });
 }
+
 
 // ---------- FORGOT PASSWORD ----------
 const forgotForm = document.getElementById("forgotForm");
