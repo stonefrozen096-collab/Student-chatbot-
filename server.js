@@ -1,6 +1,5 @@
 // server.js — Production-ready Student Assistant (ESM, Resend-ready)
 // Full merged version (both parts). Keep models and socket logic intact.
-
 import path from "path";
 import fs from "fs";
 import express from "express";
@@ -20,7 +19,9 @@ dotenv.config();
 const __dirname = path.resolve();
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: process.env.CORS_ORIGIN || "*" } });
+const io = new Server(server, {
+  cors: { origin: process.env.CORS_ORIGIN || "*" },
+});
 
 // ---------- Resend init ----------
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -30,21 +31,26 @@ async function sendEmail({ from, to, subject, text, html }) {
   try {
     if (!resend) {
       console.warn("⚠️ RESEND not configured: running in debug email mode");
-      // debug fallback: don't throw so callers can return debug code
-      return { ok: true, debug: true };
+      return { ok: true, debug: true }; // fallback mode
     }
+
     const data = await resend.emails.send({ from, to, subject, text, html });
     console.log("📧 Email sent (resend id):", data?.id);
     return { ok: true, id: data?.id };
   } catch (err) {
     console.error("❌ Email send failed:", err && (err.message || err));
-    // bubble up error so caller can respond 500
     throw err;
   }
 }
 
 // ---------- middlewares ----------
-app.use(cors());
+app.use(
+  cors({
+    origin: "*", // Allow requests from any frontend (mobile, web, etc.)
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
