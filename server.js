@@ -521,4 +521,28 @@ app.post("/api/chat/send", authMiddleware, wrap(async (req, res) => {
   const triggers = await ChatTrigger.find().lean();
   const found = triggers.find((t) => message.toLowerCase().includes(t.trigger.toLowerCase()));
   if (found) {
-    if (["alert", "
+    if (["alert", "urgent", "warning"].includes(found.type)) {
+      io.emit("chatbot:lock", { seconds: 10, message: found.response });
+      return res.json({ type: "lock", response: found.response });
+    }
+    return res.json({ type: "reply", response: found.response });
+  }
+  return res.json({ type: "none", response: "Sorry, I don't understand." });
+}));
+
+/* ---------- GLOBAL ERROR HANDLER ---------- */
+app.use((err, req, res, next) => {
+  console.error("Server error:", err && (err.stack || err.message || err));
+  res.status(500).json({ error: "Server error", message: err && err.message });
+});
+
+/* ---------- CATCH-ALL (frontend single-page fallback) ---------- */
+app.get("*", (req, res) => {
+  const indexHtml = path.join(FRONTEND_DIR, "index.html");
+  if (fs.existsSync(indexHtml)) return res.sendFile(indexHtml);
+  return res.status(404).send("Not found");
+});
+
+/* ---------- SERVER START ---------- */
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
