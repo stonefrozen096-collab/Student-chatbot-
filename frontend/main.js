@@ -86,6 +86,7 @@ if (loginForm) {
 
 // ---------- SIGNUP ----------
 const signupForm = document.getElementById("signupForm");
+
 if (signupForm) {
   signupForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -116,12 +117,15 @@ if (signupForm) {
         statusDiv.style.color = "green";
         setTimeout(() => (window.location.href = "login.html"), 1500);
       } else {
-        // 🧠 Cleanly extract any error message
         let msg = "Signup failed.";
         if (Array.isArray(data.error)) {
           msg = data.error.map(e => e.msg || e).join(", ");
         } else if (data.error && typeof data.error === "object") {
-          msg = data.error.msg || Object.values(data.error).join(", ");
+          msg =
+            data.error.msg ||
+            Object.values(data.error)
+              .map(v => (typeof v === "object" ? JSON.stringify(v) : v))
+              .join(", ");
         } else if (typeof data.error === "string") {
           msg = data.error;
         } else if (data.message) {
