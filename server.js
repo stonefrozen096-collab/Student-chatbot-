@@ -56,6 +56,7 @@ app.use((req, res, next) => {
   console.log(`➡️ ${req.method} ${req.path}`);
   next();
 });
+app.get("*", (req, res) => res.send("API running ✅"));
 
 // ---------- MONGO ----------
 const DB_URI = process.env.MONGO_URI || "mongodb://localhost:27017/student_assistant";
