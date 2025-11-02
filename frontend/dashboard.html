@@ -90,7 +90,7 @@ h2 { margin-top: 0; }
     <table id="attendanceTable">
       <thead>
         <tr>
-          <th>Student</th>
+          <th>Student</</th>
           <th>Present</th>
           <th>Absent</th>
           <th>Late</th>
@@ -372,8 +372,14 @@ h2 { margin-top: 0; }
 <!-- ===========================
      JS & Modules
 =========================== -->
-<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // 🔗 Global backend URL for all modules
+  window.API_URL = "https://feathers-26g1.onrender.com";
+</script>
+
 <script type="module" src="attendance.js"></script>
 <script type="module" src="testManagement.js"></script>
 <script type="module" src="userManagement.js"></script>
@@ -384,6 +390,7 @@ h2 { margin-top: 0; }
 <script type="module" src="masterCommand.js"></script>
 <script type="module" src="notice.js"></script>
 <script type="module" src="profile.js"></script>
+<script type="module" src="main.js"></script>
 
 <script>
 const menuBtns = document.querySelectorAll('.menuBtn');
@@ -398,7 +405,6 @@ menuBtns.forEach(btn=>{
     });
   });
 });
-// Show first section by default
 sections.forEach((sec, idx)=>{ sec.style.display = (idx===0) ? 'block' : 'none'; });
 </script>
 
