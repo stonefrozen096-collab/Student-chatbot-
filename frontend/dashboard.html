@@ -57,26 +57,122 @@ h2 { margin-top: 0; }
   from {opacity: 0; transform: translateY(10px);}
   to {opacity: 1; transform: translateY(0);}
 }
-</style>
+  </style>
 </head>
 <body>
+  <!-- 🔒 Token validation -->
+  <script>
+    (async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("⚠️ Please login first!");
+        window.location.href = "/login.html";
+        return;
+      }
 
-<!-- Sidebar -->
-<div class="sidebar">
-  <button class="menuBtn active" data-section="attendanceSection">📋 Attendance</button>
-  <button class="menuBtn" data-section="testSection">📚 Test Management</button>
-  <button class="menuBtn" data-section="userManagementSection">👤 Users</button>
-  <button class="menuBtn" data-section="badgeSection">🏅 Badges</button>
-  <button class="menuBtn" data-section="chatbotAdminSection">🤖 Chatbot</button>
-  <button class="menuBtn" data-section="analyticsSection">📈 Analytics</button>
-  <button class="menuBtn" data-section="importExportSection">🔄 Import/Export</button>
-  <button class="menuBtn" data-section="masterCommandSection">⚡ Master Command</button>
-  <button class="menuBtn" data-section="noticeSection">📢 Notices</button>
-  <button class="menuBtn" data-section="profileSection">👤 Profile</button>
-</div>
+      try {
+        const res = await fetch("https://feathers-26g1.onrender.com/api/verify-token", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error("Invalid or expired token");
+        const data = await res.json();
+        console.log("✅ Token verified:", data);
+      } catch (err) {
+        console.error("Token validation failed:", err.message);
+        alert("Session expired. Please login again.");
+        localStorage.removeItem("token");
+        window.location.href = "/login.html";
+      }
+    })();
+  </script>
 
-<!-- Main Content -->
-<div class="mainContent">
+  <!-- ✅ Sidebar -->
+  <div class="sidebar">
+    <button class="menuBtn active" data-section="attendanceSection">📋 Attendance</button>
+    <button class="menuBtn" data-section="testSection">📚 Test Management</button>
+    <button class="menuBtn" data-section="userManagementSection">👤 Users</button>
+    <button class="menuBtn" data-section="badgeSection">🏅 Badges</button>
+    <button class="menuBtn" data-section="chatbotAdminSection">🤖 Chatbot</button>
+    <button class="menuBtn" data-section="analyticsSection">📈 Analytics</button>
+    <button class="menuBtn" data-section="importExportSection">🔄 Import/Export</button>
+    <button class="menuBtn" data-section="masterCommandSection">⚡ Master Command</button>
+    <button class="menuBtn" data-section="noticeSection">📢 Notices</button>
+    <button class="menuBtn" data-section="profileSection">👤 Profile</button>
+
+    <!-- 🔒 Logout button -->
+    <div style="margin-top:auto; padding:20px; border-top:1px solid rgba(255,255,255,0.2);">
+      <button id="logoutBtn" style="
+        width:100%;
+        background:#ff3b3b;
+        color:white;
+        border:none;
+        padding:12px 0;
+        border-radius:8px;
+        cursor:pointer;
+        font-size:14px;
+        transition:0.3s;
+      ">🚪 Logout</button>
+    </div>
+  </div>
+
+  <!-- ✅ Main Content -->
+  <div class="mainContent">
+    <!-- Attendance Section -->
+    <div id="attendanceSection" class="admin-section">
+      <h2>📋 Attendance Management</h2>
+      <div class="attendance-controls">
+        <label>Select Date:</label>
+        <input type="date" id="attendanceDate" />
+        <button onclick="markAllPresent()">Mark All Present</button>
+        <button onclick="markAllAbsent()">Mark All Absent</button>
+      </div>
+      <table id="attendanceTable">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Present</th>
+            <th>Absent</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Test Management Section -->
+    <div id="testSection" class="admin-section">
+      <h2>📝 Test Management</h2>
+      <!-- Your test content -->
+    </div>
+  </div>
+
+  <!-- ✅ Logout handler -->
+  <script>
+    const logoutBtn = document.getElementById("logoutBtn");
+    logoutBtn.addEventListener("click", () => {
+      if (confirm("Are you sure you want to logout?")) {
+        const overlay = document.createElement("div");
+        overlay.style.position = "fixed";
+        overlay.style.top = 0;
+        overlay.style.left = 0;
+        overlay.style.width = "100%";
+        overlay.style.height = "100%";
+        overlay.style.background = "white";
+        overlay.style.opacity = 0;
+        overlay.style.transition = "opacity 0.5s ease";
+        overlay.style.zIndex = 9999;
+        document.body.appendChild(overlay);
+
+        requestAnimationFrame(() => (overlay.style.opacity = 1));
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          window.location.href = "/login.html";
+        }, 600);
+      }
+    });
+  </script>
+</body>
+</html>
+
 
   <!-- Attendance Section -->
   <div id="attendanceSection" class="admin-section">
