@@ -12,6 +12,10 @@ import crypto from "crypto";
 import { body, validationResult } from "express-validator";
 import dotenv from "dotenv";
 import { Resend } from "resend";
+import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import morgan from "morgan";
+import axios from "axios";
 
 dotenv.config();
 
@@ -67,6 +71,9 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(helmet());
+app.use(morgan("dev"));
 
 app.use((req, res, next) => {
   console.log(`➡️ ${req.method} ${req.path}`);
@@ -194,13 +201,17 @@ const JWT_TTL = process.env.JWT_TTL || "8h";
 function signToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_TTL });
 }
+function extractToken(req) {
+  const header = req.headers.authorization;
+  const cookieToken = req.cookies?.token;
+  if (header && header.startsWith("Bearer ")) return header.split(" ")[1];
+  if (cookieToken) return cookieToken;
+  return null;
+}
 
 function authMiddleware(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header) return res.status(401).json({ error: "Missing Authorization" });
-  const parts = header.split(" ");
-  if (parts.length !== 2) return res.status(401).json({ error: "Invalid Authorization" });
-  const token = parts[1];
+  const token = extractToken(req);
+  if (!token) return res.status(401).json({ error: "Missing token" });
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
