@@ -542,7 +542,7 @@ app.get("*", (req, res) => {
 /* ---------- SERVER START ---------- */
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-const io = require("socket.io")(server, {
+
   cors: {
     origin: process.env.CORS_ORIGIN || "*", // uses your Render env variable
     methods: ["GET", "POST"]
