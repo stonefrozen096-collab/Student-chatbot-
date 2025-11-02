@@ -1,6 +1,12 @@
-// ✅ Connect frontend to backend via Socket.IO
+// ==================================================
+// ✅ MAIN.JS — FINAL PRODUCTION VERSION
+// Backend: https://feathers-26g1.onrender.com
+// ==================================================
+
+// ---------- SOCKET.IO CONNECTION ----------
 const socket = io("https://feathers-26g1.onrender.com", {
   transports: ["websocket", "polling"],
+  reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 2000,
 });
@@ -9,34 +15,50 @@ const API_URL = "https://feathers-26g1.onrender.com";
 
 // ---------- SOCKET TEST ----------
 socket.on("connect", () => {
-  console.log("✅ Socket connected to backend:", socket.id);
+  console.log("✅ Socket connected:", socket.id);
   socket.emit("pingFromClient", { msg: "Hello from frontend 👋" });
 });
-
-socket.on("disconnect", () => console.warn("⚠️ Socket disconnected"));
+socket.on("disconnect", (reason) => console.warn("⚠️ Socket disconnected:", reason));
 socket.on("pongFromServer", (data) => console.log("📩 Reply from backend:", data));
 
-// Optional: Listen to live updates from backend
+// Live updates (optional)
 socket.on("noticeAdded", (data) => console.log("📰 New Notice:", data));
 socket.on("attendanceUpdated", (data) => console.log("📡 Attendance updated:", data));
 socket.on("chatbotTriggerAdded", (data) => console.log("🤖 Chatbot trigger added:", data));
-// ---------- THEME TOGGLE ----------
+
+// ---------- BACKEND REACH TEST ----------
+(async () => {
+  try {
+    const res = await fetch(`${API_URL}/health`);
+    if (res.ok) console.log("🌐 Backend reachable:", API_URL);
+    else console.warn("⚠️ Backend responded but not OK:", res.status);
+  } catch (err) {
+    console.error("❌ Cannot reach backend:", err.message);
+  }
+})();
+
+// ==================================================
+// 🌙 THEME TOGGLE
+// ==================================================
 const themeToggle = document.getElementById("theme-toggle");
 themeToggle?.addEventListener("click", () => {
   document.body.classList.toggle("dark-mode");
 });
 
-// ---------- SEARCH FILTER ----------
+// ==================================================
+// 🔍 SEARCH FILTER
+// ==================================================
 const searchInput = document.getElementById("search-input");
 searchInput?.addEventListener("input", () => {
   const query = searchInput.value.toLowerCase();
-  const items = document.querySelectorAll(".search-item");
-  items.forEach(item => {
+  document.querySelectorAll(".search-item").forEach((item) => {
     item.style.display = item.innerText.toLowerCase().includes(query) ? "" : "none";
   });
 });
 
-// ---------- COUNTER ANIMATION ----------
+// ==================================================
+// 🔢 COUNTER ANIMATION
+// ==================================================
 function animateCounter(element, start = 0, end, duration = 1000) {
   let startTime = null;
   function step(currentTime) {
@@ -48,19 +70,23 @@ function animateCounter(element, start = 0, end, duration = 1000) {
   window.requestAnimationFrame(step);
 }
 
-// ---------- TOAST ----------
+// ==================================================
+// 🔔 TOAST MESSAGE
+// ==================================================
 function showToast(message, type = "success") {
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
-  toast.innerText = message;
+  toast.textContent = message;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 }
 
-// ---------- LOGIN ----------
+// ==================================================
+// 🔑 LOGIN
+// ==================================================
 const loginForm = document.getElementById("loginForm");
 if (loginForm) {
-  loginForm.addEventListener("submit", async e => {
+  loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
@@ -71,7 +97,7 @@ if (loginForm) {
       const res = await fetch(`${API_URL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || data.message || "Login failed");
@@ -79,17 +105,26 @@ if (loginForm) {
       localStorage.setItem("token", data.token);
       localStorage.setItem("userRole", data.user?.role || "student");
 
+      // Analytics ping (non-blocking)
+      fetch(`${API_URL}/api/analytics`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: "login_success", email }),
+      }).catch(() => {});
+
       statusDiv.textContent = "✅ Login successful! Redirecting...";
       statusDiv.style.color = "green";
 
-      let redirectPage = "student.html";
-      switch ((data.user?.role || "").toLowerCase()) {
-        case "admin": redirectPage = "admin.html"; break;
-        case "moderator": redirectPage = "moderator.html"; break;
-        case "faculty": redirectPage = "faculty.html"; break;
-        case "tester": redirectPage = "tester.html"; break;
-      }
-      setTimeout(() => (window.location.href = `/${redirectPage}`), 1000);
+      // Redirect based on role
+      const role = (data.user?.role || "student").toLowerCase();
+      const redirects = {
+        admin: "admin.html",
+        moderator: "moderator.html",
+        faculty: "faculty.html",
+        tester: "tester.html",
+        student: "student.html",
+      };
+      setTimeout(() => (window.location.href = `/${redirects[role] || "student.html"}`), 1000);
     } catch (err) {
       console.error("Login error:", err);
       statusDiv.textContent = `❌ ${err.message}`;
@@ -98,9 +133,10 @@ if (loginForm) {
   });
 }
 
-// ---------- SIGNUP ----------
+// ==================================================
+// 🧾 SIGNUP
+// ==================================================
 const signupForm = document.getElementById("signupForm");
-
 if (signupForm) {
   signupForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -109,9 +145,7 @@ if (signupForm) {
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
     const role = "student";
-    const statusDiv =
-      document.getElementById("signupStatus") ||
-      document.getElementById("signupMsg");
+    const statusDiv = document.getElementById("signupStatus") || document.getElementById("signupMsg");
 
     statusDiv.textContent = "Creating account...";
     statusDiv.style.color = "#555";
@@ -124,27 +158,27 @@ if (signupForm) {
       });
 
       const data = await res.json();
-      alert("Signup response: " + JSON.stringify(data, null, 2));
-
       if (res.ok && data.success) {
         statusDiv.textContent = "✅ Account created successfully!";
         statusDiv.style.color = "green";
+
+        fetch(`${API_URL}/api/analytics`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ event: "signup_success", email }),
+        }).catch(() => {});
+
         setTimeout(() => (window.location.href = "login.html"), 1500);
       } else {
         let msg = "Signup failed.";
-        if (Array.isArray(data.error)) {
-          msg = data.error.map(e => e.msg || e).join(", ");
-        } else if (data.error && typeof data.error === "object") {
+        if (Array.isArray(data.error)) msg = data.error.map((e) => e.msg || e).join(", ");
+        else if (typeof data.error === "object")
           msg =
             data.error.msg ||
             Object.values(data.error)
-              .map(v => (typeof v === "object" ? JSON.stringify(v) : v))
+              .map((v) => (typeof v === "object" ? JSON.stringify(v) : v))
               .join(", ");
-        } else if (typeof data.error === "string") {
-          msg = data.error;
-        } else if (data.message) {
-          msg = data.message;
-        }
+        else msg = data.error || data.message || msg;
 
         statusDiv.textContent = `❌ ${msg}`;
         statusDiv.style.color = "red";
@@ -157,10 +191,12 @@ if (signupForm) {
   });
 }
 
-// ---------- FORGOT PASSWORD ----------
+// ==================================================
+// 🔐 FORGOT PASSWORD
+// ==================================================
 const forgotForm = document.getElementById("forgotForm");
 if (forgotForm) {
-  forgotForm.addEventListener("submit", async e => {
+  forgotForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("forgotEmail").value.trim();
     const msgDiv = document.getElementById("forgotMsg");
@@ -170,7 +206,7 @@ if (forgotForm) {
       const res = await fetch(`${API_URL}/api/request-reset`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || data.message || "Failed to send token");
@@ -185,10 +221,12 @@ if (forgotForm) {
   });
 }
 
-// ---------- RESET PASSWORD ----------
+// ==================================================
+// 🔑 RESET PASSWORD
+// ==================================================
 const resetForm = document.getElementById("resetForm");
 if (resetForm) {
-  resetForm.addEventListener("submit", async e => {
+  resetForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("resetEmail").value.trim();
     const code = document.getElementById("resetCode").value.trim();
@@ -200,7 +238,7 @@ if (resetForm) {
       const res = await fetch(`${API_URL}/api/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code, newPassword })
+        body: JSON.stringify({ email, code, newPassword }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || data.message || "Reset failed");
@@ -215,7 +253,9 @@ if (resetForm) {
   });
 }
 
-// ---------- LOGOUT ----------
+// ==================================================
+// 🚪 LOGOUT
+// ==================================================
 const logoutBtn = document.getElementById("logoutBtn");
 if (logoutBtn) {
   logoutBtn.addEventListener("click", () => {
@@ -226,9 +266,11 @@ if (logoutBtn) {
   });
 }
 
-// ---------- COUNTER INIT ----------
+// ==================================================
+// 🔢 INIT COUNTERS ON PAGE LOAD
+// ==================================================
 document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll(".counter").forEach(el => {
+  document.querySelectorAll(".counter").forEach((el) => {
     const end = parseInt(el.getAttribute("data-count"), 10) || 0;
     animateCounter(el, 0, end, 1500);
   });
