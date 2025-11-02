@@ -1,27 +1,25 @@
-// ---------- MAIN.JS — Full (Login + Signup + Forgot + Reset + Logout) ----------
-
-// ---------- SOCKET.IO CONNECTION ----------
+// ✅ Connect frontend to backend via Socket.IO
 const socket = io("https://feathers-26g1.onrender.com", {
-  transports: ["websocket"],
-  reconnection: true,
+  transports: ["websocket", "polling"],
   reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
+  reconnectionDelay: 2000,
 });
 
-// ---------- SOCKET STATUS ----------
-socket.on("connect", () => console.log("✅ Connected to Socket.IO server:", socket.id));
-socket.on("disconnect", () => console.warn("⚠️ Disconnected from server"));
-
-socket.on("noticeAdded", data => console.log("📰 New Notice received:", data));
-socket.on("attendanceUpdated", data => console.log("📡 Attendance updated:", data));
-socket.on("chatbotTriggerAdded", data => console.log("🤖 Chatbot trigger update:", data));
-
-// ---------- API BASE URL ----------
 const API_URL = "https://feathers-26g1.onrender.com";
-// ---------- SOCKET STATUS ----------
-socket.on("connect", () => console.log("✅ Connected to server"));
-socket.on("disconnect", () => console.warn("⚠️ Disconnected from server"));
 
+// ---------- SOCKET TEST ----------
+socket.on("connect", () => {
+  console.log("✅ Socket connected to backend:", socket.id);
+  socket.emit("pingFromClient", { msg: "Hello from frontend 👋" });
+});
+
+socket.on("disconnect", () => console.warn("⚠️ Socket disconnected"));
+socket.on("pongFromServer", (data) => console.log("📩 Reply from backend:", data));
+
+// Optional: Listen to live updates from backend
+socket.on("noticeAdded", (data) => console.log("📰 New Notice:", data));
+socket.on("attendanceUpdated", (data) => console.log("📡 Attendance updated:", data));
+socket.on("chatbotTriggerAdded", (data) => console.log("🤖 Chatbot trigger added:", data));
 // ---------- THEME TOGGLE ----------
 const themeToggle = document.getElementById("theme-toggle");
 themeToggle?.addEventListener("click", () => {
