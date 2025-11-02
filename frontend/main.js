@@ -1,7 +1,23 @@
 // ---------- MAIN.JS — Full (Login + Signup + Forgot + Reset + Logout) ----------
-const socket = io();
-const API_URL = "https://feathers-26g1.onrender.com";
 
+// ---------- SOCKET.IO CONNECTION ----------
+const socket = io("https://feathers-26g1.onrender.com", {
+  transports: ["websocket"],
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+});
+
+// ---------- SOCKET STATUS ----------
+socket.on("connect", () => console.log("✅ Connected to Socket.IO server:", socket.id));
+socket.on("disconnect", () => console.warn("⚠️ Disconnected from server"));
+
+socket.on("noticeAdded", data => console.log("📰 New Notice received:", data));
+socket.on("attendanceUpdated", data => console.log("📡 Attendance updated:", data));
+socket.on("chatbotTriggerAdded", data => console.log("🤖 Chatbot trigger update:", data));
+
+// ---------- API BASE URL ----------
+const API_URL = "https://feathers-26g1.onrender.com";
 // ---------- SOCKET STATUS ----------
 socket.on("connect", () => console.log("✅ Connected to server"));
 socket.on("disconnect", () => console.warn("⚠️ Disconnected from server"));
