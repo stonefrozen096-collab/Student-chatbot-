@@ -110,7 +110,7 @@ if (signupForm) {
       });
 
       const data = await res.json();
-      console.log("Signup response:", data);
+      alert("Signup response: " + JSON.stringify(data, null, 2));
 
       if (res.ok && data.success) {
         statusDiv.textContent = "✅ Account created successfully!";
