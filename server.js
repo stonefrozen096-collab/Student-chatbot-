@@ -19,8 +19,12 @@ const __dirname = path.resolve();
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: process.env.CORS_ORIGIN || "*" },
+  cors: {
+    origin: process.env.CORS_ORIGIN || "https://feathers-frontend.onrender.com",
+    methods: ["GET", "POST"],
+  },
 });
+
 // ---------- SOCKET.IO CONNECTION ----------
 io.on("connection", (socket) => {
   console.log("🟢 Socket connected:", socket.id);
