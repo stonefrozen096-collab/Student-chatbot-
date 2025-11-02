@@ -1,178 +1,242 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin Dashboard — Feathers</title>
+
 <link rel="stylesheet" href="admin.css">
 <link rel="stylesheet" href="chatbot.css">
+
 <style>
-/* Basic layout */
-body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  margin: 0;
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-}
-.sidebar {
-  width: 220px;
-  background: #004aad;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  padding-top: 20px;
-  overflow-y: auto;
-}
-.sidebar button {
-  background: transparent;
-  border: none;
-  color: #fff;
-  padding: 12px 20px;
-  text-align: left;
-  font-size: 14px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-.sidebar button:hover, .sidebar button.active {
-  background: #006bff;
-}
-.mainContent {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  background: #f4f6f9;
-}
-.admin-section {
-  display: none;
-  background: #fff;
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  animation: fadeIn 0.5s ease;
-}
-h2 { margin-top: 0; }
-@keyframes fadeIn {
-  from {opacity: 0; transform: translateY(10px);}
-  to {opacity: 1; transform: translateY(0);}
-}
-  </style>
+  /* ---------- Basic layout ---------- */
+  :root{
+    --blue:#004aad;
+    --blue-strong:#006bff;
+    --bg:#f4f6f9;
+    --card:#ffffff;
+    --glow-color: rgba(0,123,255,0.28); /* blue glow */
+  }
+
+  html,body{height:100%;margin:0;font-family:"Segoe UI", Tahoma, Geneva, Verdana, sans-serif;}
+
+  body {
+    display:flex;
+    height:100vh;
+    overflow:hidden;
+    background:var(--bg);
+    transition: background .6s ease, color .4s ease;
+  }
+
+  .sidebar {
+    width:220px;
+    background:var(--blue);
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    padding-top:20px;
+    overflow-y:auto;
+    transition: box-shadow .8s ease, background .6s ease, transform .45s ease;
+  }
+
+  .sidebar button{
+    background:transparent;
+    border:none;
+    color:#fff;
+    padding:12px 20px;
+    text-align:left;
+    font-size:14px;
+    cursor:pointer;
+    transition:background .15s;
+  }
+  .sidebar button:hover, .sidebar button.active { background: var(--blue-strong); }
+
+  .mainContent{
+    flex:1;
+    overflow-y:auto;
+    padding:20px;
+    background:var(--bg);
+    transition: box-shadow .8s ease, background .6s ease;
+  }
+
+  .admin-section{
+    display:none;
+    background:var(--card);
+    border-radius:14px;
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+    animation: fadeIn .4s ease;
+    transition: box-shadow .6s ease, background .45s ease, color .45s ease;
+  }
+  h2{ margin-top:0; }
+
+  @keyframes fadeIn {
+    from {opacity:0; transform: translateY(8px);} to {opacity:1; transform: translateY(0);}
+  }
+
+  /* ---------- Dark mode (strong, semi-transparent glow) ---------- */
+  body.dark-mode {
+    background: #071229; /* dark background */
+    color: #e8f6ff;
+  }
+
+  /* Glow applies around sidebar + main content as semi-transparent soft box */
+  body.dark-mode .sidebar {
+    background: #031a3a;
+    box-shadow:
+      0 8px 40px rgba(0,123,255,0.18), /* large ambient */
+      0 0 120px rgba(0,123,255,0.08) inset; /* inner emergency glow */
+  }
+
+  body.dark-mode .mainContent {
+    background: linear-gradient(180deg, rgba(3,26,58,0.35), rgba(6,18,35,0.25));
+    box-shadow:
+      0 20px 80px rgba(0,123,255,0.08),
+      0 6px 20px rgba(0,0,0,0.55);
+  }
+
+  body.dark-mode .admin-section {
+    background: rgba(7,21,48,0.85);
+    color: #e6f7ff;
+    box-shadow: 0 18px 60px rgba(0,0,0,0.5);
+    border: 1px solid rgba(0,123,255,0.06);
+    backdrop-filter: blur(6px);
+  }
+
+  /* Glow for headings in dark */
+  body.dark-mode h2 {
+    text-shadow: 0 8px 30px var(--glow-color);
+    transition: text-shadow .8s ease;
+  }
+
+  /* theme toggle / utility */
+  .sidebar .bottom-controls { margin-top:auto; padding:20px; border-top: 1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; gap:12px; }
+  .btn-inline { width:100%; padding:10px 12px; border-radius:8px; border:none; cursor:pointer; font-size:14px; }
+
+  /* logout dialog (top-right) - hidden by default */
+  .logout-dialog {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+    padding: 14px;
+    z-index: 12000;
+    min-width: 260px;
+    transform: translateY(-8px);
+    opacity: 0;
+    transition: opacity .36s ease, transform .36s ease;
+    display: grid;
+    gap:8px;
+  }
+  .logout-dialog.show { opacity: 1; transform: translateY(0); }
+
+  .logout-dialog.dark {
+    background: rgba(6,18,35,0.92);
+    color: #e6f7ff;
+    border: 1px solid rgba(0,123,255,0.07);
+    box-shadow: 0 12px 48px rgba(0,123,255,0.12);
+    backdrop-filter: blur(6px);
+  }
+
+  .logout-dialog .dialog-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:6px; }
+  .btn-ghost { background:transparent; border:1px solid rgba(0,0,0,0.08); padding:8px 10px; border-radius:8px; cursor:pointer; }
+  .btn-danger { background:#ff3b3b; color:#fff; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; }
+
+  /* small responsive */
+  @media (max-width:900px){
+    .sidebar { width:68px; }
+    .sidebar button { font-size:12px; padding:10px; }
+  }
+
+  /* subtle theme transition for glow intensity (slow feel) */
+  .sidebar, .mainContent, .admin-section, h2 { transition-timing-function: cubic-bezier(.2,.7,.2,1); transition-duration: 700ms; }
+</style>
 </head>
 <body>
-  <!-- 🔒 Token validation -->
-  <script>
-    (async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("⚠️ Please login first!");
-        window.location.href = "/login.html";
-        return;
-      }
 
-      try {
-        const res = await fetch("https://feathers-26g1.onrender.com/api/verify-token", {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        if (!res.ok) throw new Error("Invalid or expired token");
-        const data = await res.json();
-        console.log("✅ Token verified:", data);
-      } catch (err) {
-        console.error("Token validation failed:", err.message);
-        alert("Session expired. Please login again.");
-        localStorage.removeItem("token");
-        window.location.href = "/login.html";
-      }
-    })();
-  </script>
+<!-- ============================
+     Cookie helpers & auth check (uses cookie 'authToken')
+     - fallback to localStorage token for compatibility
+     ============================ -->
+<script>
+  function getCookie(name) {
+    const re = new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()\\[\\]\\/\\+^])/g,'\\$1') + '=([^;]*)');
+    const m = document.cookie.match(re);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+  function setCookie(name, value, days=365) {
+    const d = new Date(); d.setTime(d.getTime() + days*24*60*60*1000);
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; expires=${d.toUTCString()}; SameSite=Lax`;
+  }
+  function deleteCookie(name){
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  }
 
-  <!-- ✅ Sidebar -->
-  <div class="sidebar">
-    <button class="menuBtn active" data-section="attendanceSection">📋 Attendance</button>
-    <button class="menuBtn" data-section="testSection">📚 Test Management</button>
-    <button class="menuBtn" data-section="userManagementSection">👤 Users</button>
-    <button class="menuBtn" data-section="badgeSection">🏅 Badges</button>
-    <button class="menuBtn" data-section="chatbotAdminSection">🤖 Chatbot</button>
-    <button class="menuBtn" data-section="analyticsSection">📈 Analytics</button>
-    <button class="menuBtn" data-section="importExportSection">🔄 Import/Export</button>
-    <button class="menuBtn" data-section="masterCommandSection">⚡ Master Command</button>
-    <button class="menuBtn" data-section="noticeSection">📢 Notices</button>
-    <button class="menuBtn" data-section="profileSection">👤 Profile</button>
-    <!-- 🌗 Dark Mode Toggle -->
-<div style="margin-top: 20px; padding: 0 20px;">
-  <button id="themeToggleBtn" style="
-    width:100%;
-    background:#333;
-    color:white;
-    border:none;
-    padding:12px 0;
-    border-radius:8px;
-    cursor:pointer;
-    font-size:14px;
-    transition:0.3s;
-  ">🌙 Dark Mode</button>
+  (async () => {
+    // Prefer cookie (authToken). If not found, fallback to localStorage 'token'
+    const token = getCookie('authToken') || localStorage.getItem('token');
+    if (!token) {
+      alert('⚠️ Please login first.');
+      window.location.href = '/login.html';
+      return;
+    }
+
+    try {
+      // verify token with backend
+      const res = await fetch('https://feathers-26g1.onrender.com/api/verify-token', {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Invalid or expired token');
+      const data = await res.json();
+      console.log('✅ Token verified:', data);
+      window.__CURRENT_USER = data.user || null;
+      // optionally keep cookie in sync if token was in localStorage
+      if (!getCookie('authToken') && localStorage.getItem('token')) {
+        setCookie('authToken', localStorage.getItem('token'), 7);
+      }
+    } catch (err) {
+      console.error('Token verification failed:', err);
+      deleteCookie('authToken');
+      localStorage.removeItem('token');
+      alert('Session expired — please login again.');
+      window.location.href = '/login.html';
+    }
+  })();
+</script>
+
+<!-- ============================
+     Sidebar
+     ============================ -->
+<div class="sidebar">
+  <button class="menuBtn active" data-section="attendanceSection">📋 Attendance</button>
+  <button class="menuBtn" data-section="testSection">📚 Test Management</button>
+  <button class="menuBtn" data-section="userManagementSection">👤 Users</button>
+  <button class="menuBtn" data-section="badgeSection">🏅 Badges</button>
+  <button class="menuBtn" data-section="chatbotAdminSection">🤖 Chatbot</button>
+  <button class="menuBtn" data-section="analyticsSection">📈 Analytics</button>
+  <button class="menuBtn" data-section="importExportSection">🔄 Import/Export</button>
+  <button class="menuBtn" data-section="masterCommandSection">⚡ Master Command</button>
+  <button class="menuBtn" data-section="noticeSection">📢 Notices</button>
+  <button class="menuBtn" data-section="profileSection">👤 Profile</button>
+
+  <!-- bottom controls: theme + logout -->
+  <div class="bottom-controls">
+    <button id="themeToggleBtn" class="btn-inline" style="background:#0b2b4a;color:#fff;">🌙 Dark Mode</button>
+    <button id="logoutBtn" class="btn-inline" style="background:#ff3b3b;color:#fff;">🚪 Logout</button>
+  </div>
 </div>
 
-    <!-- 🔒 Logout button -->
-    <div style="margin-top:auto; padding:20px; border-top:1px solid rgba(255,255,255,0.2);">
-      <button id="logoutBtn" style="
-        width:100%;
-        background:#ff3b3b;
-        color:white;
-        border:none;
-        padding:12px 0;
-        border-radius:8px;
-        cursor:pointer;
-        font-size:14px;
-        transition:0.3s;
-      ">🚪 Logout</button>
-    </div>
-  </div>
+<!-- ============================
+     Main Content (all sections)
+     (keeps your full original sections)
+     ============================ -->
+<div class="mainContent">
 
-  
-
-  <!-- ✅ Logout handler -->
-  <script>
-    const logoutBtn = document.getElementById("logoutBtn");
-    logoutBtn.addEventListener("click", () => {
-      if (confirm("Are you sure you want to logout?")) {
-        const overlay = document.createElement("div");
-        overlay.style.position = "fixed";
-        overlay.style.top = 0;
-        overlay.style.left = 0;
-        overlay.style.width = "100%";
-        overlay.style.height = "100%";
-        overlay.style.background = "white";
-        overlay.style.opacity = 0;
-        overlay.style.transition = "opacity 0.5s ease";
-        overlay.style.zIndex = 9999;
-        document.body.appendChild(overlay);
-
-        requestAnimationFrame(() => (overlay.style.opacity = 1));
-        setTimeout(() => {
-          localStorage.removeItem("token");
-          window.location.href = "/login.html";
-        }, 600);
-      }
-    });
-  const themeToggleBtn = document.getElementById("themeToggleBtn");
-  const currentTheme = localStorage.getItem("theme") || "light";
-
-  // Apply saved theme
-  document.body.classList.toggle("dark-mode", currentTheme === "dark");
-  themeToggleBtn.textContent = currentTheme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
-
-  // Toggle theme
-  themeToggleBtn.addEventListener("click", () => {
-    const isDark = document.body.classList.toggle("dark-mode");
-    localStorage.setItem("theme", isDark ? "dark" : "light");
-    themeToggleBtn.textContent = isDark ? "☀️ Light Mode" : "🌙 Dark Mode";
-  });
-  </script>
-</body>
-</html>
-
-  <!-- Attendance Section -->
+  <!-- Attendance -->
   <div id="attendanceSection" class="admin-section">
     <h2>📋 Attendance Management</h2>
     <div class="attendance-controls">
@@ -181,37 +245,39 @@ h2 { margin-top: 0; }
       <button onclick="markAllPresent()">Mark All Present</button>
       <button onclick="markAllAbsent()">Mark All Absent</button>
     </div>
-    <table id="attendanceTable">
+
+    <table id="attendanceTable" style="width:100%;margin-top:12px;border-collapse:collapse;">
       <thead>
         <tr>
-          <th>Student</</th>
-          <th>Present</th>
-          <th>Absent</th>
-          <th>Late</th>
-          <th>On Duty</th>
-          <th>Status</th>
+          <th style="text-align:left;padding:8px;border-bottom:1px solid #eee">Student</th>
+          <th style="padding:8px;border-bottom:1px solid #eee">Present</th>
+          <th style="padding:8px;border-bottom:1px solid #eee">Absent</th>
+          <th style="padding:8px;border-bottom:1px solid #eee">Late</th>
+          <th style="padding:8px;border-bottom:1px solid #eee">On Duty</th>
+          <th style="padding:8px;border-bottom:1px solid #eee">Status</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
-    <button onclick="saveAttendance()">💾 Save Attendance</button>
+
+    <button onclick="saveAttendance()" style="margin-top:12px;">💾 Save Attendance</button>
   </div>
 
-  <!-- Test Section -->
+  <!-- Test Management -->
   <div id="testSection" class="admin-section">
     <h2>📝 Test Management</h2>
     <form id="createTestForm">
-      <label for="testTitle">Test Title:</label>
+      <label>Test Title:</label>
       <input type="text" id="testTitle" required>
-      <label for="testSubject">Subject:</label>
+      <label>Subject:</label>
       <input type="text" id="testSubject" required>
-      <label for="testType">Test Type:</label>
+      <label>Test Type:</label>
       <select id="testType">
         <option value="mcq">MCQ</option>
         <option value="subjective">Subjective</option>
       </select>
 
-      <div id="mcqSection" class="mcqContainer" style="display:none;">
+      <div id="mcqSection" style="display:none;margin-top:10px;">
         <label>Options:</label>
         <div id="optionContainer"></div>
         <button type="button" id="addOptionBtn">➕ Add Option</button>
@@ -219,7 +285,7 @@ h2 { margin-top: 0; }
         <select id="correctAnswerSelect"></select>
       </div>
 
-      <label for="publishSelect">Publish To:</label>
+      <label>Publish To:</label>
       <select id="publishSelect">
         <option value="all">All Students</option>
         <option value="specific">Specific Students</option>
@@ -233,23 +299,21 @@ h2 { margin-top: 0; }
       <button type="submit">Create & Publish Test</button>
     </form>
 
-    <h3>Existing Tests</h3>
+    <h3 style="margin-top:18px;">Existing Tests</h3>
     <div class="testTableContainer">
-      <table id="testTable">
+      <table id="testTable" style="width:100%;border-collapse:collapse;">
         <thead>
           <tr>
-            <th>Title</th>
-            <th>Subject</th>
-            <th>Type</th>
-            <th>Published To</th>
-            <th>Actions</th>
+            <th style="padding:8px;border-bottom:1px solid #eee">Title</th>
+            <th style="padding:8px;border-bottom:1px solid #eee">Subject</th>
+            <th style="padding:8px;border-bottom:1px solid #eee">Type</th>
+            <th style="padding:8px;border-bottom:1px solid #eee">Published To</th>
+            <th style="padding:8px;border-bottom:1px solid #eee">Actions</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
-
-    <div id="confettiContainer"></div>
   </div>
 
   <!-- User Management -->
@@ -268,24 +332,25 @@ h2 { margin-top: 0; }
       <button type="submit">Add User</button>
     </form>
 
-    <input type="text" id="profileSearchUser" placeholder="Search by username, email, or role...">
+    <input type="text" id="profileSearchUser" placeholder="Search by username, email, or role..." style="margin-top:12px;">
 
-    <div class="userTableContainer">
-      <table id="userTable">
+    <div class="userTableContainer" style="margin-top:12px;">
+      <table id="userTable" style="width:100%;border-collapse:collapse;">
         <thead>
           <tr>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Password</th>
-            <th>Status</th>
-            <th>Actions</th>
+            <th style="padding:8px;border-bottom:1px solid #eee">Username</th>
+            <th style="padding:8px;border-bottom:1px solid #eee">Email</th>
+            <th style="padding:8px;border-bottom:1px solid #eee">Role</th>
+            <th style="padding:8px;border-bottom:1px solid #eee">Password</th>
+            <th style="padding:8px;border-bottom:1px solid #eee">Status</th>
+            <th style="padding:8px;border-bottom:1px solid #eee">Actions</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
+    
 
   <!-- Badge Section -->
   <div id="badgeSection" class="admin-section">
@@ -463,6 +528,16 @@ h2 { margin-top: 0; }
 
 </div> <!-- End mainContent -->
 
+<!-- Logout confirmation dialog (top-right) -->
+<div id="logoutDialog" class="logout-dialog" aria-hidden="true" role="dialog" aria-label="Logout confirmation">
+  <div style="font-weight:600;">Confirm Logout</div>
+  <div style="font-size:13px; opacity:0.9;">Are you sure you want to log out now?</div>
+  <div class="dialog-actions">
+    <button id="cancelLogoutBtn" class="btn-ghost">Cancel</button>
+    <button id="confirmLogoutBtn" class="btn-danger">Logout</button>
+  </div>
+</div>
+
 <!-- ===========================
      JS & Modules
 =========================== -->
@@ -470,36 +545,102 @@ h2 { margin-top: 0; }
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-  // 🔗 Global backend URL for all modules
+  // expose API URL for modules
   window.API_URL = "https://feathers-26g1.onrender.com";
-</script>
 
-<script type="module" src="attendance.js"></script>
-<script type="module" src="testManagement.js"></script>
-<script type="module" src="userManagement.js"></script>
-<script type="module" src="badge.js"></script>
-<script type="module" src="chatbot.js"></script>
-<script type="module" src="analytics.js"></script>
-<script type="module" src="importExport.js"></script>
-<script type="module" src="masterCommand.js"></script>
-<script type="module" src="notice.js"></script>
-<script type="module" src="profile.js"></script>
-<script type="module" src="main.js"></script>
+  // ---------- Socket quick status (non-blocking) ----------
+  try {
+    const socket = io(window.API_URL, { transports:['websocket','polling'], reconnectionAttempts: 3 });
+    socket.on('connect', ()=> console.log('✅ Socket connected', socket.id));
+    socket.on('disconnect', (r)=> console.warn('⚠ Socket disconnected', r));
+    window.__SOCKET = socket;
+  } catch(e){ console.warn('Socket init failed', e); }
 
-<script>
-const menuBtns = document.querySelectorAll('.menuBtn');
-const sections = document.querySelectorAll('.admin-section');
-menuBtns.forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    menuBtns.forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    const target = btn.dataset.section;
-    sections.forEach(sec=>{
-      sec.style.display = (sec.id === target) ? 'block' : 'none';
+  // ---------- Menu switching ----------
+  const menuBtns = document.querySelectorAll('.menuBtn');
+  const sections = document.querySelectorAll('.admin-section');
+  menuBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      menuBtns.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const target = btn.dataset.section;
+      sections.forEach(sec=>{
+        sec.style.display = (sec.id === target) ? 'block' : 'none';
+      });
+      document.querySelector('.mainContent').scrollTop = 0;
     });
   });
-});
-sections.forEach((sec, idx)=>{ sec.style.display = (idx===0) ? 'block' : 'none'; });
+  // default show first
+  sections.forEach((s,i)=> s.style.display = i===0 ? 'block' : 'none');
+
+  // ---------- Theme toggle + cookie + fade effect ----------
+  (function themeInit(){
+    const themeBtn = document.getElementById('themeToggleBtn');
+    // read cookie
+    const themeCookie = (document.cookie.match(/(?:^|; )theme=([^;]+)/) || [])[1] || 'light';
+    const isDark = themeCookie === 'dark';
+    document.body.classList.toggle('dark-mode', isDark);
+    themeBtn.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+
+    // smooth fade-in/out of glow — we use CSS transitions already set in styles
+    themeBtn.addEventListener('click', ()=>{
+      const nowDark = document.body.classList.toggle('dark-mode');
+      document.cookie = `theme=${nowDark ? 'dark' : 'light'}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
+      themeBtn.textContent = nowDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+      // add a slight delay or micro-animation if desired (already using CSS transitions)
+    });
+  })();
+
+  // ---------- Logout dialog (top-right) ----------
+  (function logoutInit(){
+    const logoutBtn = document.getElementById('logoutBtn');
+    const dialog = document.getElementById('logoutDialog');
+    const cancelBtn = document.getElementById('cancelLogoutBtn');
+    const confirmBtn = document.getElementById('confirmLogoutBtn');
+
+    function showDialog() {
+      // reflect theme
+      dialog.classList.toggle('dark', document.body.classList.contains('dark-mode'));
+      dialog.classList.add('show');
+      dialog.setAttribute('aria-hidden', 'false');
+      // auto-focus cancel for safe escape
+      cancelBtn.focus();
+    }
+    function hideDialog() {
+      dialog.classList.remove('show');
+      dialog.setAttribute('aria-hidden', 'true');
+    }
+
+    logoutBtn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      showDialog();
+    });
+
+    cancelBtn.addEventListener('click', hideDialog);
+
+    confirmBtn.addEventListener('click', ()=>{
+      // create subtle full-screen fade overlay
+      const overlay = document.createElement('div');
+      overlay.style.position='fixed'; overlay.style.inset='0'; overlay.style.background='#031a3a';
+      overlay.style.opacity='0'; overlay.style.transition='opacity .45s ease'; overlay.style.zIndex=11999;
+      document.body.appendChild(overlay);
+      requestAnimationFrame(()=> overlay.style.opacity = '0.95');
+
+      setTimeout(()=>{
+        // remove tokens & cookies
+        document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        localStorage.removeItem('token');
+        // redirect to login
+        window.location.href = '/login.html';
+      }, 500);
+    });
+
+    // close on outside click or Esc
+    document.addEventListener('keydown', (ev)=> {
+      if (ev.key === 'Escape') hideDialog();
+    });
+  })();
+
 </script>
 
 </body>
