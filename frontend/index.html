@@ -145,7 +145,6 @@
     #auth-section {
       display: block;
     }
-
   </style>
 </head>
 <body>
@@ -191,7 +190,28 @@
     </section>
   </div>
 
+  <!-- ✅ Socket.IO Client -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
   <script>
+    // ✅ Backend URL (Render)
+    const API_URL = "https://feathers-26g1.onrender.com";
+
+    // ✅ Socket Connection Test
+    const socket = io(API_URL, {
+      transports: ["websocket", "polling"],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+    });
+
+    socket.on("connect", () => {
+      console.log("✅ Socket connected to backend:", socket.id);
+      socket.emit("pingFromClient", { msg: "Hello from frontend 👋" });
+    });
+
+    socket.on("pongFromServer", (data) => console.log("📩 Reply from backend:", data));
+    socket.on("disconnect", () => console.warn("⚠️ Socket disconnected"));
+
     const authSection = document.getElementById('auth-section');
     const forgotSection = document.getElementById('forgot-section');
     const resetSection = document.getElementById('reset-section');
@@ -219,7 +239,7 @@
       authMsg.textContent = '';
 
       try {
-        const res = await fetch('/api/login', {
+        const res = await fetch(`${API_URL}/api/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
@@ -253,7 +273,7 @@
       }
 
       try {
-        const res = await fetch('/api/users', {
+        const res = await fetch(`${API_URL}/api/users`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, password })
@@ -279,7 +299,7 @@
       const email = document.getElementById('fpEmail').value.trim();
       fpMsg.textContent = '';
       try {
-        const res = await fetch('/admin/forgot-password', {
+        const res = await fetch(`${API_URL}/admin/forgot-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
@@ -309,7 +329,7 @@
       }
 
       try {
-        const res = await fetch('/admin/reset-password', {
+        const res = await fetch(`${API_URL}/admin/reset-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token, newPassword })
