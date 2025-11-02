@@ -1,5 +1,5 @@
 // ==================================================
-// ✅ MAIN.JS — FINAL PRODUCTION VERSION
+// ✅ MAIN.JS — FINAL PRODUCTION VERSION (UPGRADED)
 // Backend: https://feathers-26g1.onrender.com
 // ==================================================
 
@@ -38,11 +38,34 @@ socket.on("chatbotTriggerAdded", (data) => console.log("🤖 Chatbot trigger add
 })();
 
 // ==================================================
-// 🌙 THEME TOGGLE
+// 🌙 THEME TOGGLE (Dark Mode with Blue Glow + Cookie Save)
 // ==================================================
 const themeToggle = document.getElementById("theme-toggle");
+
+// 🔹 Load theme preference from cookies
+const savedTheme = document.cookie
+  .split("; ")
+  .find((row) => row.startsWith("theme="))
+  ?.split("=")[1];
+if (savedTheme === "dark") document.body.classList.add("dark-mode");
+
+function saveThemeToCookie(theme) {
+  document.cookie = `theme=${theme}; path=/; max-age=${60 * 60 * 24 * 30}`;
+}
+
 themeToggle?.addEventListener("click", () => {
-  document.body.classList.toggle("dark-mode");
+  const isDark = document.body.classList.toggle("dark-mode");
+  saveThemeToCookie(isDark ? "dark" : "light");
+
+  // Add a smooth glowing fade when switching to dark
+  if (isDark) {
+    const glow = document.createElement("div");
+    glow.className = "blue-glow";
+    document.body.appendChild(glow);
+    setTimeout(() => glow.classList.add("fade-in"), 50);
+    setTimeout(() => glow.classList.remove("fade-in"), 1500);
+    setTimeout(() => glow.remove(), 1800);
+  }
 });
 
 // ==================================================
@@ -115,7 +138,6 @@ if (loginForm) {
       statusDiv.textContent = "✅ Login successful! Redirecting...";
       statusDiv.style.color = "green";
 
-      // Redirect based on role
       const role = (data.user?.role || "student").toLowerCase();
       const redirects = {
         admin: "admin.html",
@@ -170,16 +192,7 @@ if (signupForm) {
 
         setTimeout(() => (window.location.href = "login.html"), 1500);
       } else {
-        let msg = "Signup failed.";
-        if (Array.isArray(data.error)) msg = data.error.map((e) => e.msg || e).join(", ");
-        else if (typeof data.error === "object")
-          msg =
-            data.error.msg ||
-            Object.values(data.error)
-              .map((v) => (typeof v === "object" ? JSON.stringify(v) : v))
-              .join(", ");
-        else msg = data.error || data.message || msg;
-
+        let msg = data.error || data.message || "Signup failed.";
         statusDiv.textContent = `❌ ${msg}`;
         statusDiv.style.color = "red";
       }
@@ -254,11 +267,13 @@ if (resetForm) {
 }
 
 // ==================================================
-// 🚪 LOGOUT
+// 🚪 LOGOUT (With Confirmation Dialog)
 // ==================================================
 const logoutBtn = document.getElementById("logoutBtn");
 if (logoutBtn) {
   logoutBtn.addEventListener("click", () => {
+    const box = confirm("Are you sure you want to logout?");
+    if (!box) return;
     localStorage.removeItem("token");
     localStorage.removeItem("userRole");
     showToast("Logged out successfully", "info");
