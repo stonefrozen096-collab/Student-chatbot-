@@ -57,16 +57,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// ---------- static frontend ----------
-const FRONTEND_DIR = path.join(__dirname, "frontend");
-app.use(express.static(FRONTEND_DIR));
-try {
-  console.log("🧠 DEBUG: Current directory:", __dirname);
-  console.log("📂 DEBUG: Files in frontend:", fs.readdirSync(FRONTEND_DIR));
-} catch (err) {
-  console.warn("⚠️ DEBUG: Could not read frontend folder:", err && err.message);
-}
-
 // ---------- MONGO ----------
 const DB_URI = process.env.MONGO_URI || "mongodb://localhost:27017/student_assistant";
 mongoose
