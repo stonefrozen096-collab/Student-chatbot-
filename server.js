@@ -554,21 +554,3 @@ app.get("*", (req, res) => {
 /* ---------- SERVER START ---------- */
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-
-  cors: {
-    origin: process.env.CORS_ORIGIN || "*", // uses your Render env variable
-    methods: ["GET", "POST"]
-  }
-});
-
-io.on("connection", (socket) => {
-  console.log("🟢 Socket connected:", socket.id);
-
-  socket.on("disconnect", () => console.log("🔴 Socket disconnected:", socket.id));
-
-  // optional test event
-  socket.on("pingFromClient", (data) => {
-    console.log("📩 Received from client:", data);
-    socket.emit("pongFromServer", { msg: "Hello from backend 👋" });
-  });
-});
