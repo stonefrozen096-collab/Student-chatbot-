@@ -21,6 +21,18 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: process.env.CORS_ORIGIN || "*" },
 });
+// ---------- SOCKET.IO CONNECTION ----------
+io.on("connection", (socket) => {
+  console.log("🟢 Socket connected:", socket.id);
+
+  socket.on("disconnect", () => console.log("🔴 Socket disconnected:", socket.id));
+
+  // ✅ Test ping
+  socket.on("pingFromClient", (data) => {
+    console.log("📩 Received from client:", data);
+    socket.emit("pongFromServer", { msg: "Hello from backend 👋" });
+  });
+});
 
 // ---------- Resend init ----------
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
