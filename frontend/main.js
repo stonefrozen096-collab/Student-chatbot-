@@ -52,13 +52,16 @@ document.addEventListener("DOMContentLoaded", () => {
     tester: ["tester.html"],
     student: ["student.html"],
   };
-
-  // 🚫 Block access to protected pages without login
-  if (!publicPages.includes(currentPage) && !token) {
-    console.warn("🔒 Unauthorized access — redirecting to login.");
-    window.location.href = "login.html";
-    return;
-  }
+  // 🚫 Block access to protected pages without login (with small delay to avoid false redirect)
+if (!publicPages.includes(currentPage)) {
+  setTimeout(() => {
+    const checkToken = localStorage.getItem("token");
+    if (!checkToken) {
+      console.warn("🔒 Unauthorized access — redirecting to login.");
+      window.location.href = "login.html";
+    }
+  }, 300); // ⏳ small 300ms delay gives login time to finish saving token
+}
 
   // 🔁 Redirect logged-in users away from login/signup pages
   if (publicPages.includes(currentPage) && token) {
