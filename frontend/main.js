@@ -36,50 +36,187 @@ socket.on("chatbotTriggerAdded", (data) => console.log("🤖 Chatbot trigger add
     console.error("❌ Cannot reach backend:", err.message);
   }
 })();
-
 // ==================================================
-// 🔐 PROTECTED ROUTES — Prevent direct access without login
+// 🔐 ROLE-BASED PROTECTED ROUTES + SESSION AUTO LOGOUT
 // ==================================================
 document.addEventListener("DOMContentLoaded", () => {
   const publicPages = ["login.html", "signup.html", "forgot.html", "reset.html", ""];
   const currentPage = window.location.pathname.split("/").pop();
   const token = localStorage.getItem("token");
+  const role = (localStorage.getItem("userRole") || "").toLowerCase();
 
-  // 🚫 If not logged in and trying to access a protected page
+  const rolePages = {
+    admin: ["dashboard.html"],
+    moderator: ["moderator.html"],
+    faculty: ["faculty.html"],
+    tester: ["tester.html"],
+    student: ["student.html"],
+  };
+
+  // 🚫 Block access to protected pages without login
   if (!publicPages.includes(currentPage) && !token) {
     console.warn("🔒 Unauthorized access — redirecting to login.");
     window.location.href = "login.html";
+    return;
   }
 
-  // ✅ If logged in and trying to access login/signup pages again
+  // 🔁 Redirect logged-in users away from login/signup pages
   if (publicPages.includes(currentPage) && token) {
-    console.log("🔁 Already logged in — redirecting to dashboard.");
-    window.location.href = "dashboard.html";
+    const defaultPage = rolePages[role]?.[0] || "student.html";
+    console.log(`🔁 Already logged in as ${role}, redirecting to ${defaultPage}`);
+    window.location.href = defaultPage;
+    return;
+  }
+
+  // 🧭 Role mismatch protection
+  if (token && !publicPages.includes(currentPage)) {
+    let allowed = false;
+    for (const [r, pages] of Object.entries(rolePages)) {
+      if (r === role && pages.includes(currentPage)) {
+        allowed = true;
+        break;
+      }
+    }
+
+    if (!allowed) {
+      console.warn(`🚫 ${role} not allowed to access ${currentPage}. Redirecting...`);
+      const redirectPage = rolePages[role]?.[0] || "student.html";
+      window.location.href = redirectPage;
+      return;
+    }
+  }
+
+  // ==================================================
+  // ⏰ SESSION AUTO LOGOUT (1 hour)
+  // ==================================================
+  const SESSION_DURATION = 60 * 60 * 1000; // 1 hour
+  const lastLogin = localStorage.getItem("loginTime");
+
+  if (token && !lastLogin) {
+    localStorage.setItem("loginTime", Date.now().toString());
+  }
+
+  if (token) {
+    setInterval(() => {
+      const loginTime = parseInt(localStorage.getItem("loginTime") || "0", 10);
+      const now = Date.now();
+      if (now - loginTime >= SESSION_DURATION) {
+        showSessionExpiredDialog();
+      }
+    }, 60000);
+  }
+
+  // 💜 Purple Neon Session Expired Dialog
+  function showSessionExpiredDialog() {
+    if (document.getElementById("session-expired-box")) return;
+
+    const box = document.createElement("div");
+    box.id = "session-expired-box";
+    box.innerHTML = `
+      <div class="session-overlay"></div>
+      <div class="session-dialog">
+        <h3>⚡ Session Expired</h3>
+        <p>Your session has ended for security reasons.<br>Please log in again.</p>
+        <button id="session-ok-btn">Re-Login</button>
+      </div>
+    `;
+    document.body.appendChild(box);
+
+    // 💜 Matching purple neon styles
+    const style = document.createElement("style");
+    style.textContent = `
+      .session-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px);
+        z-index: 9998;
+        animation: fadeInBg 0.3s ease;
+      }
+      .session-dialog {
+        position: fixed; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(circle at top, #1a002b 0%, #090011 100%);
+        color: #e6dbff;
+        padding: 30px 45px;
+        border-radius: 18px;
+        box-shadow: 0 0 25px rgba(162, 70, 255, 0.8), inset 0 0 15px rgba(180, 80, 255, 0.3);
+        text-align: center;
+        z-index: 9999;
+        animation: popUp 0.4s ease-out;
+      }
+      .session-dialog h3 {
+        color: #bb86fc;
+        text-shadow: 0 0 10px #b57aff, 0 0 20px #a055ff;
+        margin-bottom: 10px;
+        font-size: 1.4rem;
+        font-weight: 600;
+      }
+      .session-dialog p {
+        font-size: 0.95rem;
+        color: #d9caff;
+        margin-bottom: 20px;
+        line-height: 1.4;
+      }
+      .session-dialog button {
+        background: linear-gradient(135deg, #a055ff, #bb86fc);
+        color: #fff;
+        border: none;
+        padding: 10px 22px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 0 18px rgba(187, 134, 252, 0.9);
+        transition: all 0.2s ease-in-out;
+      }
+      .session-dialog button:hover {
+        transform: scale(1.07);
+        box-shadow: 0 0 25px rgba(187, 134, 252, 1);
+        background: linear-gradient(135deg, #b784ff, #d0a2ff);
+      }
+      @keyframes fadeInBg {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes popUp {
+        from { opacity: 0; transform: translate(-50%, -46%) scale(0.9); }
+        to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    document.getElementById("session-ok-btn").addEventListener("click", () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("loginTime");
+      window.location.href = "login.html";
+    });
   }
 });
-
 // ==================================================
-// 🌙 THEME TOGGLE (Dark Mode with Blue Glow + Cookie Save)
+// 🌙 THEME TOGGLE (Dark Mode with Purple Neon Glow + Cookie Save)
 // ==================================================
 const themeToggle = document.getElementById("theme-toggle");
 
+// 🔹 Load previously saved theme from cookie
 const savedTheme = document.cookie
   .split("; ")
   .find((row) => row.startsWith("theme="))
   ?.split("=")[1];
 if (savedTheme === "dark") document.body.classList.add("dark-mode");
 
+// 🔹 Save theme preference in cookie
 function saveThemeToCookie(theme) {
   document.cookie = `theme=${theme}; path=/; max-age=${60 * 60 * 24 * 30}`;
 }
 
+// 🔹 Toggle dark mode
 themeToggle?.addEventListener("click", () => {
   const isDark = document.body.classList.toggle("dark-mode");
   saveThemeToCookie(isDark ? "dark" : "light");
 
+  // 💜 Add temporary purple glow burst effect when toggled on
   if (isDark) {
     const glow = document.createElement("div");
-    glow.className = "blue-glow";
+    glow.className = "purple-glow";
     document.body.appendChild(glow);
     setTimeout(() => glow.classList.add("fade-in"), 50);
     setTimeout(() => glow.classList.remove("fade-in"), 1500);
