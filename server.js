@@ -341,7 +341,7 @@ app.post(
     console.log("📧 Sending reset code to:", email);
 
     try {
-      const from = process.env.EMAIL_FROM || "Student Assistant <onboarding@resend.dev>";
+      const from = process.env.EMAIL_FROM || 'Feathers <feathers@on.resend.dev>';
       // If using resend, make sure EMAIL_FROM is a verified sender/domain in Resend.
       const result = await sendEmail({
         from,
