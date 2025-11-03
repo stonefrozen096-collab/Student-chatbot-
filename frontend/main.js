@@ -1,5 +1,5 @@
 // ==================================================
-// ✅ MAIN.JS — FINAL PRODUCTION VERSION (UPGRADED)
+// ✅ MAIN.JS — FINAL PRODUCTION VERSION (UPGRADED + FIXED REDIRECTS & PROTECTION)
 // Backend: https://feathers-26g1.onrender.com
 // ==================================================
 
@@ -38,11 +38,31 @@ socket.on("chatbotTriggerAdded", (data) => console.log("🤖 Chatbot trigger add
 })();
 
 // ==================================================
+// 🔐 PROTECTED ROUTES — Prevent direct access without login
+// ==================================================
+document.addEventListener("DOMContentLoaded", () => {
+  const publicPages = ["login.html", "signup.html", "forgot.html", "reset.html", ""];
+  const currentPage = window.location.pathname.split("/").pop();
+  const token = localStorage.getItem("token");
+
+  // 🚫 If not logged in and trying to access a protected page
+  if (!publicPages.includes(currentPage) && !token) {
+    console.warn("🔒 Unauthorized access — redirecting to login.");
+    window.location.href = "login.html";
+  }
+
+  // ✅ If logged in and trying to access login/signup pages again
+  if (publicPages.includes(currentPage) && token) {
+    console.log("🔁 Already logged in — redirecting to dashboard.");
+    window.location.href = "dashboard.html";
+  }
+});
+
+// ==================================================
 // 🌙 THEME TOGGLE (Dark Mode with Blue Glow + Cookie Save)
 // ==================================================
 const themeToggle = document.getElementById("theme-toggle");
 
-// 🔹 Load theme preference from cookies
 const savedTheme = document.cookie
   .split("; ")
   .find((row) => row.startsWith("theme="))
@@ -57,7 +77,6 @@ themeToggle?.addEventListener("click", () => {
   const isDark = document.body.classList.toggle("dark-mode");
   saveThemeToCookie(isDark ? "dark" : "light");
 
-  // Add a smooth glowing fade when switching to dark
   if (isDark) {
     const glow = document.createElement("div");
     glow.className = "blue-glow";
@@ -128,25 +147,18 @@ if (loginForm) {
       localStorage.setItem("token", data.token);
       localStorage.setItem("userRole", data.user?.role || "student");
 
-      // Analytics ping (non-blocking)
-      fetch(`${API_URL}/api/analytics`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event: "login_success", email }),
-      }).catch(() => {});
-
       statusDiv.textContent = "✅ Login successful! Redirecting...";
       statusDiv.style.color = "green";
 
       const role = (data.user?.role || "student").toLowerCase();
       const redirects = {
-        admin: "/dashboard.html",
+        admin: "dashboard.html",
         moderator: "moderator.html",
         faculty: "faculty.html",
         tester: "tester.html",
         student: "student.html",
       };
-      setTimeout(() => (window.location.href = `${redirects[role] || "student.html"}`), 1000);
+      setTimeout(() => (window.location.href = redirects[role] || "student.html"), 1000);
     } catch (err) {
       console.error("Login error:", err);
       statusDiv.textContent = `❌ ${err.message}`;
@@ -183,13 +195,6 @@ if (signupForm) {
       if (res.ok && data.success) {
         statusDiv.textContent = "✅ Account created successfully!";
         statusDiv.style.color = "green";
-
-        fetch(`${API_URL}/api/analytics`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ event: "signup_success", email }),
-        }).catch(() => {});
-
         setTimeout(() => (window.location.href = "login.html"), 1500);
       } else {
         let msg = data.error || data.message || "Signup failed.";
@@ -226,7 +231,6 @@ if (forgotForm) {
 
       msgDiv.style.color = "green";
       msgDiv.textContent = "✅ Token sent to your email!";
-      if (data.debugCode) console.log("DEBUG Reset Code:", data.debugCode);
     } catch (err) {
       msgDiv.style.color = "red";
       msgDiv.textContent = `❌ ${err.message}`;
