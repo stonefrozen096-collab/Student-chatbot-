@@ -348,8 +348,20 @@
       }
     });
   </script>
-  <!-- 👇 Add this just before </body> -->
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
+  <!-- 🧩 Reliable Eruda (with fallback + auto open) -->
+<script>
+(function() {
+  var script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+  script.onload = function() {
+    eruda.init();
+    eruda.show(); // auto open the console
+    console.log("🪶 Eruda console loaded successfully.");
+  };
+  document.body.appendChild(script);
+})();
+</script>
+</body>
+</html>
 </body>
 </html>
