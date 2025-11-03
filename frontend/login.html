@@ -346,22 +346,40 @@
         resetMsg.style.color = 'salmon';
         resetMsg.textContent = 'Error resetting password.';
       }
-    });
+    })();
   </script>
-  <!-- 🧩 Reliable Eruda (with fallback + auto open) -->
+  <!-- 🧩 Mini Eruda Console -->
 <script>
 (function() {
   var script = document.createElement('script');
   script.src = 'https://cdn.jsdelivr.net/npm/eruda';
   script.onload = function() {
     eruda.init();
-    eruda.show(); // auto open the console
-    console.log("🪶 Eruda console loaded successfully.");
+    eruda.show(); // auto open console
+
+    // ⬇️ Make Eruda smaller and reposition it
+    const style = document.createElement('style');
+    style.textContent = `
+      .eruda-container {
+        width: 80% !important;
+        height: 40% !important;
+        right: 10px !important;
+        bottom: 10px !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        z-index: 999999 !important;
+      }
+      .eruda-entry-btn {
+        right: 12px !important;
+        bottom: 12px !important;
+        opacity: 0.8 !important;
+      }
+    `;
+    document.head.appendChild(style);
+    console.log("🪶 Mini Eruda console loaded successfully.");
   };
   document.body.appendChild(script);
 })();
 </script>
-</body>
-</html>
 </body>
 </html>
