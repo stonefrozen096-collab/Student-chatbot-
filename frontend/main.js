@@ -308,7 +308,7 @@ if (loginForm) {
 }
 
 // ==================================================
-// 🧾 SIGNUP
+// 🧾 SIGNUP (Fixed [object Object] Issue)
 // ==================================================
 const signupForm = document.getElementById("signupForm");
 if (signupForm) {
@@ -332,12 +332,20 @@ if (signupForm) {
       });
 
       const data = await res.json();
-      if (res.ok && data.success) {
-        statusDiv.textContent = "✅ Account created successfully!";
+
+      if (res.ok) {
+        const msg =
+          typeof data.message === "object"
+            ? JSON.stringify(data.message)
+            : data.message || "Account created successfully!";
+        statusDiv.textContent = `✅ ${msg}`;
         statusDiv.style.color = "green";
         setTimeout(() => (window.location.href = "login.html"), 1500);
       } else {
-        let msg = data.error || data.message || "Signup failed.";
+        const msg =
+          typeof data.error === "object"
+            ? JSON.stringify(data.error)
+            : data.error || data.message || "Signup failed.";
         statusDiv.textContent = `❌ ${msg}`;
         statusDiv.style.color = "red";
       }
