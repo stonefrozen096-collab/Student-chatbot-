@@ -140,7 +140,7 @@ if (loginForm) {
 
       const role = (data.user?.role || "student").toLowerCase();
       const redirects = {
-        admin: "dashboard.html",
+        admin: "/dashboard.html",
         moderator: "moderator.html",
         faculty: "faculty.html",
         tester: "tester.html",
