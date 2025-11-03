@@ -1,0 +1,97 @@
+/* ==================================================
+   💜 DASHBOARD GLOW THEME — Premium Purple Breathing Effect
+   Works automatically with your dark mode toggle
+   ================================================== */
+
+/* Base dark-mode setup */
+body.dark-mode {
+  background: radial-gradient(circle at center, #0a0018 0%, #050010 100%);
+  color: #f5e9ff;
+  transition: background 0.6s ease, color 0.4s ease;
+}
+
+/* Headings with breathing purple glow */
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode .glow-text {
+  color: #e3b6ff;
+  text-shadow: 0 0 10px #b066ff, 0 0 20px #9c45ff, 0 0 40px #b066ff;
+  animation: breatheGlow 3.5s ease-in-out infinite alternate;
+  letter-spacing: 0.5px;
+}
+
+/* Buttons — soft neon borders + breathing background */
+body.dark-mode button,
+body.dark-mode .btn {
+  background: transparent;
+  border: 2px solid #a855f7;
+  color: #f5e9ff;
+  font-weight: 600;
+  border-radius: 12px;
+  box-shadow: 0 0 10px #a855f7aa, inset 0 0 10px #7e22ce33;
+  transition: all 0.4s ease;
+  animation: breatheButton 4s ease-in-out infinite alternate;
+}
+
+body.dark-mode button:hover,
+body.dark-mode .btn:hover {
+  background: #a855f722;
+  box-shadow: 0 0 20px #c084fc, inset 0 0 15px #7e22ce55;
+  transform: scale(1.03);
+}
+
+/* Special accent text */
+body.dark-mode .highlight {
+  color: #d8b4fe;
+  text-shadow: 0 0 12px #c084fc, 0 0 25px #a855f7;
+  animation: breatheGlow 3.2s ease-in-out infinite alternate;
+}
+
+/* Breathing animations */
+@keyframes breatheGlow {
+  from {
+    text-shadow: 0 0 5px #7e22ce, 0 0 10px #9333ea, 0 0 20px #a855f7;
+  }
+  to {
+    text-shadow: 0 0 20px #c084fc, 0 0 40px #a855f7, 0 0 60px #c084fc;
+  }
+}
+
+@keyframes breatheButton {
+  from {
+    box-shadow: 0 0 8px #a855f7aa, inset 0 0 6px #7e22ce33;
+  }
+  to {
+    box-shadow: 0 0 20px #c084fcaa, inset 0 0 15px #7e22ce77;
+  }
+}
+
+/* Optional subtle glow overlay */
+.blue-glow {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, #a855f711 0%, transparent 70%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1s ease;
+}
+.blue-glow.fade-in {
+  opacity: 1;
+}
+
+/* Toast messages glow */
+.toast {
+  background: rgba(30, 0, 40, 0.8);
+  border: 1px solid #c084fc55;
+  color: #f3e8ff;
+  padding: 12px 20px;
+  border-radius: 12px;
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  z-index: 9999;
+  box-shadow: 0 0 20px #a855f788;
+  backdrop-filter: blur(6px);
+  animation: breatheButton 4s ease-in-out infinite alternate;
+}
