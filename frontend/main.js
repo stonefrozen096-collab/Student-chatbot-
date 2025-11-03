@@ -146,7 +146,7 @@ if (loginForm) {
         tester: "tester.html",
         student: "student.html",
       };
-      setTimeout(() => (window.location.href = `/${redirects[role] || "student.html"}`), 1000);
+      setTimeout(() => (window.location.href = `${redirects[role] || "student.html"}`), 1000);
     } catch (err) {
       console.error("Login error:", err);
       statusDiv.textContent = `❌ ${err.message}`;
@@ -258,7 +258,7 @@ if (resetForm) {
 
       msgDiv.style.color = "green";
       msgDiv.textContent = "✅ Password reset successful! Redirecting...";
-      setTimeout(() => (window.location.href = "/login.html"), 1500);
+      setTimeout(() => (window.location.href = "login.html"), 1500);
     } catch (err) {
       msgDiv.style.color = "red";
       msgDiv.textContent = `❌ ${err.message}`;
@@ -277,7 +277,7 @@ if (logoutBtn) {
     localStorage.removeItem("token");
     localStorage.removeItem("userRole");
     showToast("Logged out successfully", "info");
-    setTimeout(() => (window.location.href = "/login.html"), 1000);
+    setTimeout(() => (window.location.href = "login.html"), 1000);
   });
 }
 
