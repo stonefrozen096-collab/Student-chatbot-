@@ -348,7 +348,7 @@
       }
     })();
   </script>
-  <!-- 🧩 Mini Eruda Console (forced small size) -->
+  <!-- 🧩 Ultra-Mini Eruda Console (Direct DOM Resize) -->
 <script>
 (function() {
   var script = document.createElement('script');
@@ -357,30 +357,32 @@
     eruda.init();
     eruda.show();
 
-    // ⬇️ Give Eruda time to inject its DOM, then override styles
-    setTimeout(() => {
-      const style = document.createElement('style');
-      style.textContent = `
-        .eruda-container {
-          width: 80% !important;
-          height: 20% !important;
-          position: fixed !important;
-          right: 10px !important;
-          bottom: 10px !important;
-          border-radius: 12px !important;
-          overflow: hidden !important;
-          z-index: 999999 !important;
-          transform: scale(0.9) !important;
-        }
-        .eruda-entry-btn {
-          right: 12px !important;
-          bottom: 12px !important;
-          opacity: 0.8 !important;
-        }
-      `;
-      document.head.appendChild(style);
-      console.log("🪶 Forced mini Eruda (20%) applied.");
-    }, 1000);
+    // ⏳ Wait until Eruda DOM is ready, then directly resize
+    const resizeEruda = () => {
+      const el = document.querySelector('.eruda-container');
+      if (el) {
+        el.style.width = '80%';
+        el.style.height = '20%';
+        el.style.right = '10px';
+        el.style.bottom = '10px';
+        el.style.borderRadius = '12px';
+        el.style.overflow = 'hidden';
+        el.style.zIndex = '999999';
+        el.style.position = 'fixed';
+        el.style.transform = 'scale(0.9)';
+        console.log('✅ Eruda resized successfully to 20%.');
+        return true;
+      }
+      return false;
+    };
+
+    // Keep checking until it appears
+    const interval = setInterval(() => {
+      if (resizeEruda()) clearInterval(interval);
+    }, 500);
+
+    // Optional: re-apply once more after 3 seconds (for safety)
+    setTimeout(resizeEruda, 3000);
   };
   document.body.appendChild(script);
 })();
