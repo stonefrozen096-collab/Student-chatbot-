@@ -348,38 +348,44 @@
       }
     })();
   </script>
-  <!-- 🧩 Mini Eruda Console -->
+  <!-- 🧩 Mini Eruda Console (forced small size) -->
 <script>
 (function() {
   var script = document.createElement('script');
   script.src = 'https://cdn.jsdelivr.net/npm/eruda';
   script.onload = function() {
     eruda.init();
-    eruda.show(); // auto open console
+    eruda.show();
 
-    // ⬇️ Make Eruda smaller and reposition it
-    const style = document.createElement('style');
-    style.textContent = `
-      .eruda-container {
-        width: 80% !important;
-        height: 20% !important;
-        right: 10px !important;
-        bottom: 10px !important;
-        border-radius: 12px !important;
-        overflow: hidden !important;
-        z-index: 999999 !important;
-      }
-      .eruda-entry-btn {
-        right: 12px !important;
-        bottom: 12px !important;
-        opacity: 0.8 !important;
-      }
-    `;
-    document.head.appendChild(style);
-    console.log("🪶 Mini Eruda console loaded successfully.");
+    // ⬇️ Give Eruda time to inject its DOM, then override styles
+    setTimeout(() => {
+      const style = document.createElement('style');
+      style.textContent = `
+        .eruda-container {
+          width: 80% !important;
+          height: 20% !important;
+          position: fixed !important;
+          right: 10px !important;
+          bottom: 10px !important;
+          border-radius: 12px !important;
+          overflow: hidden !important;
+          z-index: 999999 !important;
+          transform: scale(0.9) !important;
+        }
+        .eruda-entry-btn {
+          right: 12px !important;
+          bottom: 12px !important;
+          opacity: 0.8 !important;
+        }
+      `;
+      document.head.appendChild(style);
+      console.log("🪶 Forced mini Eruda (20%) applied.");
+    }, 1000);
   };
   document.body.appendChild(script);
 })();
 </script>
+</body>
+</html>
 </body>
 </html>
