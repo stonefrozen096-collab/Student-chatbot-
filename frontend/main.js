@@ -286,19 +286,21 @@ if (loginForm) {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("userRole", data.user?.role || "student");
+      statusDiv.textContent = "✅ Login successful! (Debug mode - no redirect)";
+statusDiv.style.color = "green";
 
-      statusDiv.textContent = "✅ Login successful! Redirecting...";
-      statusDiv.style.color = "green";
-
-      const role = (data.user?.role || "student").toLowerCase();
-      const redirects = {
-        admin: "dashboard.html",
-        moderator: "moderator.html",
-        faculty: "faculty.html",
-        tester: "tester.html",
-        student: "student.html",
-      };
-      setTimeout(() => (window.location.href = redirects[role] || "student.html"), 1000);
+console.log("🪶 Login response data:", data);
+localStorage.setItem("lastLoginResponse", JSON.stringify(data));
+// Commented redirect for now to check what’s going wrong
+// const role = (data.user?.role || "student").toLowerCase();
+// const redirects = {
+//   admin: "dashboard.html",
+//   moderator: "moderator.html",
+//   faculty: "faculty.html",
+//   tester: "tester.html",
+//   student: "student.html",
+// };
+// setTimeout(() => (window.location.href = redirects[role] || "student.html"), 1000);
     } catch (err) {
       console.error("Login error:", err);
       statusDiv.textContent = `❌ ${err.message}`;
