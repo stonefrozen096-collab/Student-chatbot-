@@ -348,46 +348,5 @@
       }
     })();
   </script>
-  <!-- 🧩 Ultra-Mini Eruda Console (Direct DOM Resize) -->
-<script>
-(function() {
-  var script = document.createElement('script');
-  script.src = 'https://cdn.jsdelivr.net/npm/eruda';
-  script.onload = function() {
-    eruda.init();
-    eruda.show();
-
-    // ⏳ Wait until Eruda DOM is ready, then directly resize
-    const resizeEruda = () => {
-      const el = document.querySelector('.eruda-container');
-      if (el) {
-        el.style.width = '80%';
-        el.style.height = '20%';
-        el.style.right = '10px';
-        el.style.bottom = '10px';
-        el.style.borderRadius = '12px';
-        el.style.overflow = 'hidden';
-        el.style.zIndex = '999999';
-        el.style.position = 'fixed';
-        el.style.transform = 'scale(0.9)';
-        console.log('✅ Eruda resized successfully to 20%.');
-        return true;
-      }
-      return false;
-    };
-
-    // Keep checking until it appears
-    const interval = setInterval(() => {
-      if (resizeEruda()) clearInterval(interval);
-    }, 500);
-
-    // Optional: re-apply once more after 3 seconds (for safety)
-    setTimeout(resizeEruda, 3000);
-  };
-  document.body.appendChild(script);
-})();
-</script>
-</body>
-</html>
 </body>
 </html>
